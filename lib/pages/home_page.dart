@@ -30,12 +30,14 @@ class _HomePageState extends State<HomePage> {
     final weekCount = await _dbHelper.getThisWeekCount();
     final mostUsedTag = await _dbHelper.getMostUsedTag();
 
-    setState(() {
-      _records = records;
-      _totalCount = totalCount;
-      _weekCount = weekCount;
-      _mostUsedTag = mostUsedTag;
-    });
+    if (mounted) {
+      setState(() {
+        _records = records;
+        _totalCount = totalCount;
+        _weekCount = weekCount;
+        _mostUsedTag = mostUsedTag;
+      });
+    }
   }
 
   Map<String, List<Map<String, dynamic>>> _groupRecordsByDate() {
@@ -44,17 +46,17 @@ class _HomePageState extends State<HomePage> {
 
     for (var record in _records) {
       DateTime recordDate =
-          DateTime.fromMillisecondsSinceEpoch(record['created_at']);
+          DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
       String groupKey;
 
       if (_isSameDay(recordDate, now)) {
-        groupKey = '今天';
+        groupKey = '\u4ECA\u5929';
       } else if (_isSameDay(recordDate, now.subtract(Duration(days: 1)))) {
-        groupKey = '昨天';
+        groupKey = '\u6628\u5929';
       } else if (recordDate.isAfter(now.subtract(Duration(days: 7)))) {
-        groupKey = '本周';
+        groupKey = '\u672C\u5468';
       } else {
-        groupKey = '更早';
+        groupKey = '\u66F4\u65E9';
       }
 
       if (!grouped.containsKey(groupKey)) {
@@ -118,7 +120,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
         title: Text(
-          'AI人生记录器',
+          'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Color(0xFF4A90E2),
@@ -148,29 +150,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildDeveloperInfo() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderBottom: Border(bottom: BorderSide(color: Colors.grey[200]!)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '开发者：杰哥网络科技',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-          ),
-          Text(
-            'qq2711793818',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildStatsCards() {
     return Container(
       height: 120,
@@ -178,13 +157,13 @@ class _HomePageState extends State<HomePage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _buildStatCard('总记录数', _totalCount.toString(), Icons.article,
+          _buildStatCard('\u603B\u8BB0\u5F55\u6570', _totalCount.toString(), Icons.article,
               Color(0xFF4A90E2)),
           SizedBox(width: 12),
-          _buildStatCard('本周记录', _weekCount.toString(), Icons.calendar_today,
+          _buildStatCard('\u672C\u5468\u8BB0\u5F55', _weekCount.toString(), Icons.calendar_today,
               Color(0xFF50C878)),
           SizedBox(width: 12),
-          _buildStatCard('最常用标签', _mostUsedTag ?? '暂无', Icons.tag,
+          _buildStatCard('\u6700\u5E38\u7528\u6807\u7B7E', _mostUsedTag ?? '\u6682\u65E0', Icons.tag,
               Color(0xFFFF6B6B)),
         ],
       ),
@@ -238,10 +217,10 @@ class _HomePageState extends State<HomePage> {
           children: [
             Icon(Icons.book_outlined, size: 80, color: Colors.grey[300]),
             SizedBox(height: 16),
-            Text('还没有记录',
+            Text('\u8FD8\u6CA1\u6709\u8BB0\u5F55',
                 style: TextStyle(fontSize: 18, color: Colors.grey[500])),
             SizedBox(height: 8),
-            Text('点击右下角 + 按钮开始记录生活',
+            Text('\u70B9\u51FB\u53F3\u4E0B\u89D2 + \u6309\u94AE\u5F00\u59CB\u8BB0\u5F55\u751F\u6D3B',
                 style: TextStyle(fontSize: 14, color: Colors.grey[400])),
           ],
         ),
@@ -279,10 +258,34 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildDeveloperInfo() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderBottom: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '\u5F00\u53D1\u8005\uFF1A\u6770\u54E5\u7F51\u7EDC\u79D1\u6280',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+          Text(
+            'qq2711793818',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRecordCard(Map<String, dynamic> record) {
-    DateTime dateTime =
-        DateTime.fromMillisecondsSinceEpoch(record['created_at']);
+    int timestamp = record['created_at'] ?? 0;
+    DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
     String timeStr = DateFormat('HH:mm').format(dateTime);
+    String content = record['content']?.toString() ?? '';
 
     List<String> tags = [];
     if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
@@ -303,8 +306,8 @@ class _HomePageState extends State<HomePage> {
           children: [
             Row(
               children: [
-                Icon(_getMoodIcon(record['mood']),
-                    color: _getMoodColor(record['mood']), size: 24),
+                Icon(_getMoodIcon(record['mood'] as String?),
+                    color: _getMoodColor(record['mood'] as String?), size: 24),
                 SizedBox(width: 8),
                 Text(timeStr,
                     style: TextStyle(
@@ -314,7 +317,7 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             SizedBox(height: 12),
-            Text(record['content'],
+            Text(content,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 16, height: 1.5)),

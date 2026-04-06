@@ -22,10 +22,10 @@ class _AddRecordPageState extends State<AddRecordPage> {
   final stt.SpeechToText _speech = stt.SpeechToText();
 
   List<Map<String, dynamic>> _moods = [
-    {'value': 'happy', 'emoji': '😊', 'label': '开心'},
-    {'value': 'neutral', 'emoji': '😐', 'label': '平静'},
-    {'value': 'sad', 'emoji': '😢', 'label': '难过'},
-    {'value': 'excited', 'emoji': '🎉', 'label': '兴奋'},
+    {'value': 'happy', 'emoji': '\U0001F60A', 'label': '\u5F00\u5FC3'},
+    {'value': 'neutral', 'emoji': '\U0001F610', 'label': '\u5E73\u9759'},
+    {'value': 'sad', 'emoji': '\U0001F622', 'label': '\u96BE\u8FC7'},
+    {'value': 'excited', 'emoji': '\U0001F389', 'label': '\u5174\u594B'},
   ];
 
   @override
@@ -37,17 +37,21 @@ class _AddRecordPageState extends State<AddRecordPage> {
   void _initSpeech() async {
     bool available = await _speech.initialize(
       onStatus: (status) {
-        setState(() {
-          _isListening = status == 'listening';
-        });
+        if (mounted) {
+          setState(() {
+            _isListening == 'listening';
+          });
+        }
       },
       onError: (error) {
-        setState(() {
-          _isListening = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('语音识别错误: \${error.errorMsg}')),
-        );
+        if (mounted) {
+          setState(() {
+            _isListening = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: ${error.errorMsg}')),
+          );
+        }
       },
     );
   }
@@ -59,9 +63,11 @@ class _AddRecordPageState extends State<AddRecordPage> {
         setState(() => _isListening = true);
         _speech.listen(
           onResult: (result) {
-            setState(() {
-              _contentController.text = result.recognizedWords;
-            });
+            if (mounted) {
+              setState(() {
+                _contentController.text = result.recognizedWords;
+              });
+            }
           },
           localeId: 'zh_CN',
         );
@@ -75,7 +81,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   Future<void> _saveRecord() async {
     if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('请输入记录内容')),
+        SnackBar(content: Text('\u8BF7\u8F93\u5165\u8BB0\u5F55\u5185\u5BB9')),
       );
       return;
     }
@@ -90,7 +96,8 @@ class _AddRecordPageState extends State<AddRecordPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text('标签生成失败，已保存无标签记录'),
+                content:
+                    Text('\u6807\u7B7E\u751F\u6210\u5931\u8D25\uFF0C\u5DF2\u4FDD\u5B58\u65E0\u6807\u7B7E\u8BB0\u5F55'),
                 backgroundColor: Colors.orange),
           );
         }
@@ -105,18 +112,12 @@ class _AddRecordPageState extends State<AddRecordPage> {
 
       if (mounted) {
         Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ 记录保存成功！'),
-            backgroundColor: Color(0xFF50C878),
-          ),
-        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('保存失败，请重试'),
+            content: Text('\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5'),
             backgroundColor: Colors.red,
           ),
         );
@@ -141,7 +142,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
         title: Text(
-          '添加记录',
+          '\u6DFB\u52A0\u8BB0\u5F55',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Color(0xFF4A90E2),
@@ -177,29 +178,6 @@ class _AddRecordPageState extends State<AddRecordPage> {
     );
   }
 
-  Widget _buildDeveloperInfo() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderBottom: Border(bottom: BorderSide(color: Colors.grey[200]!)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '开发者：杰哥网络科技',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-          ),
-          Text(
-            'qq2711793818',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildContentInput() {
     return Container(
       decoration: BoxDecoration(
@@ -217,7 +195,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         controller: _contentController,
         maxLines: 6,
         decoration: InputDecoration(
-          hintText: '今天发生了什么？',
+          hintText: '\u4ECA\u5929\u53D1\u751F\u4E86\u4EC0\u4E48\uFF1F',
           hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(20),
@@ -233,7 +211,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
       children: [
         Padding(
           padding: EdgeInsets.only(left: 4, bottom: 12),
-          child: Text('选择心情',
+          child: Text('\u9009\u62E9\u5FC3\u60C5',
               style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -319,6 +297,29 @@ class _AddRecordPageState extends State<AddRecordPage> {
     );
   }
 
+  Widget _buildDeveloperInfo() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderBottom: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            '\u5F00\u53D1\u8005\uFF1A\u6770\u54E5\u7F51\u7EDC\u79D1\u6280',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+          Text(
+            'qq2711793818',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSaveButton() {
     return SizedBox(
       width: double.infinity,
@@ -339,7 +340,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : Text('保存记录',
+            : Text('\u4FDD\u5B58\u8BB0\u5F55',
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
