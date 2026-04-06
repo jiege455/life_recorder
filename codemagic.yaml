@@ -8,13 +8,25 @@ workflows:
       cocoapods: default
       android_sdk: 34
     scripts:
+      - name: Set up Android build environment
+        script: |
+          echo "Setting up Android environment..."
+          export ANDROID_HOME=$HOME/programs/android-sdk-macosx
+          chmod +x $ANDROID_HOME/platform-tools/*
+          export PATH=$PATH:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools
+          echo "Android SDK: $ANDROID_SDK_ROOT"
+          echo "Java version:"
+          java -version
       - name: Get Flutter dependencies
         script: |
           cd $CM_BUILD_DIR
           flutter pub get
+          echo "Dependencies installed successfully"
       - name: Build debug APK
         script: |
           cd $CM_BUILD_DIR
           flutter build apk --debug --no-codesign
+          echo "Build completed"
+          ls -la $CM_BUILD_DIR/build/app/outputs/flutter-apk/
     artifacts:
       - build/app/outputs/flutter-apk/app-debug.apk
