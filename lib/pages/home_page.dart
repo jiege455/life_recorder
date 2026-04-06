@@ -263,7 +263,7 @@ class _HomePageState extends State<HomePage> {
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderBottom: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
