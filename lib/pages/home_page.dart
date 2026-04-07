@@ -4,6 +4,9 @@ import 'dart:convert';
 import '../database/database_helper.dart';
 import 'add_record_page.dart';
 import 'record_detail_page.dart';
+import 'calendar_page.dart';
+import 'stats_page.dart';
+import 'ai_report_page.dart';
 import 'about_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -23,6 +26,7 @@ class _HomePageState extends State<HomePage> {
   bool _isSearching = false;
   String? _selectedMoodFilter;
   final TextEditingController _searchController = TextEditingController();
+  int _currentIndex = 0;
 
   List<Map<String, dynamic>> _moods = [
     {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '\u5F00\u5FC3'},
@@ -132,43 +136,26 @@ class _HomePageState extends State<HomePage> {
 
   IconData _getMoodIcon(String? mood) {
     switch (mood) {
-      case 'happy':
-        return Icons.sentiment_very_satisfied;
-      case 'neutral':
-        return Icons.sentiment_neutral;
-      case 'sad':
-        return Icons.sentiment_dissatisfied;
-      case 'excited':
-        return Icons.celebration;
-      default:
-        return Icons.sentiment_satisfied_alt;
+      case 'happy': return Icons.sentiment_very_satisfied;
+      case 'neutral': return Icons.sentiment_neutral;
+      case 'sad': return Icons.sentiment_dissatisfied;
+      case 'excited': return Icons.celebration;
+      default: return Icons.sentiment_satisfied_alt;
     }
   }
 
   Color _getMoodColor(String? mood) {
     switch (mood) {
-      case 'happy':
-        return Colors.amber;
-      case 'neutral':
-        return Colors.grey;
-      case 'sad':
-        return Colors.blue;
-      case 'excited':
-        return Colors.pink;
-      default:
-        return Colors.green;
+      case 'happy': return Colors.amber;
+      case 'neutral': return Colors.grey;
+      case 'sad': return Colors.blue;
+      case 'excited': return Colors.pink;
+      default: return Colors.green;
     }
   }
 
   Color _getTagColor(int index) {
-    final colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.teal,
-      Colors.red
-    ];
+    final colors = [Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.teal, Colors.red];
     return colors[index % colors.length];
   }
 
@@ -180,14 +167,8 @@ class _HomePageState extends State<HomePage> {
         content: Text('\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u6761\u8BB0\u5F55\u5417\uFF1F'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('\u53D6\u6D88'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('\u5220\u9664', style: TextStyle(color: Colors.red)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('\u53D6\u6D88')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text('\u5220\u9664', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -196,15 +177,62 @@ class _HomePageState extends State<HomePage> {
       await _dbHelper.deleteRecord(id);
       _loadData();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('\u5DF2\u5220\u9664')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('\u5DF2\u5220\u9664')));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFFF5F7FA),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          _buildHomeTab(),
+          CalendarPage(),
+          StatsPage(),
+          AiReportPage(),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, -2))],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) => setState(() => _currentIndex = index),
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: Color(0xFF4A90E2),
+          unselectedItemColor: Colors.grey[400],
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          items: [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: '\u9996\u9875'),
+            BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: '\u65E5\u5386'),
+            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '\u7EDF\u8BA1'),
+            BottomNavigationBarItem(icon: Icon(Icons.auto_awesome), label: 'AI\u62A5\u544A'),
+          ],
+        ),
+      ),
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AddRecordPage()),
+                );
+                if (result == true) _loadData();
+              },
+              backgroundColor: Color(0xFF4A90E2),
+              child: Icon(Icons.add, color: Colors.white, size: 30),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildHomeTab() {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
@@ -220,10 +248,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 onChanged: _searchRecords,
               )
-            : Text(
-                'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
+            : Text('AI\u4EBA\u751F\u8BB0\u5F55\u5668', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Color(0xFF4A90E2),
         elevation: 0,
         centerTitle: true,
@@ -248,8 +273,7 @@ class _HomePageState extends State<HomePage> {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 'about', child: Row(children: [Icon(Icons.info_outline, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('\u5173\u4E8E')]),
-              ),
+              PopupMenuItem(value: 'about', child: Row(children: [Icon(Icons.info_outline, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('\u5173\u4E8E')])),
             ],
           ),
         ],
@@ -261,19 +285,6 @@ class _HomePageState extends State<HomePage> {
           Expanded(child: _buildRecordsList()),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AddRecordPage()),
-          );
-          if (result == true) {
-            _loadData();
-          }
-        },
-        backgroundColor: Color(0xFF4A90E2),
-        child: Icon(Icons.add, color: Colors.white, size: 30),
-      ),
     );
   }
 
@@ -284,51 +295,32 @@ class _HomePageState extends State<HomePage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _buildStatCard('\u603B\u8BB0\u5F55\u6570', _totalCount.toString(), Icons.article,
-              Color(0xFF4A90E2)),
+          _buildStatCard('\u603B\u8BB0\u5F55\u6570', _totalCount.toString(), Icons.article, Color(0xFF4A90E2)),
           SizedBox(width: 12),
-          _buildStatCard('\u672C\u5468\u8BB0\u5F55', _weekCount.toString(), Icons.calendar_today,
-              Color(0xFF50C878)),
+          _buildStatCard('\u672C\u5468\u8BB0\u5F55', _weekCount.toString(), Icons.calendar_today, Color(0xFF50C878)),
           SizedBox(width: 12),
-          _buildStatCard('\u6700\u5E38\u7528\u6807\u7B7E', _mostUsedTag ?? '\u6682\u65E0', Icons.tag,
-              Color(0xFFFF6B6B)),
+          _buildStatCard('\u6700\u5E38\u7528\u6807\u7B7E', _mostUsedTag ?? '\u6682\u65E0', Icons.tag, Color(0xFFFF6B6B)),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
       width: 140,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          )
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: Offset(0, 4))],
       ),
       padding: EdgeInsets.all(16),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 22),
-              SizedBox(width: 6),
-              Text(title,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-            ],
-          ),
+          Row(children: [Icon(icon, color: color, size: 22), SizedBox(width: 6), Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600]))]),
           SizedBox(height: 8),
-          Text(value,
-              style:
-                  TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
         ],
       ),
     );
@@ -350,10 +342,7 @@ class _HomePageState extends State<HomePage> {
               selectedColor: Color(0xFF4A90E2).withOpacity(0.2),
               backgroundColor: Colors.white,
               side: BorderSide(color: _selectedMoodFilter == null ? Color(0xFF4A90E2) : Colors.grey[300]!),
-              labelStyle: TextStyle(
-                color: _selectedMoodFilter == null ? Color(0xFF4A90E2) : Colors.grey[600],
-                fontSize: 13,
-              ),
+              labelStyle: TextStyle(color: _selectedMoodFilter == null ? Color(0xFF4A90E2) : Colors.grey[600], fontSize: 13),
             ),
           ),
           ..._moods.map((mood) => Padding(
@@ -365,10 +354,7 @@ class _HomePageState extends State<HomePage> {
               selectedColor: Color(0xFF4A90E2).withOpacity(0.2),
               backgroundColor: Colors.white,
               side: BorderSide(color: _selectedMoodFilter == mood['value'] ? Color(0xFF4A90E2) : Colors.grey[300]!),
-              labelStyle: TextStyle(
-                color: _selectedMoodFilter == mood['value'] ? Color(0xFF4A90E2) : Colors.grey[600],
-                fontSize: 13,
-              ),
+              labelStyle: TextStyle(color: _selectedMoodFilter == mood['value'] ? Color(0xFF4A90E2) : Colors.grey[600], fontSize: 13),
             ),
           )),
         ],
@@ -378,7 +364,6 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildRecordsList() {
     var grouped = _groupRecordsByDate();
-
     if (grouped.isEmpty) {
       return Center(
         child: Column(
@@ -386,14 +371,9 @@ class _HomePageState extends State<HomePage> {
           children: [
             Icon(Icons.book_outlined, size: 80, color: Colors.grey[300]),
             SizedBox(height: 16),
-            Text(_isSearching ? '\u6CA1\u6709\u627E\u5230\u76F8\u5173\u8BB0\u5F55' : '\u8FD8\u6CA1\u6709\u8BB0\u5F55',
-                style: TextStyle(fontSize: 18, color: Colors.grey[500])),
+            Text(_isSearching ? '\u6CA1\u6709\u627E\u5230\u76F8\u5173\u8BB0\u5F55' : '\u8FD8\u6CA1\u6709\u8BB0\u5F55', style: TextStyle(fontSize: 18, color: Colors.grey[500])),
             SizedBox(height: 8),
-            Text(
-                _isSearching
-                    ? '\u8BD5\u8BD5\u5176\u4ED6\u5173\u952E\u8BCD'
-                    : '\u70B9\u51FB\u53F3\u4E0B\u89D2 + \u6309\u94AE\u5F00\u59CB\u8BB0\u5F55\u751F\u6D3B',
-                style: TextStyle(fontSize: 14, color: Colors.grey[400])),
+            Text(_isSearching ? '\u8BD5\u8BD5\u5176\u4ED6\u5173\u952E\u8BCD' : '\u70B9\u51FB\u53F3\u4E0B\u89D2 + \u6309\u94AE\u5F00\u59CB\u8BB0\u5F55\u751F\u6D3B', style: TextStyle(fontSize: 14, color: Colors.grey[400])),
           ],
         ),
       );
@@ -408,7 +388,6 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           String dateLabel = grouped.keys.elementAt(index);
           List<Map<String, dynamic>> records = grouped[dateLabel]!;
-
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -416,15 +395,8 @@ class _HomePageState extends State<HomePage> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 margin: EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: Color(0xFF4A90E2).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(dateLabel,
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF4A90E2))),
+                decoration: BoxDecoration(color: Color(0xFF4A90E2).withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                child: Text(dateLabel, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF4A90E2))),
               ),
               ...records.map((record) => _buildRecordCard(record)),
             ],
@@ -457,15 +429,8 @@ class _HomePageState extends State<HomePage> {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RecordDetailPage(recordId: recordId),
-            ),
-          );
-          if (result == true) {
-            _loadData();
-          }
+          final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => RecordDetailPage(recordId: recordId)));
+          if (result == true) _loadData();
         },
         onLongPress: () => _deleteRecord(recordId),
         child: Padding(
@@ -475,28 +440,15 @@ class _HomePageState extends State<HomePage> {
             children: [
               Row(
                 children: [
-                  Icon(_getMoodIcon(record['mood'] as String?),
-                      color: _getMoodColor(record['mood'] as String?), size: 22),
+                  Icon(_getMoodIcon(record['mood'] as String?), color: _getMoodColor(record['mood'] as String?), size: 22),
                   SizedBox(width: 8),
-                  Text(timeStr,
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w500)),
+                  Text(timeStr, style: TextStyle(fontSize: 13, color: Colors.grey[500], fontWeight: FontWeight.w500)),
                   Spacer(),
-                  IconButton(
-                    icon: Icon(Icons.delete_outline, color: Colors.grey[400], size: 18),
-                    onPressed: () => _deleteRecord(recordId),
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
-                  ),
+                  IconButton(icon: Icon(Icons.delete_outline, color: Colors.grey[400], size: 18), onPressed: () => _deleteRecord(recordId), padding: EdgeInsets.zero, constraints: BoxConstraints()),
                 ],
               ),
               SizedBox(height: 10),
-              Text(content,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 15, height: 1.5)),
+              Text(content, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, height: 1.5)),
               if (tags.isNotEmpty) ...[
                 SizedBox(height: 10),
                 Wrap(
@@ -504,8 +456,7 @@ class _HomePageState extends State<HomePage> {
                   runSpacing: 6,
                   children: tags.asMap().entries.map((entry) {
                     return Chip(
-                      label: Text(entry.value,
-                          style: TextStyle(fontSize: 11, color: Colors.white)),
+                      label: Text(entry.value, style: TextStyle(fontSize: 11, color: Colors.white)),
                       backgroundColor: _getTagColor(entry.key),
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       visualDensity: VisualDensity.compact,

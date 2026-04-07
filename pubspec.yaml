@@ -1,7 +1,7 @@
 name: life_recorder
 description: AI\u4EBA\u751F\u8BB0\u5F55\u5668 - \u8BB0\u5F55\u751F\u6D3B\u70B9\u6EF4\uFF0CAI\u667A\u80FD\u6253\u6807\u7B7E
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -16,6 +16,8 @@ dependencies:
   intl: ^0.19.0
   permission_handler: ^11.3.0
   ifly_speech_recognition: ^1.0.5
+  fl_chart: ^0.69.0
+  table_calendar: ^3.1.2
 
 dev_dependencies:
   flutter_test:

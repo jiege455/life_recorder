@@ -107,4 +107,85 @@ class DatabaseHelper {
       ..sort((a, b) => b.value.compareTo(a.value));
     return sortedTags.first.key;
   }
+
+  Future<List<Map<String, dynamic>>> getRecordsByDate(DateTime date) async {
+    final db = await database;
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
+    return await db.query(
+      'records',
+      where: 'created_at >= ? AND created_at <= ?',
+      whereArgs: [startOfDay.millisecondsSinceEpoch, endOfDay.millisecondsSinceEpoch],
+      orderBy: 'created_at DESC',
+    );
+  }
+
+  Future<Map<String, dynamic>> getMoodStats() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT mood, COUNT(*) as count FROM records GROUP BY mood');
+    Map<String, int> stats = {};
+    for (var row in result) {
+      String mood = row['mood']?.toString() ?? 'neutral';
+      stats[mood] = (row['count'] as int?) ?? 0;
+    }
+    return stats;
+  }
+
+  Future<Map<int, int>> getDailyRecordCounts(int year, int month) async {
+    final db = await database;
+    final start = DateTime(year, month, 1);
+    final end = DateTime(year, month + 1, 0, 23, 59, 59, 999);
+    final records = await db.query(
+      'records',
+      where: 'created_at >= ? AND created_at <= ?',
+      whereArgs: [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
+      columns: ['created_at'],
+    );
+    Map<int, int> counts = {};
+    for (var record in records) {
+      DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] as int);
+      counts[dt.day] = (counts[dt.day] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  Future<List<double>> getMonthlyMoodCounts(int year, int month) async {
+    final db = await database;
+    final start = DateTime(year, month, 1);
+    final end = DateTime(year, month + 1, 0, 23, 59, 59, 999);
+    final records = await db.query(
+      'records',
+      where: 'created_at >= ? AND created_at <= ?',
+      whereArgs: [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
+      columns: ['mood', 'created_at'],
+    );
+    int daysInMonth = DateTime(year, month + 1, 0).day;
+    List<double> counts = List.filled(daysInMonth, 0);
+    for (var record in records) {
+      DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] as int);
+      int moodValue = _moodToValue(record['mood']?.toString());
+      counts[dt.day - 1] = moodValue.toDouble();
+    }
+    return counts;
+  }
+
+  int _moodToValue(String? mood) {
+    switch (mood) {
+      case 'happy': return 4;
+      case 'excited': return 3;
+      case 'neutral': return 2;
+      case 'sad': return 1;
+      default: return 2;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getRecordsForPeriod(DateTime start, DateTime end) async {
+    final db = await database;
+    return await db.query(
+      'records',
+      where: 'created_at >= ? AND created_at <= ?',
+      whereArgs: [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
+      orderBy: 'created_at ASC',
+    );
+  }
 }
