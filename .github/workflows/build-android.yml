@@ -26,8 +26,8 @@ jobs:
         with:
           channel: 'stable'
           cache: true
-          cache-key: flutter-${{ runner.os }}-pubspec-lock-${{ hashFiles('**/pubspec.lock') }}
-          cache-path: ${{ env.FLUTTER_HOME }}/.pub-cache
+          cache-key: flutter-${{ runner.os }}-stable
+          cache-path: /tmp/.flutter-cache
           architecture: x64
 
       - name: Get dependencies
