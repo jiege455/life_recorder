@@ -82,47 +82,9 @@ class AboutPage extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.person, color: Color(0xFF4A90E2), size: 20),
-                      SizedBox(width: 8),
-                      Text('\u5F00\u53D1\u8005', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                  SizedBox(height: 12),
-                  Text('\u6770\u54E5\u7F51\u7EDC\u79D1\u6280', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.chat, color: Color(0xFF4A90E2), size: 16),
-                      SizedBox(width: 6),
-                      Text('QQ: 2711793818', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  )
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
                       Icon(Icons.info_outline, color: Color(0xFF4A90E2), size: 20),
                       SizedBox(width: 8),
- Text('\u529F\u80FD\u7279\u6027', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      Text('\u529F\u80FD\u7279\u6027', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                     ],
                   ),
                   SizedBox(height: 12),
