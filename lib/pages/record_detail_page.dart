@@ -25,8 +25,10 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   bool _isEditing = false;
   bool _isLoading = false;
   bool _isListening = false;
+  bool _isGeneratingTags = false;
   bool _speechAvailable = false;
   String _selectedMood = 'neutral';
+  List<String> _editTags = [];
 
   List<Map<String, dynamic>> _moods = [
     {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '\u5F00\u5FC3'},
@@ -58,6 +60,12 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
           setState(() {
             _isListening = false;
           });
+          String errorMsg = error.errorMsg == 'error_network'
+              ? '\u8BED\u97F3\u8BC6\u522B\u9700\u8981\u7F51\u7EDC\u8FDE\u63A5'
+              : '\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: ${error.errorMsg}';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMsg), backgroundColor: Colors.orange),
+          );
         }
       },
     );
@@ -70,6 +78,13 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
         _record = record;
         _selectedMood = record['mood'] ?? 'neutral';
         _contentController.text = record['content']?.toString() ?? '';
+        _editTags = [];
+        if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
+          try {
+            List<dynamic> decoded = jsonDecode(record['tags'].toString());
+            _editTags = decoded.map((e) => e.toString()).toList();
+          } catch (e) {}
+        }
       });
     }
   }
@@ -147,6 +162,38 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     }
   }
 
+  Future<void> _generateTags() async {
+    if (_contentController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('\u8BF7\u5148\u8F93\u5165\u5185\u5BB9')),
+      );
+      return;
+    }
+    setState(() => _isGeneratingTags = true);
+    try {
+      final tags = await _aiService.generateTags(_contentController.text.trim());
+      if (mounted) {
+        setState(() {
+          _editTags = tags;
+          _isGeneratingTags = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isGeneratingTags = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('\u6807\u7B7E\u751F\u6210\u5931\u8D25'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _removeTag(int index) {
+    setState(() {
+      _editTags.removeAt(index);
+    });
+  }
+
   Future<void> _saveEdit() async {
     if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -158,10 +205,12 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     setState(() => _isLoading = true);
 
     try {
-      List<String> tags = [];
-      try {
-        tags = await _aiService.generateTags(_contentController.text.trim());
-      } catch (e) {}
+      List<String> tags = List.from(_editTags);
+      if (tags.isEmpty) {
+        try {
+          tags = await _aiService.generateTags(_contentController.text.trim());
+        } catch (e) {}
+      }
 
       await _dbHelper.updateRecord(widget.recordId, {
         'content': _contentController.text.trim(),
@@ -176,7 +225,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
         });
         _loadRecord();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('\u4FDD\u5B58\u6210\u529F')),
+          SnackBar(content: Text('\u4FDD\u5B58\u6210\u529F'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
@@ -267,8 +316,6 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
               onPressed: () {
                 setState(() {
                   _isEditing = true;
-                  _selectedMood = _record!['mood'] ?? 'neutral';
-                  _contentController.text = _record!['content']?.toString() ?? '';
                 });
               },
             ),
@@ -280,7 +327,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
-        child: _isEditing ? _buildEditMode(tags) : _buildViewMode(tags, dateStr),
+        child: _isEditing ? _buildEditMode() : _buildViewMode(tags, dateStr),
       ),
     );
   }
@@ -325,6 +372,15 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                 SizedBox(height: 16),
                 Divider(height: 1, color: Colors.grey[200]),
                 SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.auto_awesome, size: 16, color: Color(0xFF4A90E2)),
+                    SizedBox(width: 6),
+                    Text('AI\u6807\u7B7E',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+                  ],
+                ),
+                SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -346,7 +402,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     );
   }
 
-  Widget _buildEditMode(List<String> tags) {
+  Widget _buildEditMode() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -374,7 +430,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             style: TextStyle(fontSize: 16, height: 1.6),
           ),
         ),
-        SizedBox(height: 20),
+        SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: _moods.map((mood) {
@@ -412,26 +468,79 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             );
           }).toList(),
         ),
-        SizedBox(height: 20),
+        SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: Color(0xFF4A90E2), size: 20),
+                  SizedBox(width: 8),
+                  Text('AI\u6807\u7B7E',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                  Spacer(),
+                  _isGeneratingTags
+                      ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      : TextButton.icon(
+                          onPressed: _generateTags,
+                          icon: Icon(Icons.auto_awesome, size: 16),
+                          label: Text('\u91CD\u65B0\u751F\u6210'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Color(0xFF4A90E2),
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                ],
+              ),
+              if (_editTags.isNotEmpty) ...[
+                SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _editTags.asMap().entries.map((entry) {
+                    return Chip(
+                      label: Text(entry.value, style: TextStyle(fontSize: 13, color: Colors.white)),
+                      backgroundColor: _getTagColor(entry.key),
+                      deleteIconColor: Colors.white70,
+                      onDeleted: () => _removeTag(entry.key),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    );
+                  }).toList(),
+                ),
+              ],
+            ],
+          ),
+        ),
+        SizedBox(height: 16),
         Center(
           child: GestureDetector(
             onTap: _startListening,
             child: Container(
-              width: 80,
-              height: 80,
+              width: 70,
+              height: 70,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: _isListening ? Colors.red : Color(0xFF4A90E2),
               ),
               child: Icon(
                 _isListening ? Icons.mic : Icons.mic_none,
-                size: 32,
+                size: 28,
                 color: Colors.white,
               ),
             ),
           ),
         ),
-        SizedBox(height: 24),
+        SizedBox(height: 20),
         SizedBox(
           width: double.infinity,
           height: 56,
@@ -445,14 +554,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
+                      SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))),
                       SizedBox(width: 12),
                       Text('\u4FDD\u5B58\u4E2D...', style: TextStyle(color: Colors.white)),
                     ],
@@ -470,6 +572,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
               setState(() {
                 _isEditing = false;
               });
+              _loadRecord();
             },
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: Colors.grey[300]!),

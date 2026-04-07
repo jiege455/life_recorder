@@ -20,7 +20,9 @@ class _AddRecordPageState extends State<AddRecordPage> {
   String _selectedMood = 'neutral';
   bool _isListening = false;
   bool _isLoading = false;
+  bool _isGeneratingTags = false;
   bool _speechAvailable = false;
+  List<String> _generatedTags = [];
   final stt.SpeechToText _speech = stt.SpeechToText();
 
   List<Map<String, dynamic>> _moods = [
@@ -84,8 +86,26 @@ class _AddRecordPageState extends State<AddRecordPage> {
           setState(() {
             _isListening = false;
           });
+          String errorMsg;
+          switch (error.errorMsg) {
+            case 'error_network':
+              errorMsg = '\u8BED\u97F3\u8BC6\u522B\u9700\u8981\u7F51\u7EDC\u8FDE\u63A5\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8BBE\u7F6E';
+              break;
+            case 'error_no_match':
+              errorMsg = '\u672A\u8BC6\u522B\u5230\u8BED\u97F3\uFF0C\u8BF7\u91CD\u8BD5';
+              break;
+            case 'error_audio':
+              errorMsg = '\u5F55\u97F3\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u9EA6\u514B\u98CE';
+              break;
+            default:
+              errorMsg = '\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: ${error.errorMsg}';
+          }
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: ${error.errorMsg}')),
+            SnackBar(
+              content: Text(errorMsg),
+              duration: Duration(seconds: 3),
+              backgroundColor: Colors.orange,
+            ),
           );
         }
       },
@@ -98,7 +118,11 @@ class _AddRecordPageState extends State<AddRecordPage> {
   void _startListening() async {
     if (!_speechAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('\u8BED\u97F3\u8BC6\u522B\u4E0D\u53EF\u7528\uFF0C\u8BF7\u68C0\u67E5\u9EA6\u514B\u98CE\u6743\u9650')),
+        SnackBar(
+          content: Text('\u8BED\u97F3\u8BC6\u522B\u4E0D\u53EF\u7528\uFF0C\u8BF7\u786E\u4FDD\u624B\u673A\u5DF2\u5B89\u88C5Google\u670D\u52A1\u4E14\u7F51\u7EDC\u7545\u901A'),
+          duration: Duration(seconds: 3),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -137,6 +161,48 @@ class _AddRecordPageState extends State<AddRecordPage> {
     }
   }
 
+  Future<void> _generateTags() async {
+    if (_contentController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('\u8BF7\u5148\u8F93\u5165\u5185\u5BB9\u518D\u751F\u6210\u6807\u7B7E')),
+      );
+      return;
+    }
+
+    setState(() => _isGeneratingTags = true);
+    try {
+      final tags = await _aiService.generateTags(_contentController.text.trim());
+      if (mounted) {
+        setState(() {
+          _generatedTags = tags;
+          _isGeneratingTags = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('\u5DF2\u751F\u6210${tags.length}\u4E2A\u6807\u7B7E'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isGeneratingTags = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('\u6807\u7B7E\u751F\u6210\u5931\u8D25\uFF1A$e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _removeTag(int index) {
+    setState(() {
+      _generatedTags.removeAt(index);
+    });
+  }
+
   Future<void> _saveRecord() async {
     if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -148,17 +214,19 @@ class _AddRecordPageState extends State<AddRecordPage> {
     setState(() => _isLoading = true);
 
     try {
-      List<String> tags = [];
-      try {
-        tags = await _aiService.generateTags(_contentController.text.trim());
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content:
-                    Text('\u6807\u7B7E\u751F\u6210\u5931\u8D25\uFF0C\u5DF2\u4FDD\u5B58\u65E0\u6807\u7B7E\u8BB0\u5F55'),
-                backgroundColor: Colors.orange),
-          );
+      List<String> tags = List.from(_generatedTags);
+
+      if (tags.isEmpty) {
+        try {
+          tags = await _aiService.generateTags(_contentController.text.trim());
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text('\u6807\u7B7E\u81EA\u52A8\u751F\u6210\u5931\u8D25\uFF0C\u5DF2\u4FDD\u5B58\u65E0\u6807\u7B7E\u8BB0\u5F55'),
+                  backgroundColor: Colors.orange),
+            );
+          }
         }
       }
 
@@ -197,6 +265,11 @@ class _AddRecordPageState extends State<AddRecordPage> {
     super.dispose();
   }
 
+  Color _getTagColor(int index) {
+    final colors = [Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.teal, Colors.red];
+    return colors[index % colors.length];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -220,11 +293,13 @@ class _AddRecordPageState extends State<AddRecordPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildContentInput(),
-            SizedBox(height: 24),
+            SizedBox(height: 20),
             _buildMoodSelector(),
-            SizedBox(height: 24),
+            SizedBox(height: 20),
             _buildVoiceButton(),
-            SizedBox(height: 32),
+            SizedBox(height: 20),
+            _buildAITagSection(),
+            SizedBox(height: 28),
             _buildSaveButton(),
           ],
         ),
@@ -330,8 +405,8 @@ class _AddRecordPageState extends State<AddRecordPage> {
             onTap: _startListening,
             child: AnimatedContainer(
               duration: Duration(milliseconds: 200),
-              width: 100,
-              height: 100,
+              width: 90,
+              height: 90,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: _isListening ? Colors.red : Color(0xFF4A90E2),
@@ -346,21 +421,100 @@ class _AddRecordPageState extends State<AddRecordPage> {
               ),
               child: Icon(
                 _isListening ? Icons.mic : Icons.mic_none,
-                size: 40,
+                size: 36,
                 color: Colors.white,
               ),
             ),
           ),
         ),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
         Text(
-          _isListening ? '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62' : '\u70B9\u51FB\u5F00\u59CB\u8BED\u97F3\u8F93\u5165',
+          _isListening ? '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62' : '\u8BED\u97F3\u8F93\u5165',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             color: _isListening ? Colors.red : Colors.grey[500],
           ),
         ),
+        SizedBox(height: 4),
+        Text(
+          '\u9700\u8981\u7F51\u7EDC\u548CGoogle\u670D\u52A1',
+          style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+        ),
       ],
+    );
+  }
+
+  Widget _buildAITagSection() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.auto_awesome, color: Color(0xFF4A90E2), size: 20),
+              SizedBox(width: 8),
+              Text('AI\u667A\u80FD\u6807\u7B7E',
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800])),
+              Spacer(),
+              _isGeneratingTags
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : TextButton.icon(
+                      onPressed: _generateTags,
+                      icon: Icon(Icons.auto_awesome, size: 16),
+                      label: Text('\u751F\u6210\u6807\u7B7E'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Color(0xFF4A90E2),
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+            ],
+          ),
+          if (_generatedTags.isNotEmpty) ...[
+            SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _generatedTags.asMap().entries.map((entry) {
+                return Chip(
+                  label: Text(entry.value,
+                      style: TextStyle(fontSize: 13, color: Colors.white)),
+                  backgroundColor: _getTagColor(entry.key),
+                  deleteIconColor: Colors.white70,
+                  onDeleted: () => _removeTag(entry.key),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                );
+              }).toList(),
+            ),
+          ] else if (!_isGeneratingTags) ...[
+            SizedBox(height: 8),
+            Text('\u70B9\u51FB\u201C\u751F\u6210\u6807\u7B7E\u201D\u8BA9AI\u81EA\u52A8\u4E3A\u4F60\u6253\u6807\u7B7E\uFF0C\u6216\u4FDD\u5B58\u65F6\u81EA\u52A8\u751F\u6210',
+                style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+          ],
+        ],
+      ),
     );
   }
 
@@ -388,7 +542,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                     ),
                   ),
                   SizedBox(width: 12),
-                  Text('\u6B63\u5728\u4FDD\u5B58\u5E76\u751F\u6210\u6807\u7B7E...',
+                  Text('\u6B63\u5728\u4FDD\u5B58...',
                       style: TextStyle(fontSize: 16, color: Colors.white)),
                 ],
               )
