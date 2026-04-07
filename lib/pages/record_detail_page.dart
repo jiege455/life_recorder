@@ -498,8 +498,8 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
           child: GestureDetector(
             onTap: _isRecognizing ? null : _startListening,
             child: Container(
-              width: 70,
-              height: 70,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: _isRecognizing
@@ -508,8 +508,8 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
               ),
               child: _isRecognizing
                   ? SizedBox(
-                      width: 28,
-                      height: 28,
+                      width: 24,
+                      height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 3,
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -517,25 +517,12 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                     )
                   : Icon(
                       _isListening ? Icons.mic : Icons.mic_none,
-                      size: 28,
+                      size: 24,
                       color: Colors.white,
                     ),
             ),
           ),
         ),
-        if (_isListening || _isRecognizing)
-          Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Center(
-              child: Text(
-                _isRecognizing ? '\u6B63\u5728\u8BC6\u522B...' : '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: _isRecognizing ? Colors.orange : Colors.red,
-                ),
-              ),
-            ),
-          ),
         SizedBox(height: 20),
         SizedBox(
           width: double.infinity,

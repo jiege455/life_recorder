@@ -318,66 +318,45 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildVoiceButton() {
-    return Column(
-      children: [
-        Center(
-          child: GestureDetector(
-            onTap: _isRecognizing ? null : _startListening,
-            child: AnimatedContainer(
-              duration: Duration(milliseconds: 200),
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _isRecognizing
-                    ? Colors.orange
-                    : (_isListening ? Colors.red : Color(0xFF4A90E2)),
-                boxShadow: [
-                  BoxShadow(
-                    color: (_isRecognizing
-                            ? Colors.orange
-                            : (_isListening ? Colors.red : Color(0xFF4A90E2)))
-                        .withOpacity(0.3),
-                    blurRadius: 15,
-                    offset: Offset(0, 5),
-                  )
-                ],
-              ),
-              child: _isRecognizing
-                  ? SizedBox(
-                      width: 36,
-                      height: 36,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Icon(
-                      _isListening ? Icons.mic : Icons.mic_none,
-                      size: 36,
-                      color: Colors.white,
-                    ),
-            ),
-          ),
-        ),
-        SizedBox(height: 8),
-        Text(
-          _isRecognizing
-              ? '\u6B63\u5728\u8BC6\u522B...'
-              : (_isListening ? '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62' : '\u8BAF\u98DE\u8BED\u97F3\u8F93\u5165'),
-          style: TextStyle(
-            fontSize: 13,
+    return Center(
+      child: GestureDetector(
+        onTap: _isRecognizing ? null : _startListening,
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 200),
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
             color: _isRecognizing
                 ? Colors.orange
-                : (_isListening ? Colors.red : Colors.grey[500]),
+                : (_isListening ? Colors.red : Color(0xFF4A90E2)),
+            boxShadow: [
+              BoxShadow(
+                color: (_isRecognizing
+                        ? Colors.orange
+                        : (_isListening ? Colors.red : Color(0xFF4A90E2)))
+                    .withOpacity(0.3),
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              )
+            ],
           ),
+          child: _isRecognizing
+              ? SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Icon(
+                  _isListening ? Icons.mic : Icons.mic_none,
+                  size: 28,
+                  color: Colors.white,
+                ),
         ),
-        SizedBox(height: 4),
-        Text(
-          '\u56FD\u5185\u76F4\u8FDE\uFF0C\u4E0D\u9700\u8981VPN',
-          style: TextStyle(fontSize: 11, color: Colors.green[400]),
-        ),
-      ],
+      ),
     );
   }
 
