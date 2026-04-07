@@ -13,7 +13,7 @@ dependencies:
   sqflite: ^2.3.0
   path_provider: ^2.1.0
   dio: ^5.4.0
-  speech_to_text: ^6.6.0
+  speech_to_text: ^7.3.0
   intl: ^0.18.0
 
 dev_dependencies:
