@@ -117,7 +117,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
           if (mounted) {
             setState(() => _isListening = false);
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(error), backgroundColor: Colors.orange, duration: Duration(seconds: 3)),
+              SnackBar(content: Text('\u8BED\u97F3\u9519\u8BEF: $error'), backgroundColor: Colors.orange, duration: Duration(seconds: 3)),
             );
           }
         },

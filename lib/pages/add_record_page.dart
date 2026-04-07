@@ -60,19 +60,11 @@ class _AddRecordPageState extends State<AddRecordPage> {
         onError: (error) {
           if (mounted) {
             setState(() => _isListening = false);
-            String errorMsg;
-            if (error.contains('network') || error.contains('Network')) {
-              errorMsg = '\u8BED\u97F3\u8BC6\u522B\u9700\u8981\u7F51\u7EDC\u8FDE\u63A5\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8BBE\u7F6E\u3002\u5982\u5728\u56FD\u5185\u4F7F\u7528\uFF0C\u53EF\u80FD\u9700\u8981VPN\u3002';
-            } else if (error.contains('\u9EA6\u514B\u98CE')) {
-              errorMsg = error;
-            } else {
-              errorMsg = '\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: $error';
-            }
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(errorMsg),
+                content: Text('\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: $error'),
                 backgroundColor: Colors.orange,
-                duration: Duration(seconds: 4),
+                duration: Duration(seconds: 3),
               ),
             );
           }
@@ -350,7 +342,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         ),
         SizedBox(height: 8),
         Text(
-          _isListening ? '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62' : '\u8BED\u97F3\u8F93\u5165',
+          _isListening ? '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62' : '\u8BAF\u98DE\u8BED\u97F3\u8F93\u5165',
           style: TextStyle(
             fontSize: 13,
             color: _isListening ? Colors.red : Colors.grey[500],
@@ -358,8 +350,8 @@ class _AddRecordPageState extends State<AddRecordPage> {
         ),
         SizedBox(height: 4),
         Text(
-          '\u9700\u8981\u7F51\u7EDC\u8FDE\u63A5\uFF0C\u56FD\u5185\u53EF\u80FD\u9700\u8981VPN',
-          style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+          '\u56FD\u5185\u76F4\u8FDE\uFF0C\u4E0D\u9700\u8981VPN',
+          style: TextStyle(fontSize: 11, color: Colors.green[400]),
         ),
       ],
     );
