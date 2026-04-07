@@ -1,4 +1,4 @@
-import 'package:ifly_speech_recognition/ifly_speech_recognition.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
 
 class SpeechService {
@@ -6,36 +6,29 @@ class SpeechService {
   factory SpeechService() => _instance;
   SpeechService._internal();
 
-  final IflySpeechRecognition _speech = IflySpeechRecognition();
+  final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isInitialized = false;
   bool _isListening = false;
+  bool _isAvailable = false;
 
   bool get isListening => _isListening;
-
-  static const String _appId = '000dc3e2';
-  static const String _apiKey = 'eeb3a079d047433a30fc7d39a2988f50';
-  static const String _apiSecret = 'N2IxNzU5YzNhMDI3YjQ2N2Q2MzMxNDAx';
-
-  bool get isConfigured => true;
+  bool get isAvailable => _isAvailable;
 
   Future<bool> init() async {
-    if (_isInitialized) return true;
+    if (_isInitialized) return _isAvailable;
 
-    try {
-      _speech.init({
-        'appid': _appId,
-        'api_key': _apiKey,
-        'api_secret': _apiSecret,
-        'language': 'zh_cn',
-        'accent': 'mandarin',
-        'vad_eos': 3000,
-        'sample_rate': 16000,
-      });
-      _isInitialized = true;
-      return true;
-    } catch (e) {
-      return false;
-    }
+    _isAvailable = await _speech.initialize(
+      onStatus: (status) {
+        if (status == 'done' || status == 'notListening') {
+          _isListening = false;
+        }
+      },
+      onError: (error) {
+        _isListening = false;
+      },
+    );
+    _isInitialized = true;
+    return _isAvailable;
   }
 
   Future<bool> requestPermission() async {
@@ -50,9 +43,8 @@ class SpeechService {
   }
 
   Future<void> startListening({
-    required Function(String result, bool isLast) onResult,
+    required Function(String result) onResult,
     required Function(String error) onError,
-    required Function() onVolumeChanged,
   }) async {
     var hasPermission = await requestPermission();
     if (!hasPermission) {
@@ -61,42 +53,29 @@ class SpeechService {
     }
 
     if (!_isInitialized) {
-      bool success = await init();
-      if (!success) {
-        onError('\u8BED\u97F3\u8BC6\u522B\u521D\u59CB\u5316\u5931\u8D25');
-        return;
-      }
+      await init();
+    }
+
+    if (!_isAvailable) {
+      onError('\u8BED\u97F3\u8BC6\u522B\u4E0D\u53EF\u7528\uFF0C\u8BF7\u786E\u4FDD\u7F51\u7EDC\u7545\u901A');
+      return;
     }
 
     _isListening = true;
 
-    try {
-      _speech.startListening(
-        onVolumeChanged: (volume) {
-          onVolumeChanged();
-        },
-        onResult: (result, isLast) {
-          if (isLast) {
-            _isListening = false;
-          }
-          onResult(result, isLast);
-        },
-        onError: (error) {
-          _isListening = false;
-          onError(error);
-        },
-      );
-    } catch (e) {
-      _isListening = false;
-      onError('\u542F\u52A8\u8BED\u97F3\u8BC6\u522B\u5931\u8D25: $e');
-    }
+    _speech.listen(
+      onResult: (result) {
+        onResult(result.recognizedWords);
+      },
+      localeId: 'zh_CN',
+      listenMode: stt.ListenMode.dictation,
+      onSoundLevelChange: (level) {},
+    );
   }
 
   Future<void> stopListening() async {
     if (_isListening) {
-      try {
-        await _speech.stopListening();
-      } catch (e) {}
+      await _speech.stop();
       _isListening = false;
     }
   }

@@ -97,19 +97,12 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   }
 
   void _startListening() async {
-    if (!_speechService.isConfigured) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('\u8BED\u97F3\u672A\u914D\u7F6E\uFF0C\u8BF7\u5148\u914D\u7F6E\u8BAF\u98DE\u5BC6\u94A5'), backgroundColor: Colors.orange),
-      );
-      return;
-    }
-
     if (!_isListening) {
       String existingText = _contentController.text;
       setState(() => _isListening = true);
       _speechService.startListening(
-        onResult: (result, isLast) {
-          if (mounted) {
+        onResult: (result) {
+          if (mounted && result.isNotEmpty) {
             setState(() {
               _contentController.text = existingText.isNotEmpty
                   ? existingText + result
@@ -124,11 +117,10 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
           if (mounted) {
             setState(() => _isListening = false);
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('\u8BED\u97F3\u9519\u8BEF: $error'), backgroundColor: Colors.red),
+              SnackBar(content: Text(error), backgroundColor: Colors.orange, duration: Duration(seconds: 3)),
             );
           }
         },
-        onVolumeChanged: () {},
       );
     } else {
       _speechService.stopListening();
@@ -375,7 +367,6 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   }
 
   Widget _buildEditMode() {
-    bool configured = _speechService.isConfigured;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -503,18 +494,10 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
               height: 70,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: !configured
-                    ? Colors.grey
-                    : _isListening
-                        ? Colors.red
-                        : Color(0xFF4A90E2),
+                color: _isListening ? Colors.red : Color(0xFF4A90E2),
               ),
               child: Icon(
-                !configured
-                    ? Icons.mic_off
-                    : _isListening
-                        ? Icons.mic
-                        : Icons.mic_none,
+                _isListening ? Icons.mic : Icons.mic_none,
                 size: 28,
                 color: Colors.white,
               ),
