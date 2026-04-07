@@ -17,7 +17,6 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-
     return await openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
@@ -40,10 +39,14 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getAllRecords() async {
     final db = await database;
-    return await db.query(
-      'records',
-      orderBy: 'created_at DESC',
-    );
+    return await db.query('records', orderBy: 'created_at DESC');
+  }
+
+  Future<Map<String, dynamic>?> getRecordById(int id) async {
+    final db = await database;
+    final results = await db.query('records', where: 'id = ?', whereArgs: [id]);
+    if (results.isNotEmpty) return results.first;
+    return null;
   }
 
   Future<int> deleteRecord(int id) async {
@@ -54,6 +57,16 @@ class DatabaseHelper {
   Future<int> updateRecord(int id, Map<String, dynamic> record) async {
     final db = await database;
     return await db.update('records', record, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<List<Map<String, dynamic>>> searchRecords(String keyword) async {
+    final db = await database;
+    return await db.query(
+      'records',
+      where: 'content LIKE ?',
+      whereArgs: ['%$keyword%'],
+      orderBy: 'created_at DESC',
+    );
   }
 
   Future<int> getRecordCount() async {
@@ -67,7 +80,6 @@ class DatabaseHelper {
     final now = DateTime.now();
     final weekAgo = now.subtract(Duration(days: 7));
     final weekAgoTimestamp = weekAgo.millisecondsSinceEpoch;
-
     final result = await db.rawQuery(
       'SELECT COUNT(*) as count FROM records WHERE created_at >= ?',
       [weekAgoTimestamp],
@@ -78,7 +90,6 @@ class DatabaseHelper {
   Future<String?> getMostUsedTag() async {
     final db = await database;
     final records = await db.query('records', columns: ['tags']);
-
     Map<String, int> tagCount = {};
     for (var record in records) {
       if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
@@ -91,12 +102,9 @@ class DatabaseHelper {
         } catch (e) {}
       }
     }
-
     if (tagCount.isEmpty) return null;
-
     var sortedTags = tagCount.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-
     return sortedTags.first.key;
   }
 }

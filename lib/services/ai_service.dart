@@ -37,7 +37,6 @@ class AiService {
       if (response.statusCode == 200) {
         final responseData = response.data;
         String contentText = responseData['choices'][0]['message']['content'];
-
         contentText = contentText.trim();
 
         if (contentText.startsWith('```')) {

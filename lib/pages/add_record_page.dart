@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:convert';
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
@@ -35,6 +36,38 @@ class _AddRecordPageState extends State<AddRecordPage> {
     _initSpeech();
   }
 
+  Future<void> _requestMicPermission() async {
+    var status = await Permission.microphone.status;
+    if (!status.isGranted) {
+      status = await Permission.microphone.request();
+    }
+    if (status.isPermanentlyDenied) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('\u9EA6\u514B\u98CE\u6743\u9650\u88AB\u62D2\u7EDD'),
+            content: Text('\u8BED\u97F3\u8BC6\u522B\u9700\u8981\u9EA6\u514B\u98CE\u6743\u9650\uFF0C\u8BF7\u5728\u8BBE\u7F6E\u4E2D\u5F00\u542F'),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('\u53D6\u6D88'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  openAppSettings();
+                },
+                child: Text('\u53BB\u8BBE\u7F6E'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+
   void _initSpeech() async {
     _speechAvailable = await _speech.initialize(
       onStatus: (status) {
@@ -68,6 +101,13 @@ class _AddRecordPageState extends State<AddRecordPage> {
         SnackBar(content: Text('\u8BED\u97F3\u8BC6\u522B\u4E0D\u53EF\u7528\uFF0C\u8BF7\u68C0\u67E5\u9EA6\u514B\u98CE\u6743\u9650')),
       );
       return;
+    }
+
+    var status = await Permission.microphone.status;
+    if (!status.isGranted) {
+      await _requestMicPermission();
+      status = await Permission.microphone.status;
+      if (!status.isGranted) return;
     }
 
     if (!_isListening) {
@@ -174,27 +214,20 @@ class _AddRecordPageState extends State<AddRecordPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        children: [
-          _buildDeveloperInfo(),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildContentInput(),
-                  SizedBox(height: 24),
-                  _buildMoodSelector(),
-                  SizedBox(height: 24),
-                  _buildVoiceButton(),
-                  SizedBox(height: 32),
-                  _buildSaveButton(),
-                ],
-              ),
-            ),
-          ),
-        ],
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildContentInput(),
+            SizedBox(height: 24),
+            _buildMoodSelector(),
+            SizedBox(height: 24),
+            _buildVoiceButton(),
+            SizedBox(height: 32),
+            _buildSaveButton(),
+          ],
+        ),
       ),
     );
   }
@@ -295,9 +328,10 @@ class _AddRecordPageState extends State<AddRecordPage> {
         Center(
           child: GestureDetector(
             onTap: _startListening,
-            child: Container(
-              width: 120,
-              height: 120,
+            child: AnimatedContainer(
+              duration: Duration(milliseconds: 200),
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: _isListening ? Colors.red : Color(0xFF4A90E2),
@@ -312,7 +346,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
               ),
               child: Icon(
                 _isListening ? Icons.mic : Icons.mic_none,
-                size: 48,
+                size: 40,
                 color: Colors.white,
               ),
             ),
@@ -330,29 +364,6 @@ class _AddRecordPageState extends State<AddRecordPage> {
     );
   }
 
-  Widget _buildDeveloperInfo() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '\u5F00\u53D1\u8005\uFF1A\u6770\u54E5\u7F51\u7EDC\u79D1\u6280',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-          ),
-          Text(
-            'qq2711793818',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSaveButton() {
     return SizedBox(
       width: double.infinity,
@@ -365,13 +376,21 @@ class _AddRecordPageState extends State<AddRecordPage> {
           elevation: 3,
         ),
         child: _isLoading
-            ? SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Text('\u6B63\u5728\u4FDD\u5B58\u5E76\u751F\u6210\u6807\u7B7E...',
+                      style: TextStyle(fontSize: 16, color: Colors.white)),
+                ],
               )
             : Text('\u4FDD\u5B58\u8BB0\u5F55',
                 style: TextStyle(

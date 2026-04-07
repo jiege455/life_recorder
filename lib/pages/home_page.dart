@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import '../database/database_helper.dart';
 import 'add_record_page.dart';
+import 'record_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,14 +15,23 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   List<Map<String, dynamic>> _records = [];
+  List<Map<String, dynamic>> _filteredRecords = [];
   int _totalCount = 0;
   int _weekCount = 0;
   String? _mostUsedTag;
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -34,6 +44,7 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() {
           _records = records;
+          _filteredRecords = records;
           _totalCount = totalCount;
           _weekCount = weekCount;
           _mostUsedTag = mostUsedTag;
@@ -48,11 +59,26 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _searchRecords(String keyword) async {
+    if (keyword.isEmpty) {
+      setState(() {
+        _filteredRecords = _records;
+      });
+      return;
+    }
+    final results = await _dbHelper.searchRecords(keyword);
+    if (mounted) {
+      setState(() {
+        _filteredRecords = results;
+      });
+    }
+  }
+
   Map<String, List<Map<String, dynamic>>> _groupRecordsByDate() {
     Map<String, List<Map<String, dynamic>>> grouped = {};
     DateTime now = DateTime.now();
 
-    for (var record in _records) {
+    for (var record in _filteredRecords) {
       DateTime recordDate =
           DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
       String groupKey;
@@ -128,6 +154,7 @@ class _HomePageState extends State<HomePage> {
       builder: (context) => AlertDialog(
         title: Text('\u786E\u8BA4\u5220\u9664'),
         content: Text('\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u6761\u8BB0\u5F55\u5417\uFF1F'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -144,6 +171,11 @@ class _HomePageState extends State<HomePage> {
     if (confirm == true) {
       await _dbHelper.deleteRecord(id);
       _loadData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('\u5DF2\u5220\u9664')),
+        );
+      }
     }
   }
 
@@ -152,17 +184,42 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text(
-          'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: TextStyle(color: Colors.white, fontSize: 16),
+                decoration: InputDecoration(
+                  hintText: '\u641C\u7D22\u8BB0\u5F55...',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  border: InputBorder.none,
+                ),
+                onChanged: _searchRecords,
+              )
+            : Text(
+                'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
         backgroundColor: Color(0xFF4A90E2),
         elevation: 0,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.white),
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchController.clear();
+                  _filteredRecords = _records;
+                }
+              });
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
-          _buildDeveloperInfo(),
           _buildStatsCards(),
           Expanded(child: _buildRecordsList()),
         ],
@@ -185,8 +242,8 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildStatsCards() {
     return Container(
-      height: 120,
-      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      height: 110,
+      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
@@ -225,16 +282,16 @@ class _HomePageState extends State<HomePage> {
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 24),
-              SizedBox(width: 8),
+              Icon(icon, color: color, size: 22),
+              SizedBox(width: 6),
               Text(title,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600])),
             ],
           ),
           SizedBox(height: 8),
           Text(value,
               style:
-                  TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
+                  TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
         ],
       ),
     );
@@ -250,10 +307,13 @@ class _HomePageState extends State<HomePage> {
           children: [
             Icon(Icons.book_outlined, size: 80, color: Colors.grey[300]),
             SizedBox(height: 16),
-            Text('\u8FD8\u6CA1\u6709\u8BB0\u5F55',
+            Text(_isSearching ? '\u6CA1\u6709\u627E\u5230\u76F8\u5173\u8BB0\u5F55' : '\u8FD8\u6CA1\u6709\u8BB0\u5F55',
                 style: TextStyle(fontSize: 18, color: Colors.grey[500])),
             SizedBox(height: 8),
-            Text('\u70B9\u51FB\u53F3\u4E0B\u89D2 + \u6309\u94AE\u5F00\u59CB\u8BB0\u5F55\u751F\u6D3B',
+            Text(
+                _isSearching
+                    ? '\u8BD5\u8BD5\u5176\u4ED6\u5173\u952E\u8BCD'
+                    : '\u70B9\u51FB\u53F3\u4E0B\u89D2 + \u6309\u94AE\u5F00\u59CB\u8BB0\u5F55\u751F\u6D3B',
                 style: TextStyle(fontSize: 14, color: Colors.grey[400])),
           ],
         ),
@@ -273,17 +333,17 @@ class _HomePageState extends State<HomePage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (index > 0) SizedBox(height: 20),
+              if (index > 0) SizedBox(height: 16),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                margin: EdgeInsets.only(bottom: 12),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                margin: EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
                   color: Color(0xFF4A90E2).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(dateLabel,
                     style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF4A90E2))),
               ),
@@ -291,29 +351,6 @@ class _HomePageState extends State<HomePage> {
             ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildDeveloperInfo() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            '\u5F00\u53D1\u8005\uFF1A\u6770\u54E5\u7F51\u7EDC\u79D1\u6280',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-          ),
-          Text(
-            'qq2711793818',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-          ),
-        ],
       ),
     );
   }
@@ -335,11 +372,22 @@ class _HomePageState extends State<HomePage> {
 
     return Card(
       elevation: 0,
-      margin: EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: Colors.white,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
+        onTap: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RecordDetailPage(recordId: recordId),
+            ),
+          );
+          if (result == true) {
+            _loadData();
+          }
+        },
         onLongPress: () => _deleteRecord(recordId),
         child: Padding(
           padding: EdgeInsets.all(16),
@@ -349,39 +397,40 @@ class _HomePageState extends State<HomePage> {
               Row(
                 children: [
                   Icon(_getMoodIcon(record['mood'] as String?),
-                      color: _getMoodColor(record['mood'] as String?), size: 24),
+                      color: _getMoodColor(record['mood'] as String?), size: 22),
                   SizedBox(width: 8),
                   Text(timeStr,
                       style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
+                          fontSize: 13,
+                          color: Colors.grey[500],
                           fontWeight: FontWeight.w500)),
                   Spacer(),
                   IconButton(
-                    icon: Icon(Icons.delete_outline, color: Colors.grey[400], size: 20),
+                    icon: Icon(Icons.delete_outline, color: Colors.grey[400], size: 18),
                     onPressed: () => _deleteRecord(recordId),
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(),
                   ),
                 ],
               ),
-              SizedBox(height: 12),
+              SizedBox(height: 10),
               Text(content,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 16, height: 1.5)),
+                  style: TextStyle(fontSize: 15, height: 1.5)),
               if (tags.isNotEmpty) ...[
-                SizedBox(height: 12),
+                SizedBox(height: 10),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 6,
+                  runSpacing: 6,
                   children: tags.asMap().entries.map((entry) {
                     return Chip(
                       label: Text(entry.value,
-                          style: TextStyle(fontSize: 12, color: Colors.white)),
+                          style: TextStyle(fontSize: 11, color: Colors.white)),
                       backgroundColor: _getTagColor(entry.key),
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.symmetric(horizontal: 8),
                     );
                   }).toList(),
                 ),
