@@ -12,18 +12,14 @@ class SpeechService {
 
   bool get isListening => _isListening;
 
-  static const String _appId = 'YOUR_APP_ID';
-  static const String _apiKey = 'YOUR_API_KEY';
-  static const String _apiSecret = 'YOUR_API_SECRET';
+  static const String _appId = '000dc3e2';
+  static const String _apiKey = 'eeb3a079d047433a30fc7d39a2988f50';
+  static const String _apiSecret = 'N2IxNzU5YzNhMDI3YjQ2N2Q2MzMxNDAx';
 
-  bool get isConfigured =>
-      _appId != 'YOUR_APP_ID' &&
-      _apiKey != 'YOUR_API_KEY' &&
-      _apiSecret != 'YOUR_API_SECRET';
+  bool get isConfigured => true;
 
   Future<bool> init() async {
     if (_isInitialized) return true;
-    if (!isConfigured) return false;
 
     try {
       _speech.init({
@@ -47,6 +43,9 @@ class SpeechService {
     if (!status.isGranted) {
       status = await Permission.microphone.request();
     }
+    if (status.isPermanentlyDenied) {
+      openAppSettings();
+    }
     return status.isGranted;
   }
 
@@ -55,11 +54,6 @@ class SpeechService {
     required Function(String error) onError,
     required Function() onVolumeChanged,
   }) async {
-    if (!isConfigured) {
-      onError('\u8BF7\u5148\u914D\u7F6E\u8BAF\u98DE\u8BED\u97F3\u5BC6\u94A5');
-      return;
-    }
-
     var hasPermission = await requestPermission();
     if (!hasPermission) {
       onError('\u9EA6\u514B\u98CE\u6743\u9650\u672A\u6388\u4E88');
@@ -82,7 +76,9 @@ class SpeechService {
           onVolumeChanged();
         },
         onResult: (result, isLast) {
-          _isListening = false;
+          if (isLast) {
+            _isListening = false;
+          }
           onResult(result, isLast);
         },
         onError: (error) {
