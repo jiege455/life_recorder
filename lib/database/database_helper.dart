@@ -63,8 +63,8 @@ class DatabaseHelper {
     final db = await database;
     return await db.query(
       'records',
-      where: 'content LIKE ?',
-      whereArgs: ['%$keyword%'],
+      where: 'content LIKE ? OR tags LIKE ?',
+      whereArgs: ['%$keyword%', '%$keyword%'],
       orderBy: 'created_at DESC',
     );
   }

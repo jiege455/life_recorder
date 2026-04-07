@@ -318,45 +318,60 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildVoiceButton() {
-    return Center(
-      child: GestureDetector(
-        onTap: _isRecognizing ? null : _startListening,
-        child: AnimatedContainer(
-          duration: Duration(milliseconds: 200),
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _isRecognizing
-                ? Colors.orange
-                : (_isListening ? Colors.red : Color(0xFF4A90E2)),
-            boxShadow: [
-              BoxShadow(
-                color: (_isRecognizing
-                        ? Colors.orange
-                        : (_isListening ? Colors.red : Color(0xFF4A90E2)))
-                    .withOpacity(0.3),
-                blurRadius: 12,
-                offset: Offset(0, 4),
-              )
-            ],
+    return Column(
+      children: [
+        Center(
+          child: GestureDetector(
+            onTap: _isRecognizing ? null : _startListening,
+            child: AnimatedContainer(
+              duration: Duration(milliseconds: 200),
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _isRecognizing
+                    ? Colors.orange
+                    : (_isListening ? Colors.red : Color(0xFF4A90E2)),
+                boxShadow: [
+                  BoxShadow(
+                    color: (_isRecognizing
+                            ? Colors.orange
+                            : (_isListening ? Colors.red : Color(0xFF4A90E2)))
+                        .withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  )
+                ],
+              ),
+              child: _isRecognizing
+                  ? SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Icon(
+                      _isListening ? Icons.mic : Icons.mic_none,
+                      size: 28,
+                      color: Colors.white,
+                    ),
+            ),
           ),
-          child: _isRecognizing
-              ? SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Icon(
-                  _isListening ? Icons.mic : Icons.mic_none,
-                  size: 28,
-                  color: Colors.white,
-                ),
         ),
-      ),
+        if (_isListening || _isRecognizing)
+          Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text(
+              _isRecognizing ? '\u6B63\u5728\u8BC6\u522B...' : '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62',
+              style: TextStyle(
+                fontSize: 13,
+                color: _isRecognizing ? Colors.orange : Colors.red,
+              ),
+            ),
+          ),
+      ],
     );
   }
 

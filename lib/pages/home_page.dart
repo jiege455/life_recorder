@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../database/database_helper.dart';
 import 'add_record_page.dart';
 import 'record_detail_page.dart';
+import 'about_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,7 +21,15 @@ class _HomePageState extends State<HomePage> {
   int _weekCount = 0;
   String? _mostUsedTag;
   bool _isSearching = false;
+  String? _selectedMoodFilter;
   final TextEditingController _searchController = TextEditingController();
+
+  List<Map<String, dynamic>> _moods = [
+    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '\u5F00\u5FC3'},
+    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '\u5E73\u9759'},
+    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '\u96BE\u8FC7'},
+    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '\u5174\u594B'},
+  ];
 
   @override
   void initState() {
@@ -44,7 +53,7 @@ class _HomePageState extends State<HomePage> {
       if (mounted) {
         setState(() {
           _records = records;
-          _filteredRecords = records;
+          _filteredRecords = _applyFilters(records);
           _totalCount = totalCount;
           _weekCount = weekCount;
           _mostUsedTag = mostUsedTag;
@@ -59,19 +68,34 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  List<Map<String, dynamic>> _applyFilters(List<Map<String, dynamic>> records) {
+    var filtered = records;
+    if (_selectedMoodFilter != null) {
+      filtered = filtered.where((r) => r['mood'] == _selectedMoodFilter).toList();
+    }
+    return filtered;
+  }
+
   void _searchRecords(String keyword) async {
     if (keyword.isEmpty) {
       setState(() {
-        _filteredRecords = _records;
+        _filteredRecords = _applyFilters(_records);
       });
       return;
     }
     final results = await _dbHelper.searchRecords(keyword);
     if (mounted) {
       setState(() {
-        _filteredRecords = results;
+        _filteredRecords = _applyFilters(results);
       });
     }
+  }
+
+  void _filterByMood(String? mood) {
+    setState(() {
+      _selectedMoodFilter = mood;
+      _filteredRecords = _applyFilters(_records);
+    });
   }
 
   Map<String, List<Map<String, dynamic>>> _groupRecordsByDate() {
@@ -211,16 +235,29 @@ class _HomePageState extends State<HomePage> {
                 _isSearching = !_isSearching;
                 if (!_isSearching) {
                   _searchController.clear();
-                  _filteredRecords = _records;
+                  _filteredRecords = _applyFilters(_records);
                 }
               });
             },
+          ),
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (value) {
+              if (value == 'about') {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => AboutPage()));
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(value: 'about', child: Row(children: [Icon(Icons.info_outline, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('\u5173\u4E8E')]),
+              ),
+            ],
           ),
         ],
       ),
       body: Column(
         children: [
           _buildStatsCards(),
+          _buildMoodFilter(),
           Expanded(child: _buildRecordsList()),
         ],
       ),
@@ -292,6 +329,48 @@ class _HomePageState extends State<HomePage> {
           Text(value,
               style:
                   TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMoodFilter() {
+    return Container(
+      height: 44,
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text('\u5168\u90E8'),
+              selected: _selectedMoodFilter == null,
+              onSelected: (_) => _filterByMood(null),
+              selectedColor: Color(0xFF4A90E2).withOpacity(0.2),
+              backgroundColor: Colors.white,
+              side: BorderSide(color: _selectedMoodFilter == null ? Color(0xFF4A90E2) : Colors.grey[300]!),
+              labelStyle: TextStyle(
+                color: _selectedMoodFilter == null ? Color(0xFF4A90E2) : Colors.grey[600],
+                fontSize: 13,
+              ),
+            ),
+          ),
+          ..._moods.map((mood) => Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text('${mood['emoji']} ${mood['label']}'),
+              selected: _selectedMoodFilter == mood['value'],
+              onSelected: (_) => _filterByMood(mood['value']),
+              selectedColor: Color(0xFF4A90E2).withOpacity(0.2),
+              backgroundColor: Colors.white,
+              side: BorderSide(color: _selectedMoodFilter == mood['value'] ? Color(0xFF4A90E2) : Colors.grey[300]!),
+              labelStyle: TextStyle(
+                color: _selectedMoodFilter == mood['value'] ? Color(0xFF4A90E2) : Colors.grey[600],
+                fontSize: 13,
+              ),
+            ),
+          )),
         ],
       ),
     );

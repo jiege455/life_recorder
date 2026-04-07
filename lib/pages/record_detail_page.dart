@@ -291,10 +291,11 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                 });
               },
             ),
-          IconButton(
-            icon: Icon(Icons.delete, color: Colors.white),
-            onPressed: _deleteRecord,
-          ),
+          if (!_isEditing)
+            IconButton(
+              icon: Icon(Icons.delete, color: Colors.white),
+              onPressed: _deleteRecord,
+            ),
         ],
       ),
       body: SingleChildScrollView(
@@ -494,34 +495,49 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
           ),
         ),
         SizedBox(height: 16),
-        Center(
-          child: GestureDetector(
-            onTap: _isRecognizing ? null : _startListening,
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _isRecognizing
-                    ? Colors.orange
-                    : (_isListening ? Colors.red : Color(0xFF4A90E2)),
+        Column(
+          children: [
+            Center(
+              child: GestureDetector(
+                onTap: _isRecognizing ? null : _startListening,
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _isRecognizing
+                        ? Colors.orange
+                        : (_isListening ? Colors.red : Color(0xFF4A90E2)),
+                  ),
+                  child: _isRecognizing
+                      ? SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Icon(
+                          _isListening ? Icons.mic : Icons.mic_none,
+                          size: 24,
+                          color: Colors.white,
+                        ),
+                ),
               ),
-              child: _isRecognizing
-                  ? SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Icon(
-                      _isListening ? Icons.mic : Icons.mic_none,
-                      size: 24,
-                      color: Colors.white,
-                    ),
             ),
-          ),
+            if (_isListening || _isRecognizing)
+              Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Text(
+                  _isRecognizing ? '\u6B63\u5728\u8BC6\u522B...' : '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: _isRecognizing ? Colors.orange : Colors.red,
+                  ),
+                ),
+              ),
+          ],
         ),
         SizedBox(height: 20),
         SizedBox(
