@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:ifly_speech_recognition/ifly_speech_recognition.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -6,23 +7,54 @@ class SpeechService {
   factory SpeechService() => _instance;
   SpeechService._internal();
 
-  final IflySpeechRecognition _speech = IflySpeechRecognition();
+  SpeechRecognitionService? _speechService;
   bool _isInitialized = false;
   bool _isListening = false;
+  bool _isRecognizing = false;
+  StreamSubscription? _resultSubscription;
+  StreamSubscription? _stopSubscription;
+  Function(String)? _onResult;
+  Function(String)? _onError;
 
   bool get isListening => _isListening;
+  bool get isRecognizing => _isRecognizing;
 
   Future<bool> init() async {
     if (_isInitialized) return true;
 
     try {
-      _speech.init({
-        'appid': '000dc3e2',
-        'language': 'zh_cn',
-        'accent': 'mandarin',
-        'vad_eos': 3000,
-        'sample_rate': 16000,
+      _speechService = SpeechRecognitionService(
+        appId: '000dc3e2',
+        appKey: 'eeb3a079d047433a30fc7d39a2988f50',
+        appSecret: 'N2IxNzU5YzNhMDI3YjQ2N2Q2MzMxNDAx',
+      );
+
+      await _speechService!.initRecorder();
+
+      _resultSubscription = _speechService!.onRecordResult().listen(
+        (message) {
+          _isRecognizing = false;
+          if (_onResult != null && message.isNotEmpty) {
+            _onResult!(message);
+          }
+        },
+        onError: (err) {
+          _isRecognizing = false;
+          _isListening = false;
+          if (_onError != null) {
+            _onError!(err.toString());
+          }
+        },
+      );
+
+      _stopSubscription = _speechService!.onStopRecording().listen((isAutomatic) {
+        if (isAutomatic) {
+          _isListening = false;
+          _isRecognizing = true;
+          _speechService!.speechRecognition();
+        }
       });
+
       _isInitialized = true;
       return true;
     } catch (e) {
@@ -52,27 +84,20 @@ class SpeechService {
     }
 
     if (!_isInitialized) {
-      await init();
+      bool success = await init();
+      if (!success) {
+        onError('\u8BED\u97F3\u670D\u52A1\u521D\u59CB\u5316\u5931\u8D25');
+        return;
+      }
     }
 
+    _onResult = onResult;
+    _onError = onError;
     _isListening = true;
+    _isRecognizing = false;
 
     try {
-      _speech.startListening(
-        onVolumeChanged: (volume) {},
-        onResult: (result, isLast) {
-          if (isLast) {
-            _isListening = false;
-          }
-          if (result.isNotEmpty) {
-            onResult(result);
-          }
-        },
-        onError: (error) {
-          _isListening = false;
-          onError(error);
-        },
-      );
+      await _speechService!.startRecord();
     } catch (e) {
       _isListening = false;
       onError('\u542F\u52A8\u8BED\u97F3\u8BC6\u522B\u5931\u8D25: $e');
@@ -82,13 +107,19 @@ class SpeechService {
   Future<void> stopListening() async {
     if (_isListening) {
       try {
-        await _speech.stopListening();
-      } catch (e) {}
-      _isListening = false;
+        await _speechService!.stopRecord();
+        _isListening = false;
+        _isRecognizing = true;
+        _speechService!.speechRecognition();
+      } catch (e) {
+        _isListening = false;
+        _isRecognizing = false;
+      }
     }
   }
 
   void dispose() {
-    stopListening();
+    _resultSubscription?.cancel();
+    _stopSubscription?.cancel();
   }
 }

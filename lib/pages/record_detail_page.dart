@@ -25,6 +25,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   bool _isEditing = false;
   bool _isLoading = false;
   bool _isListening = false;
+  bool _isRecognizing = false;
   bool _isGeneratingTags = false;
   String _selectedMood = 'neutral';
   List<String> _editTags = [];
@@ -40,7 +41,6 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   void initState() {
     super.initState();
     _loadRecord();
-    _speechService.init();
   }
 
   Future<void> _loadRecord() async {
@@ -97,13 +97,15 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   }
 
   void _startListening() async {
-    if (!_isListening) {
+    if (!_isListening && !_isRecognizing) {
       String existingText = _contentController.text;
       setState(() => _isListening = true);
+
       _speechService.startListening(
         onResult: (result) {
           if (mounted && result.isNotEmpty) {
             setState(() {
+              _isRecognizing = false;
               _contentController.text = existingText.isNotEmpty
                   ? existingText + result
                   : result;
@@ -115,16 +117,22 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
         },
         onError: (error) {
           if (mounted) {
-            setState(() => _isListening = false);
+            setState(() {
+              _isListening = false;
+              _isRecognizing = false;
+            });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('\u8BED\u97F3\u9519\u8BEF: $error'), backgroundColor: Colors.orange, duration: Duration(seconds: 3)),
             );
           }
         },
       );
-    } else {
+    } else if (_isListening) {
       _speechService.stopListening();
-      setState(() => _isListening = false);
+      setState(() {
+        _isListening = false;
+        _isRecognizing = true;
+      });
     }
   }
 
@@ -488,22 +496,46 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
         SizedBox(height: 16),
         Center(
           child: GestureDetector(
-            onTap: _startListening,
+            onTap: _isRecognizing ? null : _startListening,
             child: Container(
               width: 70,
               height: 70,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _isListening ? Colors.red : Color(0xFF4A90E2),
+                color: _isRecognizing
+                    ? Colors.orange
+                    : (_isListening ? Colors.red : Color(0xFF4A90E2)),
               ),
-              child: Icon(
-                _isListening ? Icons.mic : Icons.mic_none,
-                size: 28,
-                color: Colors.white,
-              ),
+              child: _isRecognizing
+                  ? SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Icon(
+                      _isListening ? Icons.mic : Icons.mic_none,
+                      size: 28,
+                      color: Colors.white,
+                    ),
             ),
           ),
         ),
+        if (_isListening || _isRecognizing)
+          Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Center(
+              child: Text(
+                _isRecognizing ? '\u6B63\u5728\u8BC6\u522B...' : '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _isRecognizing ? Colors.orange : Colors.red,
+                ),
+              ),
+            ),
+          ),
         SizedBox(height: 20),
         SizedBox(
           width: double.infinity,
@@ -530,19 +562,19 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
         SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
-          height: 48,
+          height: 56,
           child: OutlinedButton(
             onPressed: () {
               setState(() {
                 _isEditing = false;
               });
-              _loadRecord();
             },
             style: OutlinedButton.styleFrom(
               side: BorderSide(color: Colors.grey[300]!),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: Text('\u53D6\u6D88\u7F16\u8F91', style: TextStyle(color: Colors.grey[600])),
+            child: Text('\u53D6\u6D88\u7F16\u8F91',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600])),
           ),
         ),
       ],

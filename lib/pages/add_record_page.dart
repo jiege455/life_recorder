@@ -20,6 +20,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
 
   String _selectedMood = 'neutral';
   bool _isListening = false;
+  bool _isRecognizing = false;
   bool _isLoading = false;
   bool _isGeneratingTags = false;
   List<String> _generatedTags = [];
@@ -34,11 +35,10 @@ class _AddRecordPageState extends State<AddRecordPage> {
   @override
   void initState() {
     super.initState();
-    _speechService.init();
   }
 
   void _startListening() async {
-    if (!_isListening) {
+    if (!_isListening && !_isRecognizing) {
       String existingText = _contentController.text;
       setState(() => _isListening = true);
 
@@ -46,6 +46,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         onResult: (result) {
           if (mounted && result.isNotEmpty) {
             setState(() {
+              _isRecognizing = false;
               if (existingText.isNotEmpty) {
                 _contentController.text = existingText + result;
               } else {
@@ -59,7 +60,10 @@ class _AddRecordPageState extends State<AddRecordPage> {
         },
         onError: (error) {
           if (mounted) {
-            setState(() => _isListening = false);
+            setState(() {
+              _isListening = false;
+              _isRecognizing = false;
+            });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: $error'),
@@ -70,9 +74,12 @@ class _AddRecordPageState extends State<AddRecordPage> {
           }
         },
       );
-    } else {
+    } else if (_isListening) {
       _speechService.stopListening();
-      setState(() => _isListening = false);
+      setState(() {
+        _isListening = false;
+        _isRecognizing = true;
+      });
     }
   }
 
@@ -315,37 +322,54 @@ class _AddRecordPageState extends State<AddRecordPage> {
       children: [
         Center(
           child: GestureDetector(
-            onTap: _startListening,
+            onTap: _isRecognizing ? null : _startListening,
             child: AnimatedContainer(
               duration: Duration(milliseconds: 200),
               width: 90,
               height: 90,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _isListening ? Colors.red : Color(0xFF4A90E2),
+                color: _isRecognizing
+                    ? Colors.orange
+                    : (_isListening ? Colors.red : Color(0xFF4A90E2)),
                 boxShadow: [
                   BoxShadow(
-                    color: (_isListening ? Colors.red : Color(0xFF4A90E2))
+                    color: (_isRecognizing
+                            ? Colors.orange
+                            : (_isListening ? Colors.red : Color(0xFF4A90E2)))
                         .withOpacity(0.3),
                     blurRadius: 15,
                     offset: Offset(0, 5),
                   )
                 ],
               ),
-              child: Icon(
-                _isListening ? Icons.mic : Icons.mic_none,
-                size: 36,
-                color: Colors.white,
-              ),
+              child: _isRecognizing
+                  ? SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Icon(
+                      _isListening ? Icons.mic : Icons.mic_none,
+                      size: 36,
+                      color: Colors.white,
+                    ),
             ),
           ),
         ),
         SizedBox(height: 8),
         Text(
-          _isListening ? '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62' : '\u8BAF\u98DE\u8BED\u97F3\u8F93\u5165',
+          _isRecognizing
+              ? '\u6B63\u5728\u8BC6\u522B...'
+              : (_isListening ? '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62' : '\u8BAF\u98DE\u8BED\u97F3\u8F93\u5165'),
           style: TextStyle(
             fontSize: 13,
-            color: _isListening ? Colors.red : Colors.grey[500],
+            color: _isRecognizing
+                ? Colors.orange
+                : (_isListening ? Colors.red : Colors.grey[500]),
           ),
         ),
         SizedBox(height: 4),
