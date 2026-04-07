@@ -19,13 +19,14 @@ class _AddRecordPageState extends State<AddRecordPage> {
   String _selectedMood = 'neutral';
   bool _isListening = false;
   bool _isLoading = false;
+  bool _speechAvailable = false;
   final stt.SpeechToText _speech = stt.SpeechToText();
 
   List<Map<String, dynamic>> _moods = [
-    {'value': 'happy', 'emoji': '\U0001F60A', 'label': '\u5F00\u5FC3'},
-    {'value': 'neutral', 'emoji': '\U0001F610', 'label': '\u5E73\u9759'},
-    {'value': 'sad', 'emoji': '\U0001F622', 'label': '\u96BE\u8FC7'},
-    {'value': 'excited', 'emoji': '\U0001F389', 'label': '\u5174\u594B'},
+    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '\u5F00\u5FC3'},
+    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '\u5E73\u9759'},
+    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '\u96BE\u8FC7'},
+    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '\u5174\u594B'},
   ];
 
   @override
@@ -35,12 +36,14 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   void _initSpeech() async {
-    bool available = await _speech.initialize(
+    _speechAvailable = await _speech.initialize(
       onStatus: (status) {
         if (mounted) {
-          setState(() {
-            _isListening == 'listening';
-          });
+          if (status == 'done' || status == 'notListening') {
+            setState(() {
+              _isListening = false;
+            });
+          }
         }
       },
       onError: (error) {
@@ -54,24 +57,40 @@ class _AddRecordPageState extends State<AddRecordPage> {
         }
       },
     );
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _startListening() async {
+    if (!_speechAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('\u8BED\u97F3\u8BC6\u522B\u4E0D\u53EF\u7528\uFF0C\u8BF7\u68C0\u67E5\u9EA6\u514B\u98CE\u6743\u9650')),
+      );
+      return;
+    }
+
     if (!_isListening) {
-      bool available = await _speech.initialize();
-      if (available) {
-        setState(() => _isListening = true);
-        _speech.listen(
-          onResult: (result) {
-            if (mounted) {
-              setState(() {
+      String existingText = _contentController.text;
+      setState(() => _isListening = true);
+      _speech.listen(
+        onResult: (result) {
+          if (mounted) {
+            setState(() {
+              if (existingText.isNotEmpty) {
+                _contentController.text = existingText + result.recognizedWords;
+              } else {
                 _contentController.text = result.recognizedWords;
-              });
-            }
-          },
-          localeId: 'zh_CN',
-        );
-      }
+              }
+              _contentController.selection = TextSelection.fromPosition(
+                TextPosition(offset: _contentController.text.length),
+              );
+            });
+          }
+        },
+        localeId: 'zh_CN',
+        listenMode: stt.ListenMode.dictation,
+      );
     } else {
       _speech.stop();
       setState(() => _isListening = false);
@@ -132,7 +151,9 @@ class _AddRecordPageState extends State<AddRecordPage> {
   @override
   void dispose() {
     _contentController.dispose();
-    _speech.stop();
+    if (_speech.isListening) {
+      _speech.stop();
+    }
     super.dispose();
   }
 
@@ -269,31 +290,43 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildVoiceButton() {
-    return Center(
-      child: GestureDetector(
-        onTap: _startListening,
-        child: Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _isListening ? Colors.red : Color(0xFF4A90E2),
-            boxShadow: [
-              BoxShadow(
-                color: (_isListening ? Colors.red : Color(0xFF4A90E2))
-                    .withOpacity(0.3),
-                blurRadius: 15,
-                offset: Offset(0, 5),
-              )
-            ],
-          ),
-          child: Icon(
-            _isListening ? Icons.mic : Icons.mic_none,
-            size: 48,
-            color: Colors.white,
+    return Column(
+      children: [
+        Center(
+          child: GestureDetector(
+            onTap: _startListening,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _isListening ? Colors.red : Color(0xFF4A90E2),
+                boxShadow: [
+                  BoxShadow(
+                    color: (_isListening ? Colors.red : Color(0xFF4A90E2))
+                        .withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: Offset(0, 5),
+                  )
+                ],
+              ),
+              child: Icon(
+                _isListening ? Icons.mic : Icons.mic_none,
+                size: 48,
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
-      ),
+        SizedBox(height: 12),
+        Text(
+          _isListening ? '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62' : '\u70B9\u51FB\u5F00\u59CB\u8BED\u97F3\u8F93\u5165',
+          style: TextStyle(
+            fontSize: 14,
+            color: _isListening ? Colors.red : Colors.grey[500],
+          ),
+        ),
+      ],
     );
   }
 

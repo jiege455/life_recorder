@@ -25,18 +25,26 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadData() async {
-    final records = await _dbHelper.getAllRecords();
-    final totalCount = await _dbHelper.getRecordCount();
-    final weekCount = await _dbHelper.getThisWeekCount();
-    final mostUsedTag = await _dbHelper.getMostUsedTag();
+    try {
+      final records = await _dbHelper.getAllRecords();
+      final totalCount = await _dbHelper.getRecordCount();
+      final weekCount = await _dbHelper.getThisWeekCount();
+      final mostUsedTag = await _dbHelper.getMostUsedTag();
 
-    if (mounted) {
-      setState(() {
-        _records = records;
-        _totalCount = totalCount;
-        _weekCount = weekCount;
-        _mostUsedTag = mostUsedTag;
-      });
+      if (mounted) {
+        setState(() {
+          _records = records;
+          _totalCount = totalCount;
+          _weekCount = weekCount;
+          _mostUsedTag = mostUsedTag;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('\u52A0\u8F7D\u6570\u636E\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5')),
+        );
+      }
     }
   }
 
@@ -56,7 +64,7 @@ class _HomePageState extends State<HomePage> {
       } else if (recordDate.isAfter(now.subtract(Duration(days: 7)))) {
         groupKey = '\u672C\u5468';
       } else {
-        groupKey = '\u66F4\u65E9';
+        groupKey = DateFormat('MM\u6708dd\u65E5').format(recordDate);
       }
 
       if (!grouped.containsKey(groupKey)) {
@@ -112,6 +120,31 @@ class _HomePageState extends State<HomePage> {
       Colors.red
     ];
     return colors[index % colors.length];
+  }
+
+  void _deleteRecord(int id) async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('\u786E\u8BA4\u5220\u9664'),
+        content: Text('\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u6761\u8BB0\u5F55\u5417\uFF1F'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('\u53D6\u6D88'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('\u5220\u9664', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _dbHelper.deleteRecord(id);
+      _loadData();
+    }
   }
 
   @override
@@ -227,34 +260,38 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    return ListView.builder(
-      padding: EdgeInsets.all(16),
-      itemCount: grouped.keys.length,
-      itemBuilder: (context, index) {
-        String dateLabel = grouped.keys.elementAt(index);
-        List<Map<String, dynamic>> records = grouped[dateLabel]!;
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: ListView.builder(
+        physics: AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.all(16),
+        itemCount: grouped.keys.length,
+        itemBuilder: (context, index) {
+          String dateLabel = grouped.keys.elementAt(index);
+          List<Map<String, dynamic>> records = grouped[dateLabel]!;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (index > 0) SizedBox(height: 20),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              margin: EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Color(0xFF4A90E2).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (index > 0) SizedBox(height: 20),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                margin: EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Color(0xFF4A90E2).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(dateLabel,
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF4A90E2))),
               ),
-              child: Text(dateLabel,
-                  style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF4A90E2))),
-            ),
-            ...records.map((record) => _buildRecordCard(record)),
-          ],
-        );
-      },
+              ...records.map((record) => _buildRecordCard(record)),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -286,11 +323,13 @@ class _HomePageState extends State<HomePage> {
     DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
     String timeStr = DateFormat('HH:mm').format(dateTime);
     String content = record['content']?.toString() ?? '';
+    int recordId = record['id'] ?? 0;
 
     List<String> tags = [];
     if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
       try {
-        tags = jsonDecode(record['tags'].toString());
+        List<dynamic> decoded = jsonDecode(record['tags'].toString());
+        tags = decoded.map((e) => e.toString()).toList();
       } catch (e) {}
     }
 
@@ -299,45 +338,56 @@ class _HomePageState extends State<HomePage> {
       margin: EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: Colors.white,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(_getMoodIcon(record['mood'] as String?),
-                    color: _getMoodColor(record['mood'] as String?), size: 24),
-                SizedBox(width: 8),
-                Text(timeStr,
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500)),
-              ],
-            ),
-            SizedBox(height: 12),
-            Text(content,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 16, height: 1.5)),
-            if (tags.isNotEmpty) ...[
-              SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: tags.asMap().entries.map((entry) {
-                  return Chip(
-                    label: Text(entry.value,
-                        style: TextStyle(fontSize: 12, color: Colors.white)),
-                    backgroundColor: _getTagColor(entry.key),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  );
-                }).toList(),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onLongPress: () => _deleteRecord(recordId),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(_getMoodIcon(record['mood'] as String?),
+                      color: _getMoodColor(record['mood'] as String?), size: 24),
+                  SizedBox(width: 8),
+                  Text(timeStr,
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500)),
+                  Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline, color: Colors.grey[400], size: 20),
+                    onPressed: () => _deleteRecord(recordId),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
+                ],
               ),
+              SizedBox(height: 12),
+              Text(content,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 16, height: 1.5)),
+              if (tags.isNotEmpty) ...[
+                SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: tags.asMap().entries.map((entry) {
+                    return Chip(
+                      label: Text(entry.value,
+                          style: TextStyle(fontSize: 12, color: Colors.white)),
+                      backgroundColor: _getTagColor(entry.key),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    );
+                  }).toList(),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

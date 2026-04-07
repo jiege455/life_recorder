@@ -46,6 +46,16 @@ class DatabaseHelper {
     );
   }
 
+  Future<int> deleteRecord(int id) async {
+    final db = await database;
+    return await db.delete('records', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<int> updateRecord(int id, Map<String, dynamic> record) async {
+    final db = await database;
+    return await db.update('records', record, where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<int> getRecordCount() async {
     final db = await database;
     final result = await db.rawQuery('SELECT COUNT(*) as count FROM records');
@@ -73,9 +83,10 @@ class DatabaseHelper {
     for (var record in records) {
       if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
         try {
-          List<String> tags = jsonDecode(record['tags'].toString());
+          List<dynamic> tags = jsonDecode(record['tags'].toString());
           for (var tag in tags) {
-            tagCount[tag] = (tagCount[tag] ?? 0) + 1;
+            String tagStr = tag.toString();
+            tagCount[tagStr] = (tagCount[tagStr] ?? 0) + 1;
           }
         } catch (e) {}
       }
