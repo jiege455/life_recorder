@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:convert';
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
+import '../services/speech_service.dart';
 
 class RecordDetailPage extends StatefulWidget {
   final int recordId;
@@ -19,14 +19,13 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final AiService _aiService = AiService();
   final TextEditingController _contentController = TextEditingController();
-  final stt.SpeechToText _speech = stt.SpeechToText();
+  final SpeechService _speechService = SpeechService();
 
   Map<String, dynamic>? _record;
   bool _isEditing = false;
   bool _isLoading = false;
   bool _isListening = false;
   bool _isGeneratingTags = false;
-  bool _speechAvailable = false;
   String _selectedMood = 'neutral';
   List<String> _editTags = [];
 
@@ -41,34 +40,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   void initState() {
     super.initState();
     _loadRecord();
-    _initSpeech();
-  }
-
-  void _initSpeech() async {
-    _speechAvailable = await _speech.initialize(
-      onStatus: (status) {
-        if (mounted) {
-          if (status == 'done' || status == 'notListening') {
-            setState(() {
-              _isListening = false;
-            });
-          }
-        }
-      },
-      onError: (error) {
-        if (mounted) {
-          setState(() {
-            _isListening = false;
-          });
-          String errorMsg = error.errorMsg == 'error_network'
-              ? '\u8BED\u97F3\u8BC6\u522B\u9700\u8981\u7F51\u7EDC\u8FDE\u63A5'
-              : '\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: ${error.errorMsg}';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(errorMsg), backgroundColor: Colors.orange),
-          );
-        }
-      },
-    );
+    _speechService.init();
   }
 
   Future<void> _loadRecord() async {
@@ -125,39 +97,41 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   }
 
   void _startListening() async {
-    if (!_speechAvailable) {
+    if (!_speechService.isConfigured) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('\u8BED\u97F3\u8BC6\u522B\u4E0D\u53EF\u7528')),
+        SnackBar(content: Text('\u8BED\u97F3\u672A\u914D\u7F6E\uFF0C\u8BF7\u5148\u914D\u7F6E\u8BAF\u98DE\u5BC6\u94A5'), backgroundColor: Colors.orange),
       );
       return;
     }
-    var status = await Permission.microphone.status;
-    if (!status.isGranted) {
-      status = await Permission.microphone.request();
-    }
-    if (!status.isGranted) return;
 
     if (!_isListening) {
       String existingText = _contentController.text;
       setState(() => _isListening = true);
-      _speech.listen(
-        onResult: (result) {
+      _speechService.startListening(
+        onResult: (result, isLast) {
           if (mounted) {
             setState(() {
               _contentController.text = existingText.isNotEmpty
-                  ? existingText + result.recognizedWords
-                  : result.recognizedWords;
+                  ? existingText + result
+                  : result;
               _contentController.selection = TextSelection.fromPosition(
                 TextPosition(offset: _contentController.text.length),
               );
             });
           }
         },
-        localeId: 'zh_CN',
-        listenMode: stt.ListenMode.dictation,
+        onError: (error) {
+          if (mounted) {
+            setState(() => _isListening = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('\u8BED\u97F3\u9519\u8BEF: $error'), backgroundColor: Colors.red),
+            );
+          }
+        },
+        onVolumeChanged: () {},
       );
     } else {
-      _speech.stop();
+      _speechService.stopListening();
       setState(() => _isListening = false);
     }
   }
@@ -269,9 +243,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   @override
   void dispose() {
     _contentController.dispose();
-    if (_speech.isListening) {
-      _speech.stop();
-    }
+    _speechService.stopListening();
     super.dispose();
   }
 
@@ -403,6 +375,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   }
 
   Widget _buildEditMode() {
+    bool configured = _speechService.isConfigured;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -530,10 +503,18 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
               height: 70,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _isListening ? Colors.red : Color(0xFF4A90E2),
+                color: !configured
+                    ? Colors.grey
+                    : _isListening
+                        ? Colors.red
+                        : Color(0xFF4A90E2),
               ),
               child: Icon(
-                _isListening ? Icons.mic : Icons.mic_none,
+                !configured
+                    ? Icons.mic_off
+                    : _isListening
+                        ? Icons.mic
+                        : Icons.mic_none,
                 size: 28,
                 color: Colors.white,
               ),

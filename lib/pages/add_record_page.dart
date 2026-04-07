@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:convert';
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
+import '../services/speech_service.dart';
 
 class AddRecordPage extends StatefulWidget {
   const AddRecordPage({super.key});
@@ -16,14 +16,13 @@ class _AddRecordPageState extends State<AddRecordPage> {
   final TextEditingController _contentController = TextEditingController();
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final AiService _aiService = AiService();
+  final SpeechService _speechService = SpeechService();
 
   String _selectedMood = 'neutral';
   bool _isListening = false;
   bool _isLoading = false;
   bool _isGeneratingTags = false;
-  bool _speechAvailable = false;
   List<String> _generatedTags = [];
-  final stt.SpeechToText _speech = stt.SpeechToText();
 
   List<Map<String, dynamic>> _moods = [
     {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '\u5F00\u5FC3'},
@@ -35,116 +34,33 @@ class _AddRecordPageState extends State<AddRecordPage> {
   @override
   void initState() {
     super.initState();
-    _initSpeech();
-  }
-
-  Future<void> _requestMicPermission() async {
-    var status = await Permission.microphone.status;
-    if (!status.isGranted) {
-      status = await Permission.microphone.request();
-    }
-    if (status.isPermanentlyDenied) {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text('\u9EA6\u514B\u98CE\u6743\u9650\u88AB\u62D2\u7EDD'),
-            content: Text('\u8BED\u97F3\u8BC6\u522B\u9700\u8981\u9EA6\u514B\u98CE\u6743\u9650\uFF0C\u8BF7\u5728\u8BBE\u7F6E\u4E2D\u5F00\u542F'),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('\u53D6\u6D88'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  openAppSettings();
-                },
-                child: Text('\u53BB\u8BBE\u7F6E'),
-              ),
-            ],
-          ),
-        );
-      }
-    }
-  }
-
-  void _initSpeech() async {
-    _speechAvailable = await _speech.initialize(
-      onStatus: (status) {
-        if (mounted) {
-          if (status == 'done' || status == 'notListening') {
-            setState(() {
-              _isListening = false;
-            });
-          }
-        }
-      },
-      onError: (error) {
-        if (mounted) {
-          setState(() {
-            _isListening = false;
-          });
-          String errorMsg;
-          switch (error.errorMsg) {
-            case 'error_network':
-              errorMsg = '\u8BED\u97F3\u8BC6\u522B\u9700\u8981\u7F51\u7EDC\u8FDE\u63A5\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC\u8BBE\u7F6E';
-              break;
-            case 'error_no_match':
-              errorMsg = '\u672A\u8BC6\u522B\u5230\u8BED\u97F3\uFF0C\u8BF7\u91CD\u8BD5';
-              break;
-            case 'error_audio':
-              errorMsg = '\u5F55\u97F3\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u9EA6\u514B\u98CE';
-              break;
-            default:
-              errorMsg = '\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: ${error.errorMsg}';
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMsg),
-              duration: Duration(seconds: 3),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-      },
-    );
-    if (mounted) {
-      setState(() {});
-    }
+    _speechService.init();
   }
 
   void _startListening() async {
-    if (!_speechAvailable) {
+    if (!_speechService.isConfigured) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('\u8BED\u97F3\u8BC6\u522B\u4E0D\u53EF\u7528\uFF0C\u8BF7\u786E\u4FDD\u624B\u673A\u5DF2\u5B89\u88C5Google\u670D\u52A1\u4E14\u7F51\u7EDC\u7545\u901A'),
-          duration: Duration(seconds: 3),
+          content: Text('\u8BED\u97F3\u8BC6\u522B\u5C1A\u672A\u914D\u7F6E\uFF0C\u8BF7\u5148\u914D\u7F6E\u8BAF\u98DE\u8BED\u97F3\u5BC6\u94A5'),
           backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
         ),
       );
       return;
     }
 
-    var status = await Permission.microphone.status;
-    if (!status.isGranted) {
-      await _requestMicPermission();
-      status = await Permission.microphone.status;
-      if (!status.isGranted) return;
-    }
-
     if (!_isListening) {
       String existingText = _contentController.text;
       setState(() => _isListening = true);
-      _speech.listen(
-        onResult: (result) {
+
+      _speechService.startListening(
+        onResult: (result, isLast) {
           if (mounted) {
             setState(() {
               if (existingText.isNotEmpty) {
-                _contentController.text = existingText + result.recognizedWords;
+                _contentController.text = existingText + result;
               } else {
-                _contentController.text = result.recognizedWords;
+                _contentController.text = result;
               }
               _contentController.selection = TextSelection.fromPosition(
                 TextPosition(offset: _contentController.text.length),
@@ -152,11 +68,21 @@ class _AddRecordPageState extends State<AddRecordPage> {
             });
           }
         },
-        localeId: 'zh_CN',
-        listenMode: stt.ListenMode.dictation,
+        onError: (error) {
+          if (mounted) {
+            setState(() => _isListening = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: $error'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        onVolumeChanged: () {},
       );
     } else {
-      _speech.stop();
+      _speechService.stopListening();
       setState(() => _isListening = false);
     }
   }
@@ -259,9 +185,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   @override
   void dispose() {
     _contentController.dispose();
-    if (_speech.isListening) {
-      _speech.stop();
-    }
+    _speechService.stopListening();
     super.dispose();
   }
 
@@ -398,6 +322,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildVoiceButton() {
+    bool configured = _speechService.isConfigured;
     return Column(
       children: [
         Center(
@@ -409,18 +334,28 @@ class _AddRecordPageState extends State<AddRecordPage> {
               height: 90,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _isListening ? Colors.red : Color(0xFF4A90E2),
-                boxShadow: [
-                  BoxShadow(
-                    color: (_isListening ? Colors.red : Color(0xFF4A90E2))
-                        .withOpacity(0.3),
-                    blurRadius: 15,
-                    offset: Offset(0, 5),
-                  )
-                ],
+                color: !configured
+                    ? Colors.grey
+                    : _isListening
+                        ? Colors.red
+                        : Color(0xFF4A90E2),
+                boxShadow: configured
+                    ? [
+                        BoxShadow(
+                          color: (_isListening ? Colors.red : Color(0xFF4A90E2))
+                              .withOpacity(0.3),
+                          blurRadius: 15,
+                          offset: Offset(0, 5),
+                        )
+                      ]
+                    : null,
               ),
               child: Icon(
-                _isListening ? Icons.mic : Icons.mic_none,
+                !configured
+                    ? Icons.mic_off
+                    : _isListening
+                        ? Icons.mic
+                        : Icons.mic_none,
                 size: 36,
                 color: Colors.white,
               ),
@@ -429,17 +364,28 @@ class _AddRecordPageState extends State<AddRecordPage> {
         ),
         SizedBox(height: 8),
         Text(
-          _isListening ? '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62' : '\u8BED\u97F3\u8F93\u5165',
+          !configured
+              ? '\u8BED\u97F3\u672A\u914D\u7F6E'
+              : _isListening
+                  ? '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62'
+                  : '\u8BED\u97F3\u8F93\u5165',
           style: TextStyle(
             fontSize: 13,
-            color: _isListening ? Colors.red : Colors.grey[500],
+            color: !configured
+                ? Colors.grey
+                : _isListening
+                    ? Colors.red
+                    : Colors.grey[500],
           ),
         ),
-        SizedBox(height: 4),
-        Text(
-          '\u9700\u8981\u7F51\u7EDC\u548CGoogle\u670D\u52A1',
-          style: TextStyle(fontSize: 11, color: Colors.grey[400]),
-        ),
+        if (!configured)
+          Padding(
+            padding: EdgeInsets.only(top: 4),
+            child: Text(
+              '\u9700\u914D\u7F6E\u8BAF\u98DE\u8BED\u97F3\u5BC6\u94A5\u540E\u53EF\u7528',
+              style: TextStyle(fontSize: 11, color: Colors.orange[400]),
+            ),
+          ),
       ],
     );
   }
