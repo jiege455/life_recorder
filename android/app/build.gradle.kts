@@ -30,7 +30,7 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystoreFile = System.getenv("KEYSTORE_FILE") ?: file("key.jks")
+            val keystoreFile: File = if (System.getenv("KEYSTORE_FILE") != null) file(System.getenv("KEYSTORE_FILE")) else file("key.jks")
             storeFile = keystoreFile
             storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "changeit"
             keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
