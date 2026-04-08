@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'privacy_policy_page.dart';
+import 'user_agreement_page.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
+
+  Future<String> _getVersion() async {
+    try {
+      final version = await MethodChannel('flutter/version').invokeMethod<String>('getVersion');
+      return version ?? '2.0.0';
+    } catch (e) {
+      return '2.0.0';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,9 +67,14 @@ class AboutPage extends StatelessWidget {
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF4A90E2)),
                   ),
                   SizedBox(height: 8),
-                  Text(
-                    'v1.2.4',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  FutureBuilder<String>(
+                    future: _getVersion(),
+                    builder: (context, snapshot) {
+                      return Text(
+                        'v${snapshot.data ?? '2.0.0'}',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      );
+                    },
                   ),
                   SizedBox(height: 4),
                   Text(
@@ -139,7 +156,7 @@ class AboutPage extends StatelessWidget {
                   ),
                   SizedBox(height: 12),
                   _buildTechItem('Flutter', '\u8DE8\u5E73\u53F0\u6846\u67B6'),
-                  _buildTechItem('DeepSeek', 'AI\u6807\u7B49\u4E0E\u62A5\u544A\u751F\u6210'),
+                  _buildTechItem('DeepSeek', 'AI\u6807\u7B7E\u4E0E\u62A5\u544A\u751F\u6210'),
                   _buildTechItem('\u8BAF\u98DE', '\u8BED\u97F3\u8BC6\u522B'),
                   _buildTechItem('SQLite', '\u672C\u5730\u6570\u636E\u5B58\u50A8'),
                   _buildTechItem('fl_chart', '\u56FE\u8868\u53EF\u89C6\u5316'),
@@ -147,6 +164,78 @@ class AboutPage extends StatelessWidget {
                 ],
               ),
             ),
+            SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  )
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.gavel, color: Color(0xFF4A90E2), size: 20),
+                      SizedBox(width: 8),
+                      Text('\u6CD5\u5F8B\u4FE1\u606F', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  _buildLinkItem(context, Icons.privacy_tip, '\u9690\u79C1\u653F\u7B56', () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => PrivacyPolicyPage()));
+                  }),
+                  _buildLinkItem(context, Icons.description, '\u7528\u6237\u534F\u8BAE', () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => UserAgreementPage()));
+                  }),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  )
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.contact_support, color: Color(0xFF4A90E2), size: 20),
+                      SizedBox(width: 8),
+                      Text('\u8054\u7CFB\u6211\u4EEC', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  _buildContactItem(Icons.business, '\u6770\u54E5\u7F51\u7EDC\u79D1\u6280'),
+                  _buildContactItem(Icons.chat, 'QQ\uFF1A2711793818'),
+                ],
+              ),
+            ),
+            SizedBox(height: 24),
+            Text(
+              '\u00A9 2026 \u6770\u54E5\u7F51\u7EDC\u79D1\u6280 \u7248\u6743\u6240\u6709',
+              style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+            ),
+            SizedBox(height: 16),
           ],
         ),
       ),
@@ -181,6 +270,38 @@ class AboutPage extends StatelessWidget {
           ),
           SizedBox(width: 10),
           Text(desc, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLinkItem(BuildContext context, IconData icon, String text, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: Color(0xFF4A90E2)),
+            SizedBox(width: 10),
+            Text(text, style: TextStyle(fontSize: 14, color: Color(0xFF4A90E2))),
+            Spacer(),
+            Icon(Icons.chevron_right, size: 18, color: Colors.grey[400]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContactItem(IconData icon, String text) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Color(0xFF4A90E2)),
+          SizedBox(width: 10),
+          Text(text, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
         ],
       ),
     );
