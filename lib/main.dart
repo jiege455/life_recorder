@@ -40,7 +40,8 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkLock();
+    _lockEnabled = LockService.instance.lockEnabled;
+    _isLocked = _lockEnabled;
   }
 
   @override
@@ -51,15 +52,11 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused && _lockEnabled) {
-      setState(() => _isLocked = true);
+    if (state == AppLifecycleState.resumed) {
+      if (_lockEnabled && !_isLocked) {
+        setState(() => _isLocked = true);
+      }
     }
-  }
-
-  void _checkLock() async {
-    final lockService = LockService.instance;
-    _lockEnabled = lockService.lockEnabled;
-    _isLocked = _lockEnabled;
   }
 
   void _unlock() {
@@ -68,15 +65,20 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'AI人生记录器',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeService.lightTheme,
-      darkTheme: ThemeService.darkTheme,
-      themeMode: widget.themeService.themeMode,
-      home: _isLocked && _lockEnabled
-          ? LockScreen(onUnlock: _unlock)
-          : const HomePage(),
+    return AnimatedBuilder(
+      animation: widget.themeService,
+      builder: (context, child) {
+        return MaterialApp(
+          title: 'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeService.lightTheme,
+          darkTheme: ThemeService.darkTheme,
+          themeMode: widget.themeService.themeMode,
+          home: _isLocked && _lockEnabled
+              ? LockScreen(onUnlock: _unlock)
+              : const HomePage(),
+        );
+      },
     );
   }
 }
@@ -107,7 +109,7 @@ class _LockScreenState extends State<LockScreen> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('验证失败，请重试'), backgroundColor: Colors.red),
+          SnackBar(content: Text('\u9A8C\u8BC1\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5'), backgroundColor: Colors.red),
         );
       }
     }
@@ -132,7 +134,7 @@ class _LockScreenState extends State<LockScreen> {
                 Icon(Icons.lock_outline, size: 80, color: Colors.white),
                 SizedBox(height: 24),
                 Text(
-                  'AI人生记录器',
+                  'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -141,7 +143,7 @@ class _LockScreenState extends State<LockScreen> {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  '已启用隐私保护',
+                  '\u5DF2\u542F\u7528\u9690\u79C1\u4FDD\u62A4',
                   style: TextStyle(fontSize: 16, color: Colors.white70),
                 ),
                 SizedBox(height: 48),
@@ -157,7 +159,7 @@ class _LockScreenState extends State<LockScreen> {
                           ),
                         )
                       : Icon(Icons.fingerprint),
-                  label: Text(_isAuthenticating ? '验证中...' : '点击验证'),
+                  label: Text(_isAuthenticating ? '\u9A8C\u8BC1\u4E2D...' : '\u70B9\u51FB\u9A8C\u8BC1'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Color(0xFF4A90E2),

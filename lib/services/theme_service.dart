@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ThemeService {
+class ThemeService extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
   static ThemeService? _instance;
   static SharedPreferences? _prefs;
@@ -33,7 +33,10 @@ class ThemeService {
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
     await _prefs?.setString(_themeKey, mode.name);
+    notifyListeners();
   }
+
+  bool get isDarkMode => _themeMode == ThemeMode.dark;
 
   static ThemeData lightTheme = ThemeData(
     primarySwatch: Colors.blue,
@@ -47,6 +50,7 @@ class ThemeService {
     ),
     cardTheme: CardThemeData(
       elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -54,7 +58,12 @@ class ThemeService {
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: Colors.white,
       selectedItemColor: Color(0xFF4A90E2),
-      unselectedItemColor: Colors.grey[400],
+      unselectedItemColor: Colors.grey,
+    ),
+    colorScheme: ColorScheme.light(
+      primary: Color(0xFF4A90E2),
+      surface: Colors.white,
+      onSurface: Colors.black87,
     ),
   );
 
@@ -78,7 +87,12 @@ class ThemeService {
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: Color(0xFF16213E),
       selectedItemColor: Color(0xFF4A90E2),
-      unselectedItemColor: Colors.grey[500],
+      unselectedItemColor: Colors.grey,
+    ),
+    colorScheme: ColorScheme.dark(
+      primary: Color(0xFF4A90E2),
+      surface: Color(0xFF16213E),
+      onSurface: Colors.white70,
     ),
   );
 }
