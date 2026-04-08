@@ -33,7 +33,7 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text('隐私锁', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('\u9690\u79C1\u9501', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Color(0xFF4A90E2),
         elevation: 0,
         centerTitle: true,
@@ -82,12 +82,12 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '保护你的隐私',
+                  '\u4FDD\u62A4\u4F60\u7684\u9690\u79C1',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 SizedBox(height: 4),
                 Text(
-                  '启用后，进入应用需要验证指纹或密码',
+                  '\u542F\u7528\u540E\uFF0C\u8FDB\u5165\u5E94\u7528\u9700\u8981\u9A8C\u8BC1\u6307\u7EB9\u6216\u5BC6\u7801',
                   style: TextStyle(fontSize: 13, color: Colors.white70),
                 ),
               ],
@@ -106,9 +106,9 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
       ),
       child: SwitchListTile(
-        title: Text('启用隐私锁', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        title: Text('\u542F\u7528\u9690\u79C1\u9501', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
         subtitle: Text(
-          _canUseBiometrics ? '支持指纹和密码验证' : '仅支持密码验证',
+          _canUseBiometrics ? '\u652F\u6301\u6307\u7EB9\u548C\u5BC6\u7801\u9A8C\u8BC1' : '\u4EC5\u652F\u6301\u5BC6\u7801\u9A8C\u8BC1',
           style: TextStyle(fontSize: 12, color: Colors.grey[500]),
         ),
         value: _lockService.lockEnabled,
@@ -118,7 +118,7 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
             if (!_canUseBiometrics) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('当前设备不支持生物识别'), backgroundColor: Colors.orange),
+                  SnackBar(content: Text('\u5F53\u524D\u8BBE\u5907\u4E0D\u652F\u6301\u751F\u7269\u8BC6\u522B'), backgroundColor: Colors.orange),
                 );
               }
               return;
@@ -129,17 +129,20 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
               setState(() {});
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('隐私锁已启用'), backgroundColor: Colors.green),
+                  SnackBar(content: Text('\u9690\u79C1\u9501\u5DF2\u542F\u7528'), backgroundColor: Colors.green),
                 );
               }
             }
           } else {
-            await _lockService.setLockEnabled(false);
-            setState(() {});
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('隐私锁已关闭'), backgroundColor: Colors.orange),
-              );
+            final success = await _lockService.authenticate();
+            if (success) {
+              await _lockService.setLockEnabled(false);
+              setState(() {});
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('\u9690\u79C1\u9501\u5DF2\u5173\u95ED'), backgroundColor: Colors.orange),
+                );
+              }
             }
           }
         },
@@ -155,16 +158,16 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
           final success = await _lockService.authenticate();
           if (success && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('验证成功'), backgroundColor: Colors.green),
+              SnackBar(content: Text('\u9A8C\u8BC1\u6210\u529F'), backgroundColor: Colors.green),
             );
           } else if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('验证失败'), backgroundColor: Colors.red),
+              SnackBar(content: Text('\u9A8C\u8BC1\u5931\u8D25'), backgroundColor: Colors.red),
             );
           }
         },
         icon: Icon(Icons.fingerprint),
-        label: Text('测试验证'),
+        label: Text('\u6D4B\u8BD5\u9A8C\u8BC1'),
         style: ElevatedButton.styleFrom(
           backgroundColor: Color(0xFF4A90E2),
           foregroundColor: Colors.white,
