@@ -324,8 +324,8 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: ListTile(
         leading: Icon(Icons.delete_forever, color: Colors.red),
-        title: Text('清除所有数据', style: TextStyle(fontSize: 15, color: Colors.red)),
-        subtitle: Text('删除全部记录，此操作不可恢复',
+        title: Text('\u6E05\u9664\u6240\u6709\u6570\u636E', style: TextStyle(fontSize: 15, color: Colors.red)),
+        subtitle: Text('\u5220\u9664\u5168\u90E8\u8BB0\u5F55\uFF0C\u6B64\u64CD\u4F5C\u4E0D\u53EF\u6062\u590D',
             style: TextStyle(fontSize: 12, color: Colors.grey[500])),
         trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
         onTap: _clearAllData,
@@ -348,7 +348,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: ListTile(
         leading: Icon(Icons.privacy_tip, color: Color(0xFF4A90E2)),
-        title: Text('隐私政策', style: TextStyle(fontSize: 15)),
+        title: Text('\u9690\u79C1\u653F\u7B56', style: TextStyle(fontSize: 15)),
         trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
         onTap: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => PrivacyPolicyPage()));
@@ -372,7 +372,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: ListTile(
         leading: Icon(Icons.description, color: Color(0xFF4A90E2)),
-        title: Text('用户协议', style: TextStyle(fontSize: 15)),
+        title: Text('\u7528\u6237\u534F\u8BAE', style: TextStyle(fontSize: 15)),
         trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
         onTap: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => UserAgreementPage()));
@@ -385,17 +385,17 @@ class _SettingsPageState extends State<SettingsPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('确认清除所有数据'),
-        content: Text('此操作将永久删除所有记录数据，且不可恢复。建议您先导出数据备份。确定要继续吗？'),
+        title: Text('\u786E\u8BA4\u6E05\u9664\u6240\u6709\u6570\u636E'),
+        content: Text('\u6B64\u64CD\u4F5C\u5C06\u6C38\u4E45\u5220\u9664\u6240\u6709\u8BB0\u5F55\u6570\u636E\uFF0C\u4E14\u4E0D\u53EF\u6062\u590D\u3002\u5EFA\u8BAE\u60A8\u5148\u5BFC\u51FA\u6570\u636E\u5907\u4EFD\u3002\u786E\u5B9A\u8981\u7EE7\u7EED\u5417\uFF1F'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('取消'),
+            child: Text('\u53D6\u6D88'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('确认清除', style: TextStyle(color: Colors.red)),
+            child: Text('\u786E\u8BA4\u6E05\u9664', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -406,13 +406,13 @@ class _SettingsPageState extends State<SettingsPage> {
         await DatabaseHelper.instance.deleteAllRecords();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('所有数据已清除'), backgroundColor: Colors.green),
+            SnackBar(content: Text('\u6240\u6709\u6570\u636E\u5DF2\u6E05\u9664'), backgroundColor: Colors.green),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('清除数据失败，请重试'), backgroundColor: Colors.red),
+            SnackBar(content: Text('\u6E05\u9664\u6570\u636E\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5'), backgroundColor: Colors.red),
           );
         }
       }
