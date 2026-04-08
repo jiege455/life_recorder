@@ -335,7 +335,8 @@ class _HomePageState extends State<HomePage> {
               } else if (value == 'settings') {
                 final themeService = await ThemeService.getInstance();
                 if (mounted) {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage(themeService: themeService)));
+                  await Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage(themeService: themeService)));
+                  _loadData();
                 }
               } else if (value == 'annual') {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => AnnualReviewPage()));
