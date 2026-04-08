@@ -128,12 +128,16 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
         },
       );
     } else if (_isListening) {
-      _speechService.stopListening();
-      setState(() {
-        _isListening = false;
-        _isRecognizing = true;
-      });
+      _stopListening();
     }
+  }
+
+  void _stopListening() {
+    _speechService.stopListening();
+    setState(() {
+      _isListening = false;
+      _isRecognizing = true;
+    });
   }
 
   Future<void> _generateTags() async {
@@ -395,7 +399,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             controller: _contentController,
             maxLines: 6,
             decoration: InputDecoration(
-              hintText('\u4ECA\u5929\u53D1\u751F\u4E86\u4EC0\u4E48\uFF1F'),
+              hintText: '\u4ECA\u5929\u53D1\u751F\u4E86\u4EC0\u4E48\uFF1F',
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(20),
