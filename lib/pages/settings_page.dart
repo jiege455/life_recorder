@@ -5,9 +5,12 @@ import '../services/lock_service.dart';
 import '../services/reminder_service.dart';
 import '../services/tag_service.dart';
 import '../services/backup_service.dart';
+import '../database/database_helper.dart';
 import 'tag_manager_page.dart';
 import 'lock_settings_page.dart';
 import 'reminder_page.dart';
+import 'privacy_policy_page.dart';
+import 'user_agreement_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final ThemeService themeService;
@@ -68,9 +71,12 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildSectionTitle('\u6570\u636E\u7BA1\u7406'),
             _buildBackupSetting(),
             _buildRestoreSetting(),
+            _buildClearDataSetting(),
             SizedBox(height: 24),
             _buildSectionTitle('\u9690\u79C1\u4E0E\u5B89\u5168'),
             _buildLockSetting(),
+            _buildPrivacyPolicySetting(),
+            _buildUserAgreementSetting(),
             SizedBox(height: 24),
             _buildSectionTitle('\u63D0\u9192'),
             _buildReminderSetting(),
@@ -301,6 +307,116 @@ class _SettingsPageState extends State<SettingsPage> {
         },
       ),
     );
+  }
+
+  Widget _buildClearDataSetting() {
+    return Container(
+      margin: EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4))
+        ],
+      ),
+      child: ListTile(
+        leading: Icon(Icons.delete_forever, color: Colors.red),
+        title: Text('清除所有数据', style: TextStyle(fontSize: 15, color: Colors.red)),
+        subtitle: Text('删除全部记录，此操作不可恢复',
+            style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+        trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+        onTap: _clearAllData,
+      ),
+    );
+  }
+
+  Widget _buildPrivacyPolicySetting() {
+    return Container(
+      margin: EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4))
+        ],
+      ),
+      child: ListTile(
+        leading: Icon(Icons.privacy_tip, color: Color(0xFF4A90E2)),
+        title: Text('隐私政策', style: TextStyle(fontSize: 15)),
+        trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => PrivacyPolicyPage()));
+        },
+      ),
+    );
+  }
+
+  Widget _buildUserAgreementSetting() {
+    return Container(
+      margin: EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4))
+        ],
+      ),
+      child: ListTile(
+        leading: Icon(Icons.description, color: Color(0xFF4A90E2)),
+        title: Text('用户协议', style: TextStyle(fontSize: 15)),
+        trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => UserAgreementPage()));
+        },
+      ),
+    );
+  }
+
+  Future<void> _clearAllData() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('确认清除所有数据'),
+        content: Text('此操作将永久删除所有记录数据，且不可恢复。建议您先导出数据备份。确定要继续吗？'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('确认清除', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await DatabaseHelper.instance.deleteAllRecords();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('所有数据已清除'), backgroundColor: Colors.green),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('清除数据失败，请重试'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _exportData() async {

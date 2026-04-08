@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -168,6 +169,8 @@ class _AddRecordPageState extends State<AddRecordPage> {
             ),
             SizedBox(height: 20),
             Text('添加图片', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text('应用需要访问相机或相册权限来添加图片', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
             SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -594,7 +597,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         Padding(
           padding: EdgeInsets.only(top: 8),
           child: Text(
-            _isRecognizing ? '正在识别...' : '按住说话',
+            _isRecognizing ? '正在识别...' : '按住说话（需麦克风权限）',
             style: TextStyle(
               fontSize: 13,
               color: _isRecognizing ? Colors.orange : Colors.grey[500],
