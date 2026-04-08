@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
 import '../database/database_helper.dart';
 import 'record_detail_page.dart';
 
@@ -16,48 +14,36 @@ class _CalendarPageState extends State<CalendarPage> {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  Map<DateTime, List<Map<String, dynamic>>> _events = {};
+  Map<int, int> _recordCounts = {};
   List<Map<String, dynamic>> _selectedDayRecords = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _selectedDay = _focusedDay;
-    _loadEvents();
+    _selectedDay = DateTime.now();
+    _loadMonthData();
+    _loadDayRecords();
   }
 
-  Future<void> _loadEvents() async {
-    final records = await _dbHelper.getAllRecords();
-    Map<DateTime, List<Map<String, dynamic>>> events = {};
-
-    for (var record in records) {
-      DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
-      DateTime day = DateTime(dt.year, dt.month, dt.day);
-      if (!events.containsKey(day)) {
-        events[day] = [];
-      }
-      events[day]!.add(record);
-    }
-
+  Future<void> _loadMonthData() async {
+    final counts = await _dbHelper.getDailyRecordCounts(_focusedDay.year, _focusedDay.month);
     if (mounted) {
       setState(() {
-        _events = events;
+        _recordCounts = counts;
+        _isLoading = false;
       });
-      _loadDayRecords(_selectedDay!);
     }
   }
 
-  Future<void> _loadDayRecords(DateTime day) async {
-    final records = await _dbHelper.getRecordsByDate(day);
+  Future<void> _loadDayRecords() async {
+    if (_selectedDay == null) return;
+    final records = await _dbHelper.getRecordsByDate(_selectedDay!);
     if (mounted) {
       setState(() {
         _selectedDayRecords = records;
       });
     }
-  }
-
-  List<Map<String, dynamic>> _getEventsForDay(DateTime day) {
-    return _events[DateTime(day.year, day.month, day.day)] ?? [];
   }
 
   IconData _getMoodIcon(String? mood) {
@@ -80,27 +66,24 @@ class _CalendarPageState extends State<CalendarPage> {
     }
   }
 
-  Color _getTagColor(int index) {
-    final colors = [Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.teal, Colors.red];
-    return colors[index % colors.length];
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text('\u65E5\u5386\u89C6\u56FE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('日历', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Color(0xFF4A90E2),
         elevation: 0,
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          _buildCalendar(),
-          Expanded(child: _buildDayRecords()),
-        ],
-      ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                _buildCalendar(),
+                Expanded(child: _buildDayRecords()),
+              ],
+            ),
     );
   }
 
@@ -110,50 +93,25 @@ class _CalendarPageState extends State<CalendarPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
       ),
-      child: TableCalendar(
-        firstDay: DateTime(2024, 1, 1),
-        lastDay: DateTime(2030, 12, 31),
+      child: CalendarHeader(
         focusedDay: _focusedDay,
-        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+        selectedDay: _selectedDay,
         onDaySelected: (selectedDay, focusedDay) {
           setState(() {
             _selectedDay = selectedDay;
             _focusedDay = focusedDay;
           });
-          _loadDayRecords(selectedDay);
+          _loadDayRecords();
         },
-        eventLoader: _getEventsForDay,
-        calendarStyle: CalendarStyle(
-          outsideDaysVisible: false,
-          selectedDecoration: BoxDecoration(
-            color: Color(0xFF4A90E2),
-            shape: BoxShape.circle,
-          ),
-          todayDecoration: BoxDecoration(
-            color: Color(0xFF4A90E2).withOpacity(0.3),
-            shape: BoxShape.circle,
-          ),
-          markerDecoration: BoxDecoration(
-            color: Color(0xFFFF6B6B),
-            shape: BoxShape.circle,
-          ),
-          markerSize: 5,
-        ),
-        headerStyle: HeaderStyle(
-          formatButtonVisible: false,
-          titleCentered: true,
-          titleTextStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A90E2)),
-          leftChevronIcon: Icon(Icons.chevron_left, color: Color(0xFF4A90E2)),
-          rightChevronIcon: Icon(Icons.chevron_right, color: Color(0xFF4A90E2)),
-        ),
-        daysOfWeekStyle: DaysOfWeekStyle(
-          weekdayStyle: TextStyle(fontSize: 13, color: Colors.grey[600]),
-          weekendStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
-        ),
+        onPageChanged: (focusedDay) {
+          setState(() {
+            _focusedDay = focusedDay;
+          });
+          _loadMonthData();
+        },
+        recordCounts: _recordCounts,
       ),
     );
   }
@@ -166,7 +124,9 @@ class _CalendarPageState extends State<CalendarPage> {
           children: [
             Icon(Icons.event_busy, size: 60, color: Colors.grey[300]),
             SizedBox(height: 12),
-            Text('\u8FD9\u5929\u6CA1\u6709\u8BB0\u5F55', style: TextStyle(fontSize: 16, color: Colors.grey[400])),
+            Text('这天没有记录', style: TextStyle(fontSize: 16, color: Colors.grey[400])),
+            SizedBox(height: 4),
+            Text('选择其他日期查看记录', style: TextStyle(fontSize: 13, color: Colors.grey[300])),
           ],
         ),
       );
@@ -176,23 +136,15 @@ class _CalendarPageState extends State<CalendarPage> {
       padding: EdgeInsets.symmetric(horizontal: 16),
       itemCount: _selectedDayRecords.length,
       itemBuilder: (context, index) {
-        final record = _selectedDayRecords[index];
+        var record = _selectedDayRecords[index];
+        String content = record['content']?.toString() ?? '';
         int recordId = record['id'] ?? 0;
         DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
         String timeStr = DateFormat('HH:mm').format(dt);
-        String content = record['content']?.toString() ?? '';
-
-        List<String> tags = [];
-        if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
-          try {
-            List<dynamic> decoded = jsonDecode(record['tags'].toString());
-            tags = decoded.map((e) => e.toString()).toList();
-          } catch (e) {}
-        }
 
         return Card(
           elevation: 0,
-          margin: EdgeInsets.only(bottom: 8),
+          margin: EdgeInsets.only(bottom: 10),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           color: Colors.white,
           child: InkWell(
@@ -203,45 +155,201 @@ class _CalendarPageState extends State<CalendarPage> {
                 MaterialPageRoute(builder: (context) => RecordDetailPage(recordId: recordId)),
               );
               if (result == true) {
-                _loadEvents();
+                _loadMonthData();
+                _loadDayRecords();
               }
             },
             child: Padding(
               padding: EdgeInsets.all(14),
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(_getMoodIcon(record['mood']), color: _getMoodColor(record['mood']), size: 20),
-                      SizedBox(width: 6),
-                      Text(timeStr, style: TextStyle(fontSize: 13, color: Colors.grey[500])),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Text(content, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, height: 1.4)),
-                  if (tags.isNotEmpty) ...[
-                    SizedBox(height: 6),
-                    Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: tags.take(3).toList().asMap().entries.map((entry) =>
-                        Chip(
-                          label: Text(entry.value, style: TextStyle(fontSize: 10, color: Colors.white)),
-                          backgroundColor: _getTagColor(entry.key),
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.symmetric(horizontal: 6),
-                        ),
-                      ).toList(),
+                  Icon(_getMoodIcon(record['mood']), color: _getMoodColor(record['mood']), size: 24),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(timeStr, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                        SizedBox(height: 4),
+                        Text(content, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14)),
+                      ],
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class CalendarHeader extends StatefulWidget {
+  final DateTime focusedDay;
+  final DateTime? selectedDay;
+  final Function(DateTime, DateTime) onDaySelected;
+  final Function(DateTime) onPageChanged;
+  final Map<int, int> recordCounts;
+
+  const CalendarHeader({
+    super.key,
+    required this.focusedDay,
+    this.selectedDay,
+    required this.onDaySelected,
+    required this.onPageChanged,
+    required this.recordCounts,
+  });
+
+  @override
+  State<CalendarHeader> createState() => _CalendarHeaderState();
+}
+
+class _CalendarHeaderState extends State<CalendarHeader> {
+  late DateTime _focusedDay;
+  DateTime? _selectedDay;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusedDay = widget.focusedDay;
+    _selectedDay = widget.selectedDay;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: Icon(Icons.chevron_left, color: Color(0xFF4A90E2)),
+                onPressed: () {
+                  setState(() {
+                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1);
+                  });
+                  widget.onPageChanged(_focusedDay);
+                },
+              ),
+              Text(
+                '${_focusedDay.year}年${_focusedDay.month}月',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A90E2)),
+              ),
+              IconButton(
+                icon: Icon(Icons.chevron_right, color: Color(0xFF4A90E2)),
+                onPressed: () {
+                  setState(() {
+                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);
+                  });
+                  widget.onPageChanged(_focusedDay);
+                },
+              ),
+            ],
+          ),
+        ),
+        _buildWeekdayHeader(),
+        _buildCalendarGrid(),
+      ],
+    );
+  }
+
+  Widget _buildWeekdayHeader() {
+    final weekdays = ['一', '二', '三', '四', '五', '六', '日'];
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: weekdays.map((day) {
+          return Expanded(
+            child: Center(
+              child: Text(
+                day,
+                style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w500),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildCalendarGrid() {
+    final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
+    final lastDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
+    int startingWeekday = firstDayOfMonth.weekday;
+    int daysInMonth = lastDayOfMonth.day;
+
+    List<Widget> dayWidgets = [];
+
+    for (int i = 1; i < startingWeekday; i++) {
+      dayWidgets.add(Container());
+    }
+
+    for (int day = 1; day <= daysInMonth; day++) {
+      final date = DateTime(_focusedDay.year, _focusedDay.month, day);
+      final isSelected = _selectedDay != null &&
+          _selectedDay!.year == date.year &&
+          _selectedDay!.month == date.month &&
+          _selectedDay!.day == date.day;
+      final isToday = DateTime.now().year == date.year &&
+          DateTime.now().month == date.month &&
+          DateTime.now().day == date.day;
+      final hasRecord = widget.recordCounts.containsKey(day);
+
+      dayWidgets.add(
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedDay = date;
+            });
+            widget.onDaySelected(date, _focusedDay);
+          },
+          child: Container(
+            margin: EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: isSelected ? Color(0xFF4A90E2) : (isToday ? Color(0xFF4A90E2).withOpacity(0.1) : null),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  day.toString(),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: isToday || isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? Colors.white : (isToday ? Color(0xFF4A90E2) : Colors.grey[700]),
+                  ),
+                ),
+                if (hasRecord)
+                  Container(
+                    margin: EdgeInsets.only(top: 2),
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : Color(0xFFFF6B6B),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: GridView.count(
+        crossAxisCount: 7,
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        childAspectRatio: 1,
+        children: dayWidgets,
+      ),
     );
   }
 }

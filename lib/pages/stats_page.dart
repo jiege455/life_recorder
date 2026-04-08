@@ -14,12 +14,16 @@ class _StatsPageState extends State<StatsPage> {
   Map<String, int> _moodStats = {};
   int _totalCount = 0;
   bool _isLoading = true;
+  int _selectedYear = DateTime.now().year;
+  int _selectedMonth = DateTime.now().month;
+  List<double> _moodTrendData = [];
+  List<FlSpot> _spots = [];
 
   final Map<String, String> _moodLabels = {
-    'happy': '\u5F00\u5FC3',
-    'neutral': '\u5E73\u9759',
-    'sad': '\u96BE\u8FC7',
-    'excited': '\u5174\u594B',
+    'happy': '开心',
+    'neutral': '平静',
+    'sad': '难过',
+    'excited': '兴奋',
   };
 
   final Map<String, Color> _moodColors = {
@@ -45,6 +49,7 @@ class _StatsPageState extends State<StatsPage> {
   Future<void> _loadStats() async {
     final moodStats = await _dbHelper.getMoodStats();
     final totalCount = await _dbHelper.getRecordCount();
+    await _loadMoodTrend();
     if (mounted) {
       setState(() {
         _moodStats = moodStats;
@@ -54,12 +59,26 @@ class _StatsPageState extends State<StatsPage> {
     }
   }
 
+  Future<void> _loadMoodTrend() async {
+    final data = await _dbHelper.getMonthlyMoodCounts(_selectedYear, _selectedMonth);
+    List<FlSpot> spots = [];
+    for (int i = 0; i < data.length; i++) {
+      if (data[i] > 0) {
+        spots.add(FlSpot(i.toDouble() + 1, data[i]));
+      }
+    }
+    setState(() {
+      _moodTrendData = data;
+      _spots = spots;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text('\u5FC3\u60C5\u7EDF\u8BA1', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('心情统计', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Color(0xFF4A90E2),
         elevation: 0,
         centerTitle: true,
@@ -71,6 +90,8 @@ class _StatsPageState extends State<StatsPage> {
               child: Column(
                 children: [
                   _buildSummaryCard(),
+                  SizedBox(height: 16),
+                  _buildMoodTrendChart(),
                   SizedBox(height: 16),
                   _buildPieChart(),
                   SizedBox(height: 16),
@@ -93,9 +114,9 @@ class _StatsPageState extends State<StatsPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildSummaryItem(Icons.article, _totalCount.toString(), '\u603B\u8BB0\u5F55', Color(0xFF4A90E2)),
-          _buildSummaryItem(Icons.mood, _moodStats.length.toString(), '\u5FC3\u60C5\u79CD\u7C7B', Colors.amber),
-          _buildSummaryItem(Icons.star, _getDominantMood(), '\u4E3B\u5BFC\u5FC3\u60C5', Colors.pink),
+          _buildSummaryItem(Icons.article, _totalCount.toString(), '总记录', Color(0xFF4A90E2)),
+          _buildSummaryItem(Icons.mood, _moodStats.length.toString(), '心情种类', Colors.amber),
+          _buildSummaryItem(Icons.star, _getDominantMood(), '主导心情', Colors.pink),
         ],
       ),
     );
@@ -119,6 +140,146 @@ class _StatsPageState extends State<StatsPage> {
     return _moodLabels[sorted.first.key] ?? sorted.first.key;
   }
 
+  Widget _buildMoodTrendChart() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(Icons.show_chart, color: Color(0xFF4A90E2), size: 20),
+              SizedBox(width: 8),
+              Text('心情趋势', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Spacer(),
+              _buildMonthSelector(),
+            ],
+          ),
+          SizedBox(height: 20),
+          SizedBox(
+            height: 180,
+            child: _spots.isEmpty
+                ? Center(child: Text('本月暂无数据', style: TextStyle(color: Colors.grey[400])))
+                : LineChart(
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: 1,
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color: Colors.grey[200]!,
+                          strokeWidth: 1,
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40,
+                            interval: 1,
+                            getTitlesWidget: (value, meta) {
+                              String label = '';
+                              if (value == 1) label = '难过';
+                              if (value == 2) label = '平静';
+                              if (value == 3) label = '兴奋';
+                              if (value == 4) label = '开心';
+                              return Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[500]));
+                            },
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 30,
+                            interval: 5,
+                            getTitlesWidget: (value, meta) {
+                              return Text('${value.toInt()}日', style: TextStyle(fontSize: 10, color: Colors.grey[500]));
+                            },
+                          ),
+                        ),
+                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      borderData: FlBorderData(show: false),
+                      minX: 1,
+                      maxX: _moodTrendData.length.toDouble(),
+                      minY: 0,
+                      maxY: 4.5,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: _spots,
+                          isCurved: true,
+                          color: Color(0xFF4A90E2),
+                          barWidth: 3,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                              radius: 4,
+                              color: Color(0xFF4A90E2),
+                              strokeWidth: 2,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: Color(0xFF4A90E2).withOpacity(0.1),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMonthSelector() {
+    return Row(
+      children: [
+        IconButton(
+          icon: Icon(Icons.chevron_left, color: Colors.grey[600]),
+          onPressed: () {
+            setState(() {
+              if (_selectedMonth == 1) {
+                _selectedMonth = 12;
+                _selectedYear--;
+              } else {
+                _selectedMonth--;
+              }
+            });
+            _loadMoodTrend();
+          },
+        ),
+        Text(
+          '$_selectedYear年$_selectedMonth月',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[700]),
+        ),
+        IconButton(
+          icon: Icon(Icons.chevron_right, color: Colors.grey[600]),
+          onPressed: () {
+            final now = DateTime.now();
+            if (_selectedYear < now.year || (_selectedYear == now.year && _selectedMonth < now.month)) {
+              setState(() {
+                if (_selectedMonth == 12) {
+                  _selectedMonth = 1;
+                  _selectedYear++;
+                } else {
+                  _selectedMonth++;
+                }
+              });
+              _loadMoodTrend();
+            }
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildPieChart() {
     if (_moodStats.isEmpty) {
       return Container(
@@ -127,7 +288,7 @@ class _StatsPageState extends State<StatsPage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Center(child: Text('\u6682\u65E0\u6570\u636E', style: TextStyle(color: Colors.grey[400]))),
+        child: Center(child: Text('暂无数据', style: TextStyle(color: Colors.grey[400]))),
       );
     }
 
@@ -156,7 +317,7 @@ class _StatsPageState extends State<StatsPage> {
             children: [
               Icon(Icons.pie_chart, color: Color(0xFF4A90E2), size: 20),
               SizedBox(width: 8),
-              Text('\u5FC3\u60C5\u5206\u5E03', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Text('心情分布', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ],
           ),
           SizedBox(height: 20),
@@ -188,7 +349,7 @@ class _StatsPageState extends State<StatsPage> {
             children: [
               Icon(Icons.bar_chart, color: Color(0xFF4A90E2), size: 20),
               SizedBox(width: 8),
-              Text('\u5FC3\u60C5\u660E\u7EC6', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Text('心情明细', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             ],
           ),
           SizedBox(height: 16),
@@ -206,7 +367,7 @@ class _StatsPageState extends State<StatsPage> {
                       Text(_moodLabels[entry.key] ?? entry.key,
                           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                       Spacer(),
-                      Text('${entry.value}\u6761',
+                      Text('${entry.value}条',
                           style: TextStyle(fontSize: 14, color: Colors.grey[600])),
                       SizedBox(width: 8),
                       Text('${percent.toStringAsFixed(1)}%',
