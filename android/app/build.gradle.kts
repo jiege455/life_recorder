@@ -31,17 +31,19 @@ android {
     signingConfigs {
         create("release") {
             val keystoreFilePath = System.getenv("KEYSTORE_FILE")
-            if (keystoreFilePath != null) {
+            val keystorePassword = System.getenv("KEYSTORE_PASSWORD")
+            val keyAliasEnv = System.getenv("KEY_ALIAS")
+            val keyPasswordEnv = System.getenv("KEY_PASSWORD")
+
+            if (keystoreFilePath != null && keystoreFilePath.isNotEmpty()) {
                 storeFile = file(keystoreFilePath)
-                storePassword = System.getenv("KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
             } else {
                 storeFile = file("release.jks")
-                storePassword = "jiege2026"
-                keyAlias = "release"
-                keyPassword = "jiege2026"
             }
+
+            storePassword = if (!keystorePassword.isNullOrEmpty()) keystorePassword else "jiege2026"
+            keyAlias = if (!keyAliasEnv.isNullOrEmpty()) keyAliasEnv else "release"
+            keyPassword = if (!keyPasswordEnv.isNullOrEmpty()) keyPasswordEnv else "jiege2026"
         }
     }
 

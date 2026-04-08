@@ -18,11 +18,29 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Decode keystore
+      - name: Setup signing
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Using keystore from Secrets"
+            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
+          else
+            echo "Generating debug keystore for build"
+            keytool -genkey -v \
+              -keystore android/app/release.jks \
+              -storetype JKS \
+              -storepass jiege2026 \
+              -alias release \
+              -keypass jiege2026 \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 36500 \
+              -dname "CN=JieGe Network Technology, OU=Development, O=JieGe Network Technology, L=Guangzhou, ST=Guangdong, C=CN"
+          fi
       - run: flutter pub get
       - run: flutter build apk --release
         env:
