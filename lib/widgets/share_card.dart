@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import 'dart:io';
-import 'dart:convert';
-import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 class ShareCardHelper {
   static Future<void> shareAsImage(
-    BuildContext context, {\n    required String content,
+    BuildContext context, {
+    required String content,
     required String mood,
     required String moodEmoji,
     required String dateStr,
@@ -100,7 +99,6 @@ class _ShareCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 375,
-      padding: EdgeInsets.all(0),
       decoration: BoxDecoration(
         color: Colors.white,
       ),
