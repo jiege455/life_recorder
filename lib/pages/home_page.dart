@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import 'dart:convert';
 import '../database/database_helper.dart';
+import '../widgets/share_card.dart';
 import 'add_record_page.dart';
 import 'record_detail_page.dart';
 import 'calendar_page.dart';
@@ -192,6 +193,7 @@ class _HomePageState extends State<HomePage> {
   void _shareRecord(Map<String, dynamic> record) async {
     String content = record['content']?.toString() ?? '';
     String mood = _getMoodLabel(record['mood']);
+    String moodEmoji = _getMoodEmoji(record['mood']);
     DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
     String dateStr = DateFormat('yyyy\u5E74MM\u6708dd\u65E5 HH:mm').format(dt);
 
@@ -203,20 +205,33 @@ class _HomePageState extends State<HomePage> {
       } catch (e) {}
     }
 
-    StringBuffer shareText = StringBuffer();
-    shareText.writeln('AI\u4EBA\u751F\u8BB0\u5F55\u5668');
-    shareText.writeln('---');
-    shareText.writeln('\u65F6\u95F4\uFF1A$dateStr');
-    shareText.writeln('\u5FC3\u60C5\uFF1A$mood');
-    if (tags.isNotEmpty) {
-      shareText.writeln('\u6807\u7B7E\uFF1A${tags.join(", ")}');
+    List<String> images = [];
+    if (record['images'] != null && record['images'].toString().isNotEmpty) {
+      try {
+        List<dynamic> decoded = jsonDecode(record['images'].toString());
+        images = decoded.map((e) => e.toString()).toList();
+      } catch (e) {}
     }
-    shareText.writeln('---');
-    shareText.writeln(content);
-    shareText.writeln('---');
-    shareText.writeln('\u7531 AI\u4EBA\u751F\u8BB0\u5F55\u5668 \u751F\u6210');
 
-    await Share.share(shareText.toString());
+    await ShareCardHelper.shareAsImage(
+      context,
+      content: content,
+      mood: mood,
+      moodEmoji: moodEmoji,
+      dateStr: dateStr,
+      tags: tags,
+      images: images.isNotEmpty ? images : null,
+    );
+  }
+
+  String _getMoodEmoji(String? mood) {
+    switch (mood) {
+      case 'happy': return '\u{1F60A}';
+      case 'neutral': return '\u{1F610}';
+      case 'sad': return '\u{1F622}';
+      case 'excited': return '\u{1F389}';
+      default: return '\u{1F610}';
+    }
   }
 
   String _getMoodLabel(String? mood) {
