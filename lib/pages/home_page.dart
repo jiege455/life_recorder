@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'dart:convert';
 import '../database/database_helper.dart';
 import 'add_record_page.dart';
@@ -8,9 +9,14 @@ import 'calendar_page.dart';
 import 'stats_page.dart';
 import 'ai_report_page.dart';
 import 'about_page.dart';
+import 'settings_page.dart';
+import 'annual_review_page.dart';
+import '../services/theme_service.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final ThemeService? themeService;
+
+  const HomePage({super.key, this.themeService});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -29,10 +35,10 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   List<Map<String, dynamic>> _moods = [
-    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '\u5F00\u5FC3'},
-    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '\u5E73\u9759'},
-    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '\u96BE\u8FC7'},
-    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '\u5174\u594B'},
+    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '开心'},
+    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '平静'},
+    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '难过'},
+    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '兴奋'},
   ];
 
   @override
@@ -66,7 +72,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('\u52A0\u8F7D\u6570\u636E\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5')),
+          SnackBar(content: Text('加载数据失败，请重试')),
         );
       }
     }
@@ -112,13 +118,13 @@ class _HomePageState extends State<HomePage> {
       String groupKey;
 
       if (_isSameDay(recordDate, now)) {
-        groupKey = '\u4ECA\u5929';
+        groupKey = '今天';
       } else if (_isSameDay(recordDate, now.subtract(Duration(days: 1)))) {
-        groupKey = '\u6628\u5929';
+        groupKey = '昨天';
       } else if (recordDate.isAfter(now.subtract(Duration(days: 7)))) {
-        groupKey = '\u672C\u5468';
+        groupKey = '本周';
       } else {
-        groupKey = DateFormat('MM\u6708dd\u65E5').format(recordDate);
+        groupKey = DateFormat('MM月dd日').format(recordDate);
       }
 
       if (!grouped.containsKey(groupKey)) {
@@ -163,12 +169,12 @@ class _HomePageState extends State<HomePage> {
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('\u786E\u8BA4\u5220\u9664'),
-        content: Text('\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u6761\u8BB0\u5F55\u5417\uFF1F'),
+        title: Text('确认删除'),
+        content: Text('确定要删除这条记录吗？'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('\u53D6\u6D88')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text('\u5220\u9664', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('取消')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text('删除', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -177,8 +183,48 @@ class _HomePageState extends State<HomePage> {
       await _dbHelper.deleteRecord(id);
       _loadData();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('\u5DF2\u5220\u9664')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('已删除')));
       }
+    }
+  }
+
+  void _shareRecord(Map<String, dynamic> record) async {
+    String content = record['content']?.toString() ?? '';
+    String mood = _getMoodLabel(record['mood']);
+    DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
+    String dateStr = DateFormat('yyyy年MM月dd日 HH:mm').format(dt);
+
+    List<String> tags = [];
+    if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
+      try {
+        List<dynamic> decoded = jsonDecode(record['tags'].toString());
+        tags = decoded.map((e) => e.toString()).toList();
+      } catch (e) {}
+    }
+
+    StringBuffer shareText = StringBuffer();
+    shareText.writeln('AI人生记录器');
+    shareText.writeln('---');
+    shareText.writeln('时间：$dateStr');
+    shareText.writeln('心情：$mood');
+    if (tags.isNotEmpty) {
+      shareText.writeln('标签：${tags.join(", ")}');
+    }
+    shareText.writeln('---');
+    shareText.writeln(content);
+    shareText.writeln('---');
+    shareText.writeln('由 AI人生记录器 生成');
+
+    await Share.share(shareText.toString());
+  }
+
+  String _getMoodLabel(String? mood) {
+    switch (mood) {
+      case 'happy': return '开心';
+      case 'neutral': return '平静';
+      case 'sad': return '难过';
+      case 'excited': return '兴奋';
+      default: return '平静';
     }
   }
 
@@ -209,10 +255,10 @@ class _HomePageState extends State<HomePage> {
           selectedFontSize: 12,
           unselectedFontSize: 12,
           items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: '\u9996\u9875'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: '\u65E5\u5386'),
-            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '\u7EDF\u8BA1'),
-            BottomNavigationBarItem(icon: Icon(Icons.auto_awesome), label: 'AI\u62A5\u544A'),
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: '首页'),
+            BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: '日历'),
+            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '统计'),
+            BottomNavigationBarItem(icon: Icon(Icons.auto_awesome), label: 'AI报告'),
           ],
         ),
       ),
@@ -242,13 +288,13 @@ class _HomePageState extends State<HomePage> {
                 autofocus: true,
                 style: TextStyle(color: Colors.white, fontSize: 16),
                 decoration: InputDecoration(
-                  hintText: '\u641C\u7D22\u8BB0\u5F55...',
+                  hintText: '搜索记录...',
                   hintStyle: TextStyle(color: Colors.white70),
                   border: InputBorder.none,
                 ),
                 onChanged: _searchRecords,
               )
-            : Text('AI\u4EBA\u751F\u8BB0\u5F55\u5668', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            : Text('AI人生记录器', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Color(0xFF4A90E2),
         elevation: 0,
         centerTitle: true,
@@ -267,13 +313,22 @@ class _HomePageState extends State<HomePage> {
           ),
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: Colors.white),
-            onSelected: (value) {
+            onSelected: (value) async {
               if (value == 'about') {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => AboutPage()));
+              } else if (value == 'settings') {
+                final themeService = await ThemeService.getInstance();
+                if (mounted) {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage(themeService: themeService)));
+                }
+              } else if (value == 'annual') {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => AnnualReviewPage()));
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 'about', child: Row(children: [Icon(Icons.info_outline, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('\u5173\u4E8E')])),
+              PopupMenuItem(value: 'settings', child: Row(children: [Icon(Icons.settings, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('设置')])),
+              PopupMenuItem(value: 'annual', child: Row(children: [Icon(Icons.calendar_today, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('年度回顾')])),
+              PopupMenuItem(value: 'about', child: Row(children: [Icon(Icons.info_outline, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('关于')])),
             ],
           ),
         ],
@@ -295,11 +350,11 @@ class _HomePageState extends State<HomePage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _buildStatCard('\u603B\u8BB0\u5F55\u6570', _totalCount.toString(), Icons.article, Color(0xFF4A90E2)),
+          _buildStatCard('总记录数', _totalCount.toString(), Icons.article, Color(0xFF4A90E2)),
           SizedBox(width: 12),
-          _buildStatCard('\u672C\u5468\u8BB0\u5F55', _weekCount.toString(), Icons.calendar_today, Color(0xFF50C878)),
+          _buildStatCard('本周记录', _weekCount.toString(), Icons.calendar_today, Color(0xFF50C878)),
           SizedBox(width: 12),
-          _buildStatCard('\u6700\u5E38\u7528\u6807\u7B7E', _mostUsedTag ?? '\u6682\u65E0', Icons.tag, Color(0xFFFF6B6B)),
+          _buildStatCard('最常用标签', _mostUsedTag ?? '暂无', Icons.tag, Color(0xFFFF6B6B)),
         ],
       ),
     );
@@ -336,7 +391,7 @@ class _HomePageState extends State<HomePage> {
           Padding(
             padding: EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              label: Text('\u5168\u90E8'),
+              label: Text('全部'),
               selected: _selectedMoodFilter == null,
               onSelected: (_) => _filterByMood(null),
               selectedColor: Color(0xFF4A90E2).withOpacity(0.2),
@@ -371,9 +426,9 @@ class _HomePageState extends State<HomePage> {
           children: [
             Icon(Icons.book_outlined, size: 80, color: Colors.grey[300]),
             SizedBox(height: 16),
-            Text(_isSearching ? '\u6CA1\u6709\u627E\u5230\u76F8\u5173\u8BB0\u5F55' : '\u8FD8\u6CA1\u6709\u8BB0\u5F55', style: TextStyle(fontSize: 18, color: Colors.grey[500])),
+            Text(_isSearching ? '没有找到相关记录' : '还没有记录', style: TextStyle(fontSize: 18, color: Colors.grey[500])),
             SizedBox(height: 8),
-            Text(_isSearching ? '\u8BD5\u8BD5\u5176\u4ED6\u5173\u952E\u8BCD' : '\u70B9\u51FB\u53F3\u4E0B\u89D2 + \u6309\u94AE\u5F00\u59CB\u8BB0\u5F55\u751F\u6D3B', style: TextStyle(fontSize: 14, color: Colors.grey[400])),
+            Text(_isSearching ? '试试其他关键词' : '点击右下角 + 按钮开始记录生活', style: TextStyle(fontSize: 14, color: Colors.grey[400])),
           ],
         ),
       );
@@ -421,6 +476,14 @@ class _HomePageState extends State<HomePage> {
       } catch (e) {}
     }
 
+    List<String> images = [];
+    if (record['images'] != null && record['images'].toString().isNotEmpty) {
+      try {
+        List<dynamic> decoded = jsonDecode(record['images'].toString());
+        images = decoded.map((e) => e.toString()).toList();
+      } catch (e) {}
+    }
+
     return Card(
       elevation: 0,
       margin: EdgeInsets.only(bottom: 10),
@@ -444,11 +507,54 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(width: 8),
                   Text(timeStr, style: TextStyle(fontSize: 13, color: Colors.grey[500], fontWeight: FontWeight.w500)),
                   Spacer(),
-                  IconButton(icon: Icon(Icons.delete_outline, color: Colors.grey[400], size: 18), onPressed: () => _deleteRecord(recordId), padding: EdgeInsets.zero, constraints: BoxConstraints()),
+                  IconButton(
+                    icon: Icon(Icons.share, color: Colors.grey[400], size: 18),
+                    onPressed: () => _shareRecord(record),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
+                  SizedBox(width: 8),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline, color: Colors.grey[400], size: 18),
+                    onPressed: () => _deleteRecord(recordId),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(),
+                  ),
                 ],
               ),
               SizedBox(height: 10),
               Text(content, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, height: 1.5)),
+              if (images.isNotEmpty) ...[
+                SizedBox(height: 10),
+                SizedBox(
+                  height: 80,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: images.length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        width: 80,
+                        height: 80,
+                        margin: EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.grey[200],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            images[index],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(Icons.image, color: Colors.grey[400]);
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
               if (tags.isNotEmpty) ...[
                 SizedBox(height: 10),
                 Wrap(

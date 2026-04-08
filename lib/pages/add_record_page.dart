@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
+import 'dart:io';
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
 import '../services/speech_service.dart';
+import '../services/tag_service.dart';
 
 class AddRecordPage extends StatefulWidget {
   const AddRecordPage({super.key});
@@ -17,6 +20,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final AiService _aiService = AiService();
   final SpeechService _speechService = SpeechService();
+  final ImagePicker _imagePicker = ImagePicker();
 
   String _selectedMood = 'neutral';
   bool _isListening = false;
@@ -24,17 +28,26 @@ class _AddRecordPageState extends State<AddRecordPage> {
   bool _isLoading = false;
   bool _isGeneratingTags = false;
   List<String> _generatedTags = [];
+  List<String> _selectedImages = [];
+  List<String> _customTags = [];
 
   List<Map<String, dynamic>> _moods = [
-    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '\u5F00\u5FC3'},
-    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '\u5E73\u9759'},
-    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '\u96BE\u8FC7'},
-    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '\u5174\u594B'},
+    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '开心'},
+    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '平静'},
+    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '难过'},
+    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '兴奋'},
   ];
 
   @override
   void initState() {
     super.initState();
+    _loadCustomTags();
+  }
+
+  void _loadCustomTags() {
+    setState(() {
+      _customTags = TagService.instance.customTags;
+    });
   }
 
   void _startListening() async {
@@ -66,7 +79,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: $error'),
+                content: Text('语音识别错误: $error'),
                 backgroundColor: Colors.orange,
                 duration: Duration(seconds: 3),
               ),
@@ -83,10 +96,91 @@ class _AddRecordPageState extends State<AddRecordPage> {
     }
   }
 
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(source: source, imageQuality: 80);
+      if (image != null) {
+        setState(() {
+          _selectedImages.add(image.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('选择图片失败'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
+  }
+
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(height: 20),
+            Text('添加图片', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildImageSourceOption(Icons.camera_alt, '拍照', ImageSource.camera),
+                _buildImageSourceOption(Icons.photo_library, '相册', ImageSource.gallery),
+              ],
+            ),
+            SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageSourceOption(IconData icon, String label, ImageSource source) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        _pickImage(source);
+      },
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Color(0xFF4A90E2).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Color(0xFF4A90E2), size: 28),
+          ),
+          SizedBox(height: 8),
+          Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+        ],
+      ),
+    );
+  }
+
   Future<void> _generateTags() async {
     if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('\u8BF7\u5148\u8F93\u5165\u5185\u5BB9\u518D\u751F\u6210\u6807\u7B7E')),
+        SnackBar(content: Text('请先输入内容再生成标签')),
       );
       return;
     }
@@ -101,7 +195,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('\u5DF2\u751F\u6210${tags.length}\u4E2A\u6807\u7B7E'),
+            content: Text('已生成${tags.length}个标签'),
             backgroundColor: Colors.green,
           ),
         );
@@ -111,7 +205,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         setState(() => _isGeneratingTags = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('\u6807\u7B7E\u751F\u6210\u5931\u8D25\uFF1A$e'),
+            content: Text('标签生成失败：$e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -125,10 +219,18 @@ class _AddRecordPageState extends State<AddRecordPage> {
     });
   }
 
+  void _addCustomTag(String tag) {
+    if (tag.trim().isNotEmpty && !_generatedTags.contains(tag.trim())) {
+      setState(() {
+        _generatedTags.add(tag.trim());
+      });
+    }
+  }
+
   Future<void> _saveRecord() async {
-    if (_contentController.text.trim().isEmpty) {
+    if (_contentController.text.trim().isEmpty && _selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('\u8BF7\u8F93\u5165\u8BB0\u5F55\u5185\u5BB9')),
+        SnackBar(content: Text('请输入记录内容或添加图片')),
       );
       return;
     }
@@ -138,14 +240,14 @@ class _AddRecordPageState extends State<AddRecordPage> {
     try {
       List<String> tags = List.from(_generatedTags);
 
-      if (tags.isEmpty) {
+      if (tags.isEmpty && _contentController.text.trim().isNotEmpty) {
         try {
           tags = await _aiService.generateTags(_contentController.text.trim());
         } catch (e) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content: Text('\u6807\u7B7E\u81EA\u52A8\u751F\u6210\u5931\u8D25\uFF0C\u5DF2\u4FDD\u5B58\u65E0\u6807\u7B7E\u8BB0\u5F55'),
+                  content: Text('标签自动生成失败，已保存无标签记录'),
                   backgroundColor: Colors.orange),
             );
           }
@@ -156,6 +258,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         'content': _contentController.text.trim(),
         'mood': _selectedMood,
         'tags': jsonEncode(tags),
+        'images': jsonEncode(_selectedImages),
         'created_at': DateTime.now().millisecondsSinceEpoch,
       });
 
@@ -166,7 +269,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5'),
+            content: Text('保存失败，请重试'),
             backgroundColor: Colors.red,
           ),
         );
@@ -196,7 +299,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
         title: Text(
-          '\u6DFB\u52A0\u8BB0\u5F55',
+          '添加记录',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Color(0xFF4A90E2),
@@ -213,6 +316,8 @@ class _AddRecordPageState extends State<AddRecordPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildContentInput(),
+            SizedBox(height: 16),
+            _buildImageSection(),
             SizedBox(height: 20),
             _buildMoodSelector(),
             SizedBox(height: 20),
@@ -244,12 +349,106 @@ class _AddRecordPageState extends State<AddRecordPage> {
         controller: _contentController,
         maxLines: 6,
         decoration: InputDecoration(
-          hintText: '\u4ECA\u5929\u53D1\u751F\u4E86\u4EC0\u4E48\uFF1F',
+          hintText: '今天发生了什么？',
           hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(20),
         ),
         style: TextStyle(fontSize: 16, height: 1.6),
+      ),
+    );
+  }
+
+  Widget _buildImageSection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          )
+        ],
+      ),
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.image, color: Color(0xFF4A90E2), size: 20),
+              SizedBox(width: 8),
+              Text('添加图片', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+              Spacer(),
+              TextButton.icon(
+                onPressed: _showImageSourceDialog,
+                icon: Icon(Icons.add_photo_alternate, size: 16),
+                label: Text('添加'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Color(0xFF4A90E2),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
+          if (_selectedImages.isNotEmpty) ...[
+            SizedBox(height: 12),
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _selectedImages.length,
+                itemBuilder: (context, index) {
+                  return Stack(
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        margin: EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.grey[200],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            File(_selectedImages[index]),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(Icons.image, color: Colors.grey[400], size: 40);
+                            },
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 12,
+                        child: GestureDetector(
+                          onTap: () => _removeImage(index),
+                          child: Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.close, color: Colors.white, size: 14),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ] else ...[
+            SizedBox(height: 8),
+            Text('点击添加图片，记录图文并茂的生活', style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+          ],
+        ],
       ),
     );
   }
@@ -260,7 +459,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
       children: [
         Padding(
           padding: EdgeInsets.only(left: 4, bottom: 12),
-          child: Text('\u9009\u62E9\u5FC3\u60C5',
+          child: Text('选择心情',
               style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -364,7 +563,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
           Padding(
             padding: EdgeInsets.only(top: 8),
             child: Text(
-              _isRecognizing ? '\u6B63\u5728\u8BC6\u522B...' : '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62',
+              _isRecognizing ? '正在识别...' : '正在听...点击停止',
               style: TextStyle(
                 fontSize: 13,
                 color: _isRecognizing ? Colors.orange : Colors.red,
@@ -397,7 +596,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             children: [
               Icon(Icons.auto_awesome, color: Color(0xFF4A90E2), size: 20),
               SizedBox(width: 8),
-              Text('AI\u667A\u80FD\u6807\u7B7E',
+              Text('AI智能标签',
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -412,7 +611,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                   : TextButton.icon(
                       onPressed: _generateTags,
                       icon: Icon(Icons.auto_awesome, size: 16),
-                      label: Text('\u751F\u6210\u6807\u7B7E'),
+                      label: Text('生成标签'),
                       style: TextButton.styleFrom(
                         foregroundColor: Color(0xFF4A90E2),
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -422,6 +621,28 @@ class _AddRecordPageState extends State<AddRecordPage> {
                     ),
             ],
           ),
+          if (_customTags.isNotEmpty) ...[
+            SizedBox(height: 8),
+            Text('常用标签：', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+            SizedBox(height: 4),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: _customTags.map((tag) {
+                final isSelected = _generatedTags.contains(tag);
+                return GestureDetector(
+                  onTap: isSelected ? null : () => _addCustomTag(tag),
+                  child: Chip(
+                    label: Text(tag, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : Colors.grey[700])),
+                    backgroundColor: isSelected ? Colors.grey[400] : Colors.grey[100],
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.symmetric(horizontal: 4),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
           if (_generatedTags.isNotEmpty) ...[
             SizedBox(height: 12),
             Wrap(
@@ -441,7 +662,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             ),
           ] else if (!_isGeneratingTags) ...[
             SizedBox(height: 8),
-            Text('\u70B9\u51FB\u201C\u751F\u6210\u6807\u7B7E\u201D\u8BA9AI\u81EA\u52A8\u4E3A\u4F60\u6253\u6807\u7B7E\uFF0C\u6216\u4FDD\u5B58\u65F6\u81EA\u52A8\u751F\u6210',
+            Text('点击"生成标签"让AI自动为你打标签，或保存时自动生成',
                 style: TextStyle(fontSize: 12, color: Colors.grey[400])),
           ],
         ],
@@ -473,11 +694,11 @@ class _AddRecordPageState extends State<AddRecordPage> {
                     ),
                   ),
                   SizedBox(width: 12),
-                  Text('\u6B63\u5728\u4FDD\u5B58...',
+                  Text('正在保存...',
                       style: TextStyle(fontSize: 16, color: Colors.white)),
                 ],
               )
-            : Text('\u4FDD\u5B58\u8BB0\u5F55',
+            : Text('保存记录',
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
