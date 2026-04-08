@@ -88,12 +88,16 @@ class _AddRecordPageState extends State<AddRecordPage> {
         },
       );
     } else if (_isListening) {
-      _speechService.stopListening();
-      setState(() {
-        _isListening = false;
-        _isRecognizing = true;
-      });
+      _stopListening();
     }
+  }
+
+  void _stopListening() {
+    _speechService.stopListening();
+    setState(() {
+      _isListening = false;
+      _isRecognizing = true;
+    });
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -521,7 +525,9 @@ class _AddRecordPageState extends State<AddRecordPage> {
       children: [
         Center(
           child: GestureDetector(
-            onTap: _isRecognizing ? null : _startListening,
+            onTapDown: _isRecognizing ? null : (_) => _startListening(),
+            onTapUp: _isListening ? (_) => _stopListening() : null,
+            onTapCancel: _isListening ? () => _stopListening() : null,
             child: AnimatedContainer(
               duration: Duration(milliseconds: 200),
               width: 64,
@@ -559,17 +565,16 @@ class _AddRecordPageState extends State<AddRecordPage> {
             ),
           ),
         ),
-        if (_isListening || _isRecognizing)
-          Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: Text(
-              _isRecognizing ? '正在识别...' : '正在听...点击停止',
-              style: TextStyle(
-                fontSize: 13,
-                color: _isRecognizing ? Colors.orange : Colors.red,
-              ),
+        Padding(
+          padding: EdgeInsets.only(top: 8),
+          child: Text(
+            _isRecognizing ? '正在识别...' : '按住说话',
+            style: TextStyle(
+              fontSize: 13,
+              color: _isRecognizing ? Colors.orange : Colors.grey[500],
             ),
           ),
+        ),
       ],
     );
   }
