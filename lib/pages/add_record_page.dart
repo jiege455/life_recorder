@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
 import '../services/speech_service.dart';
@@ -100,13 +101,38 @@ class _AddRecordPageState extends State<AddRecordPage> {
     });
   }
 
+  Future<String?> _saveImageToAppDir(String sourcePath) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final imagesDir = Directory(p.join(appDir.path, 'record_images'));
+      if (!await imagesDir.exists()) {
+        await imagesDir.create(recursive: true);
+      }
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${p.basename(sourcePath)}';
+      final destPath = p.join(imagesDir.path, fileName);
+      await File(sourcePath).copy(destPath);
+      return destPath;
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? image = await _imagePicker.pickImage(source: source, imageQuality: 80);
       if (image != null) {
-        setState(() {
-          _selectedImages.add(image.path);
-        });
+        final savedPath = await _saveImageToAppDir(image.path);
+        if (savedPath != null) {
+          setState(() {
+            _selectedImages.add(savedPath);
+          });
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('图片保存失败，请重试'), backgroundColor: Colors.red),
+            );
+          }
+        }
       }
     } catch (e) {
       if (mounted) {

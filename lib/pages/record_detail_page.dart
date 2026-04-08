@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
 import '../services/speech_service.dart';
@@ -20,6 +23,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   final AiService _aiService = AiService();
   final TextEditingController _contentController = TextEditingController();
   final SpeechService _speechService = SpeechService();
+  final ImagePicker _imagePicker = ImagePicker();
 
   Map<String, dynamic>? _record;
   bool _isEditing = false;
@@ -29,12 +33,13 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   bool _isGeneratingTags = false;
   String _selectedMood = 'neutral';
   List<String> _editTags = [];
+  List<String> _images = [];
 
   List<Map<String, dynamic>> _moods = [
-    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '\u5F00\u5FC3'},
-    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '\u5E73\u9759'},
-    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '\u96BE\u8FC7'},
-    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '\u5174\u594B'},
+    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '开心'},
+    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '平静'},
+    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '难过'},
+    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '兴奋'},
   ];
 
   @override
@@ -57,8 +62,131 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             _editTags = decoded.map((e) => e.toString()).toList();
           } catch (e) {}
         }
+        _images = [];
+        if (record['images'] != null && record['images'].toString().isNotEmpty) {
+          try {
+            List<dynamic> decoded = jsonDecode(record['images'].toString());
+            _images = decoded.map((e) => e.toString()).toList();
+          } catch (e) {}
+        }
       });
     }
+  }
+
+  Future<String?> _saveImageToAppDir(String sourcePath) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final imagesDir = Directory(p.join(appDir.path, 'record_images'));
+      if (!await imagesDir.exists()) {
+        await imagesDir.create(recursive: true);
+      }
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${p.basename(sourcePath)}';
+      final destPath = p.join(imagesDir.path, fileName);
+      await File(sourcePath).copy(destPath);
+      return destPath;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(source: source, imageQuality: 80);
+      if (image != null) {
+        final savedPath = await _saveImageToAppDir(image.path);
+        if (savedPath != null) {
+          setState(() {
+            _images.add(savedPath);
+          });
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('图片保存失败，请重试'), backgroundColor: Colors.red),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('选择图片失败'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _showImageSourceDialog() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(height: 20),
+            Text('添加图片', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.camera);
+                  },
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Color(0xFF4A90E2).withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.camera_alt, color: Color(0xFF4A90E2), size: 28),
+                      ),
+                      SizedBox(height: 8),
+                      Text('拍照', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery);
+                  },
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Color(0xFF4A90E2).withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.photo_library, color: Color(0xFF4A90E2), size: 28),
+                      ),
+                      SizedBox(height: 8),
+                      Text('相册', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
   }
 
   IconData _getMoodIcon(String? mood) {
@@ -88,11 +216,11 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
 
   String _getMoodLabel(String? mood) {
     switch (mood) {
-      case 'happy': return '\u5F00\u5FC3';
-      case 'neutral': return '\u5E73\u9759';
-      case 'sad': return '\u96BE\u8FC7';
-      case 'excited': return '\u5174\u594B';
-      default: return '\u5E73\u9759';
+      case 'happy': return '开心';
+      case 'neutral': return '平静';
+      case 'sad': return '难过';
+      case 'excited': return '兴奋';
+      default: return '平静';
     }
   }
 
@@ -122,7 +250,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
               _isRecognizing = false;
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('\u8BED\u97F3\u9519\u8BEF: $error'), backgroundColor: Colors.orange, duration: Duration(seconds: 3)),
+              SnackBar(content: Text('语音错误: $error'), backgroundColor: Colors.orange, duration: Duration(seconds: 3)),
             );
           }
         },
@@ -143,7 +271,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   Future<void> _generateTags() async {
     if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('\u8BF7\u5148\u8F93\u5165\u5185\u5BB9')),
+        SnackBar(content: Text('请先输入内容')),
       );
       return;
     }
@@ -160,7 +288,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
       if (mounted) {
         setState(() => _isGeneratingTags = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('\u6807\u7B7E\u751F\u6210\u5931\u8D25'), backgroundColor: Colors.red),
+          SnackBar(content: Text('标签生成失败'), backgroundColor: Colors.red),
         );
       }
     }
@@ -175,7 +303,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   Future<void> _saveEdit() async {
     if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('\u8BF7\u8F93\u5165\u8BB0\u5F55\u5185\u5BB9')),
+        SnackBar(content: Text('请输入记录内容')),
       );
       return;
     }
@@ -194,6 +322,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
         'content': _contentController.text.trim(),
         'mood': _selectedMood,
         'tags': jsonEncode(tags),
+        'images': jsonEncode(_images),
       });
 
       if (mounted) {
@@ -203,14 +332,14 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
         });
         _loadRecord();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('\u4FDD\u5B58\u6210\u529F'), backgroundColor: Colors.green),
+          SnackBar(content: Text('保存成功'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('\u4FDD\u5B58\u5931\u8D25'), backgroundColor: Colors.red),
+          SnackBar(content: Text('保存失败'), backgroundColor: Colors.red),
         );
       }
     }
@@ -220,17 +349,17 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('\u786E\u8BA4\u5220\u9664'),
-        content: Text('\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u6761\u8BB0\u5F55\u5417\uFF1F'),
+        title: Text('确认删除'),
+        content: Text('确定要删除这条记录吗？'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('\u53D6\u6D88'),
+            child: Text('取消'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('\u5220\u9664', style: TextStyle(color: Colors.red)),
+            child: Text('删除', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -242,6 +371,18 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
         Navigator.pop(context, true);
       }
     }
+  }
+
+  void _showFullImage(int index) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _FullImageViewer(
+          images: _images,
+          initialIndex: index,
+        ),
+      ),
+    );
   }
 
   @override
@@ -269,13 +410,13 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     }
 
     DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(_record!['created_at'] ?? 0);
-    String dateStr = DateFormat('yyyy\u5E74MM\u6708dd\u65E5 HH:mm').format(dateTime);
+    String dateStr = DateFormat('yyyy年MM月dd日 HH:mm').format(dateTime);
 
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
         title: Text(
-          _isEditing ? '\u7F16\u8F91\u8BB0\u5F55' : '\u8BB0\u5F55\u8BE6\u60C5',
+          _isEditing ? '编辑记录' : '记录详情',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Color(0xFF4A90E2),
@@ -345,6 +486,59 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
               SizedBox(height: 16),
               Text(_record!['content']?.toString() ?? '',
                   style: TextStyle(fontSize: 16, height: 1.8)),
+              if (_images.isNotEmpty) ...[
+                SizedBox(height: 16),
+                Divider(height: 1, color: Colors.grey[200]),
+                SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.image, size: 16, color: Color(0xFF4A90E2)),
+                    SizedBox(width: 6),
+                    Text('图片',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w500)),
+                    SizedBox(width: 6),
+                    Text('${_images.length}张',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+                  ],
+                ),
+                SizedBox(height: 10),
+                SizedBox(
+                  height: 120,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _images.length,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () => _showFullImage(index),
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          margin: EdgeInsets.only(right: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.grey[200],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(
+                              File(_images[index]),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey[200],
+                                  child: Center(
+                                    child: Icon(Icons.image, color: Colors.grey[400], size: 36),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
               if (tags.isNotEmpty) ...[
                 SizedBox(height: 16),
                 Divider(height: 1, color: Colors.grey[200]),
@@ -353,7 +547,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                   children: [
                     Icon(Icons.auto_awesome, size: 16, color: Color(0xFF4A90E2)),
                     SizedBox(width: 6),
-                    Text('AI\u6807\u7B7E',
+                    Text('AI标签',
                         style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w500)),
                   ],
                 ),
@@ -399,12 +593,110 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             controller: _contentController,
             maxLines: 6,
             decoration: InputDecoration(
-              hintText: '\u4ECA\u5929\u53D1\u751F\u4E86\u4EC0\u4E48\uFF1F',
+              hintText: '今天发生了什么？',
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(20),
             ),
             style: TextStyle(fontSize: 16, height: 1.6),
+          ),
+        ),
+        SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              )
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.image, color: Color(0xFF4A90E2), size: 20),
+                  SizedBox(width: 8),
+                  Text('图片${_images.isNotEmpty ? " (${_images.length}张)" : ""}',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+                  Spacer(),
+                  TextButton.icon(
+                    onPressed: _showImageSourceDialog,
+                    icon: Icon(Icons.add_photo_alternate, size: 16),
+                    label: Text('添加'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Color(0xFF4A90E2),
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ),
+              if (_images.isNotEmpty) ...[
+                SizedBox(height: 12),
+                SizedBox(
+                  height: 100,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _images.length,
+                    itemBuilder: (context, index) {
+                      return Stack(
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
+                            margin: EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.grey[200],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(
+                                File(_images[index]),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(Icons.image, color: Colors.grey[400], size: 40);
+                                },
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 12,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _images.removeAt(index);
+                                });
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.close, color: Colors.white, size: 14),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ] else ...[
+                SizedBox(height: 8),
+                Text('点击"添加"按钮上传图片', style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+              ],
+            ],
           ),
         ),
         SizedBox(height: 16),
@@ -460,7 +752,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                 children: [
                   Icon(Icons.auto_awesome, color: Color(0xFF4A90E2), size: 20),
                   SizedBox(width: 8),
-                  Text('AI\u6807\u7B7E',
+                  Text('AI标签',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                   Spacer(),
                   _isGeneratingTags
@@ -468,7 +760,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                       : TextButton.icon(
                           onPressed: _generateTags,
                           icon: Icon(Icons.auto_awesome, size: 16),
-                          label: Text('\u91CD\u65B0\u751F\u6210'),
+                          label: Text('重新生成'),
                           style: TextButton.styleFrom(
                             foregroundColor: Color(0xFF4A90E2),
                             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -545,7 +837,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             Padding(
               padding: EdgeInsets.only(top: 6),
               child: Text(
-                _isRecognizing ? '\u6B63\u5728\u8BC6\u522B...' : '\u6309\u4F4F\u8BF4\u8BDD',
+                _isRecognizing ? '正在识别...' : '按住说话',
                 style: TextStyle(
                   fontSize: 13,
                   color: _isRecognizing ? Colors.orange : Colors.grey[500],
@@ -566,10 +858,87 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             ),
             child: _isLoading
                 ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                : Text('\u4FDD\u5B58\u4FEE\u6539', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                : Text('保存修改', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _FullImageViewer extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+
+  const _FullImageViewer({required this.images, required this.initialIndex});
+
+  @override
+  State<_FullImageViewer> createState() => _FullImageViewerState();
+}
+
+class _FullImageViewerState extends State<_FullImageViewer> {
+  late PageController _pageController;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          '${_currentIndex + 1} / ${widget.images.length}',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
+        centerTitle: true,
+      ),
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: widget.images.length,
+        onPageChanged: (index) {
+          setState(() => _currentIndex = index);
+        },
+        itemBuilder: (context, index) {
+          return InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 4.0,
+            child: Center(
+              child: Image.file(
+                File(widget.images[index]),
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.image_not_supported, color: Colors.grey[600], size: 64),
+                      SizedBox(height: 16),
+                      Text('图片无法加载', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+                    ],
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
