@@ -28,7 +28,7 @@ class AiService {
           'messages': [
             {
               'role': 'user',
-              'content':
+              'content:
                   '请为以下内容生成3个以内的中文标签，只返回JSON数组格式，例如["工作","会议"]。不要返回其他任何文字。内容：$content'
             }
           ],
