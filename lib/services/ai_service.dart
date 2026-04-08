@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import '../config/api_config.dart';
 
 class AiService {
-  static const String _apiKey = 'sk-12dcf244168e445891d34b594b2fe799';
-  static const String _baseUrl = 'https://api.deepseek.com/v1/chat/completions';
+  static const String _apiKey = ApiConfig.deepseekApiKey;
+  static const String _baseUrl = ApiConfig.deepseekBaseUrl;
 
   final Dio _dio = Dio(BaseOptions(
     connectTimeout: Duration(seconds: 15),
@@ -28,7 +29,8 @@ class AiService {
           'messages': [
             {
               'role': 'user',
-              'content': '请为以下内容生成3个以内的中文标签，只返回JSON数组格式，例如["工作","会议"]。不要返回其他任何文字。内容：$content'
+              'content':
+                  '请为以下内容生成3个以内的中文标签，只返回JSON数组格式，例如["工作","会议"]。不要返回其他任何文字。内容：$content'
             }
           ],
           'temperature': 0.3

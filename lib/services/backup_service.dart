@@ -16,7 +16,7 @@ class BackupService {
     try {
       final records = await _dbHelper.getAllRecords();
       final backupData = {
-        'version': '1.3.0',
+        'version': '2.0.0',
         'appName': 'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
         'exportTime': DateTime.now().toIso8601String(),
         'recordCount': records.length,
@@ -41,7 +41,8 @@ class BackupService {
 
       await Share.shareXFiles(
         [XFile(file.path)],
-        text: 'AI\u4EBA\u751F\u8BB0\u5F55\u5668 - \u6570\u636E\u5907\u4EFD ${DateTime.now().year}\u5E74${DateTime.now().month}\u6708${DateTime.now().day}\u65E5',
+        text:
+            'AI\u4EBA\u751F\u8BB0\u5F55\u5668 - \u6570\u636E\u5907\u4EFD ${DateTime.now().year}\u5E74${DateTime.now().month}\u6708${DateTime.now().day}\u65E5',
       );
 
       return file.path;
@@ -86,7 +87,8 @@ class BackupService {
       if (backupData['records'] == null) return null;
 
       return {
-        'recordCount': backupData['recordCount'] ?? (backupData['records'] as List).length,
+        'recordCount':
+            backupData['recordCount'] ?? (backupData['records'] as List).length,
         'exportTime': backupData['exportTime'] ?? '\u672A\u77E5',
         'version': backupData['version'] ?? '\u672A\u77E5',
         'records': backupData['records'],

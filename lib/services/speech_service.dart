@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:ifly_speech_recognition/ifly_speech_recognition.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../config/api_config.dart';
 
 class SpeechService {
   static final SpeechService _instance = SpeechService._internal();
@@ -24,9 +25,9 @@ class SpeechService {
 
     try {
       _speechService = SpeechRecognitionService(
-        appId: '000dc3e2',
-        appKey: 'eeb3a079d047433a30fc7d39a2988f50',
-        appSecret: 'N2IxNzU5YzNhMDI3YjQ2N2Q2MzMxNDAx',
+        appId: ApiConfig.iflyAppId,
+        appKey: ApiConfig.iflyAppKey,
+        appSecret: ApiConfig.iflyAppSecret,
       );
 
       await _speechService!.initRecorder();
