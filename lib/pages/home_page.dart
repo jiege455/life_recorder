@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'dart:io';
 import 'dart:convert';
 import '../database/database_helper.dart';
 import 'add_record_page.dart';
@@ -35,10 +36,10 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   List<Map<String, dynamic>> _moods = [
-    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '开心'},
-    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '平静'},
-    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '难过'},
-    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '兴奋'},
+    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '\u5F00\u5FC3'},
+    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '\u5E73\u9759'},
+    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '\u96BE\u8FC7'},
+    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '\u5174\u594B'},
   ];
 
   @override
@@ -72,7 +73,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('加载数据失败，请重试')),
+          SnackBar(content: Text('\u52A0\u8F7D\u6570\u636E\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5')),
         );
       }
     }
@@ -118,13 +119,13 @@ class _HomePageState extends State<HomePage> {
       String groupKey;
 
       if (_isSameDay(recordDate, now)) {
-        groupKey = '今天';
+        groupKey = '\u4ECA\u5929';
       } else if (_isSameDay(recordDate, now.subtract(Duration(days: 1)))) {
-        groupKey = '昨天';
+        groupKey = '\u6628\u5929';
       } else if (recordDate.isAfter(now.subtract(Duration(days: 7)))) {
-        groupKey = '本周';
+        groupKey = '\u672C\u5468';
       } else {
-        groupKey = DateFormat('MM月dd日').format(recordDate);
+        groupKey = DateFormat('MM\u6708dd\u65E5').format(recordDate);
       }
 
       if (!grouped.containsKey(groupKey)) {
@@ -169,12 +170,12 @@ class _HomePageState extends State<HomePage> {
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('确认删除'),
-        content: Text('确定要删除这条记录吗？'),
+        title: Text('\u786E\u8BA4\u5220\u9664'),
+        content: Text('\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u6761\u8BB0\u5F55\u5417\uFF1F'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('取消')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text('删除', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('\u53D6\u6D88')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text('\u5220\u9664', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -183,7 +184,7 @@ class _HomePageState extends State<HomePage> {
       await _dbHelper.deleteRecord(id);
       _loadData();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('已删除')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('\u5DF2\u5220\u9664')));
       }
     }
   }
@@ -192,7 +193,7 @@ class _HomePageState extends State<HomePage> {
     String content = record['content']?.toString() ?? '';
     String mood = _getMoodLabel(record['mood']);
     DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
-    String dateStr = DateFormat('yyyy年MM月dd日 HH:mm').format(dt);
+    String dateStr = DateFormat('yyyy\u5E74MM\u6708dd\u65E5 HH:mm').format(dt);
 
     List<String> tags = [];
     if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
@@ -203,28 +204,28 @@ class _HomePageState extends State<HomePage> {
     }
 
     StringBuffer shareText = StringBuffer();
-    shareText.writeln('AI人生记录器');
+    shareText.writeln('AI\u4EBA\u751F\u8BB0\u5F55\u5668');
     shareText.writeln('---');
-    shareText.writeln('时间：$dateStr');
-    shareText.writeln('心情：$mood');
+    shareText.writeln('\u65F6\u95F4\uFF1A$dateStr');
+    shareText.writeln('\u5FC3\u60C5\uFF1A$mood');
     if (tags.isNotEmpty) {
-      shareText.writeln('标签：${tags.join(", ")}');
+      shareText.writeln('\u6807\u7B7E\uFF1A${tags.join(", ")}');
     }
     shareText.writeln('---');
     shareText.writeln(content);
     shareText.writeln('---');
-    shareText.writeln('由 AI人生记录器 生成');
+    shareText.writeln('\u7531 AI\u4EBA\u751F\u8BB0\u5F55\u5668 \u751F\u6210');
 
     await Share.share(shareText.toString());
   }
 
   String _getMoodLabel(String? mood) {
     switch (mood) {
-      case 'happy': return '开心';
-      case 'neutral': return '平静';
-      case 'sad': return '难过';
-      case 'excited': return '兴奋';
-      default: return '平静';
+      case 'happy': return '\u5F00\u5FC3';
+      case 'neutral': return '\u5E73\u9759';
+      case 'sad': return '\u96BE\u8FC7';
+      case 'excited': return '\u5174\u594B';
+      default: return '\u5E73\u9759';
     }
   }
 
@@ -255,10 +256,10 @@ class _HomePageState extends State<HomePage> {
           selectedFontSize: 12,
           unselectedFontSize: 12,
           items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: '首页'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: '日历'),
-            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '统计'),
-            BottomNavigationBarItem(icon: Icon(Icons.auto_awesome), label: 'AI报告'),
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: '\u9996\u9875'),
+            BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: '\u65E5\u5386'),
+            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '\u7EDF\u8BA1'),
+            BottomNavigationBarItem(icon: Icon(Icons.auto_awesome), label: 'AI\u62A5\u544A'),
           ],
         ),
       ),
@@ -288,13 +289,13 @@ class _HomePageState extends State<HomePage> {
                 autofocus: true,
                 style: TextStyle(color: Colors.white, fontSize: 16),
                 decoration: InputDecoration(
-                  hintText: '搜索记录...',
+                  hintText: '\u641C\u7D22\u8BB0\u5F55...',
                   hintStyle: TextStyle(color: Colors.white70),
                   border: InputBorder.none,
                 ),
                 onChanged: _searchRecords,
               )
-            : Text('AI人生记录器', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            : Text('AI\u4EBA\u751F\u8BB0\u5F55\u5668', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Color(0xFF4A90E2),
         elevation: 0,
         centerTitle: true,
@@ -326,9 +327,9 @@ class _HomePageState extends State<HomePage> {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 'settings', child: Row(children: [Icon(Icons.settings, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('设置')])),
-              PopupMenuItem(value: 'annual', child: Row(children: [Icon(Icons.calendar_today, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('年度回顾')])),
-              PopupMenuItem(value: 'about', child: Row(children: [Icon(Icons.info_outline, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('关于')])),
+              PopupMenuItem(value: 'settings', child: Row(children: [Icon(Icons.settings, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('\u8BBE\u7F6E')])),
+              PopupMenuItem(value: 'annual', child: Row(children: [Icon(Icons.calendar_today, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('\u5E74\u5EA6\u56DE\u987E')])),
+              PopupMenuItem(value: 'about', child: Row(children: [Icon(Icons.info_outline, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('\u5173\u4E8E')])),
             ],
           ),
         ],
@@ -350,11 +351,11 @@ class _HomePageState extends State<HomePage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _buildStatCard('总记录数', _totalCount.toString(), Icons.article, Color(0xFF4A90E2)),
+          _buildStatCard('\u603B\u8BB0\u5F55\u6570', _totalCount.toString(), Icons.article, Color(0xFF4A90E2)),
           SizedBox(width: 12),
-          _buildStatCard('本周记录', _weekCount.toString(), Icons.calendar_today, Color(0xFF50C878)),
+          _buildStatCard('\u672C\u5468\u8BB0\u5F55', _weekCount.toString(), Icons.calendar_today, Color(0xFF50C878)),
           SizedBox(width: 12),
-          _buildStatCard('最常用标签', _mostUsedTag ?? '暂无', Icons.tag, Color(0xFFFF6B6B)),
+          _buildStatCard('\u6700\u5E38\u7528\u6807\u7B7E', _mostUsedTag ?? '\u6682\u65E0', Icons.tag, Color(0xFFFF6B6B)),
         ],
       ),
     );
@@ -391,7 +392,7 @@ class _HomePageState extends State<HomePage> {
           Padding(
             padding: EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              label: Text('全部'),
+              label: Text('\u5168\u90E8'),
               selected: _selectedMoodFilter == null,
               onSelected: (_) => _filterByMood(null),
               selectedColor: Color(0xFF4A90E2).withOpacity(0.2),
@@ -426,9 +427,9 @@ class _HomePageState extends State<HomePage> {
           children: [
             Icon(Icons.book_outlined, size: 80, color: Colors.grey[300]),
             SizedBox(height: 16),
-            Text(_isSearching ? '没有找到相关记录' : '还没有记录', style: TextStyle(fontSize: 18, color: Colors.grey[500])),
+            Text(_isSearching ? '\u6CA1\u6709\u627E\u5230\u76F8\u5173\u8BB0\u5F55' : '\u8FD8\u6CA1\u6709\u8BB0\u5F55', style: TextStyle(fontSize: 18, color: Colors.grey[500])),
             SizedBox(height: 8),
-            Text(_isSearching ? '试试其他关键词' : '点击右下角 + 按钮开始记录生活', style: TextStyle(fontSize: 14, color: Colors.grey[400])),
+            Text(_isSearching ? '\u8BD5\u8BD5\u5176\u4ED6\u5173\u952E\u8BCD' : '\u70B9\u51FB\u53F3\u4E0B\u89D2 + \u6309\u94AE\u5F00\u59CB\u8BB0\u5F55\u751F\u6D3B', style: TextStyle(fontSize: 14, color: Colors.grey[400])),
           ],
         ),
       );
@@ -542,8 +543,8 @@ class _HomePageState extends State<HomePage> {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            images[index],
+                          child: Image.file(
+                            File(images[index]),
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Icon(Icons.image, color: Colors.grey[400]);

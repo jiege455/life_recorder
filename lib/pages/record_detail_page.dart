@@ -395,7 +395,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             controller: _contentController,
             maxLines: 6,
             decoration: InputDecoration(
-              hintText: '\u4ECA\u5929\u53D1\u751F\u4E86\u4EC0\u4E48\uFF1F',
+              hintText('\u4ECA\u5929\u53D1\u751F\u4E86\u4EC0\u4E48\uFF1F'),
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(20),
@@ -499,7 +499,9 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
           children: [
             Center(
               child: GestureDetector(
-                onTap: _isRecognizing ? null : _startListening,
+                onTapDown: _isRecognizing ? null : (_) => _startListening(),
+                onTapUp: _isListening ? (_) => _stopListening() : null,
+                onTapCancel: _isListening ? () => _stopListening() : null,
                 child: Container(
                   width: 56,
                   height: 56,
@@ -508,6 +510,16 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                     color: _isRecognizing
                         ? Colors.orange
                         : (_isListening ? Colors.red : Color(0xFF4A90E2)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (_isRecognizing
+                                ? Colors.orange
+                                : (_isListening ? Colors.red : Color(0xFF4A90E2)))
+                            .withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: Offset(0, 4),
+                      )
+                    ],
                   ),
                   child: _isRecognizing
                       ? SizedBox(
@@ -526,23 +538,22 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                 ),
               ),
             ),
-            if (_isListening || _isRecognizing)
-              Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: Text(
-                  _isRecognizing ? '\u6B63\u5728\u8BC6\u522B...' : '\u6B63\u5728\u542C...\u70B9\u51FB\u505C\u6B62',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _isRecognizing ? Colors.orange : Colors.red,
-                  ),
+            Padding(
+              padding: EdgeInsets.only(top: 6),
+              child: Text(
+                _isRecognizing ? '\u6B63\u5728\u8BC6\u522B...' : '\u6309\u4F4F\u8BF4\u8BDD',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _isRecognizing ? Colors.orange : Colors.grey[500],
                 ),
               ),
+            ),
           ],
         ),
-        SizedBox(height: 20),
+        SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
-          height: 56,
+          height: 52,
           child: ElevatedButton(
             onPressed: _isLoading ? null : _saveEdit,
             style: ElevatedButton.styleFrom(
@@ -550,34 +561,8 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
             child: _isLoading
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))),
-                      SizedBox(width: 12),
-                      Text('\u4FDD\u5B58\u4E2D...', style: TextStyle(color: Colors.white)),
-                    ],
-                  )
-                : Text('\u4FDD\u5B58\u4FEE\u6539',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-          ),
-        ),
-        SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: OutlinedButton(
-            onPressed: () {
-              setState(() {
-                _isEditing = false;
-              });
-            },
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: Colors.grey[300]!),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-            child: Text('\u53D6\u6D88\u7F16\u8F91',
-                style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
+                : Text('\u4FDD\u5B58\u4FEE\u6539', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
           ),
         ),
       ],
