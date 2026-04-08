@@ -17,7 +17,7 @@ class DatabaseHelper {
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
-    return await openDatabase(path, version: 1, onCreate: _onCreate);
+    return await openDatabase(path, version: 2, onCreate: _onCreate, onUpgrade: _onUpgrade);
   }
 
   Future _onCreate(Database db, int version) async {
@@ -27,9 +27,16 @@ class DatabaseHelper {
         content TEXT NOT NULL,
         mood TEXT,
         tags TEXT,
+        images TEXT,
         created_at INTEGER
       )
     ''');
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute("ALTER TABLE records ADD COLUMN images TEXT");
+    }
   }
 
   Future<int> insertRecord(Map<String, dynamic> record) async {
@@ -187,5 +194,27 @@ class DatabaseHelper {
       whereArgs: [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
       orderBy: 'created_at ASC',
     );
+  }
+
+  Future<List<Map<String, dynamic>>> getYearRecords(int year) async {
+    final db = await database;
+    final start = DateTime(year, 1, 1);
+    final end = DateTime(year, 12, 31, 23, 59, 59, 999);
+    return await db.query(
+      'records',
+      where: 'created_at >= ? AND created_at <= ?',
+      whereArgs: [start.millisecondsSinceEpoch, end.millisecondsSinceEpoch],
+      orderBy: 'created_at ASC',
+    );
+  }
+
+  Future<Map<String, int>> getYearlyMoodStats(int year) async {
+    final records = await getYearRecords(year);
+    Map<String, int> stats = {};
+    for (var record in records) {
+      String mood = record['mood']?.toString() ?? 'neutral';
+      stats[mood] = (stats[mood] ?? 0) + 1;
+    }
+    return stats;
   }
 }

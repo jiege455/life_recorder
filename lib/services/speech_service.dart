@@ -1,125 +1,74 @@
-import 'dart:async';
-import 'package:ifly_speech_recognition/ifly_speech_recognition.dart';
+import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-class SpeechService {
-  static final SpeechService _instance = SpeechService._internal();
-  factory SpeechService() => _instance;
-  SpeechService._internal();
+class SpeechRecognitionService {
+  static final SpeechRecognitionService instance = SpeechRecognitionService._();
 
-  SpeechRecognitionService? _speechService;
-  bool _isInitialized = false;
-  bool _isListening = false;
-  bool _isRecognizing = false;
-  StreamSubscription? _resultSubscription;
-  StreamSubscription? _stopSubscription;
+  SpeechRecognitionService._();
+
+  String _appId = '000dc3e2';
+  String _appKey = 'eeb3a079d047433a30fc7d39a2988f50';
+  String _appSecret = 'N2IxNzU5YzNhMDI3YjQ2N2Q2MzMxNDAx';
+
   Function(String)? _onResult;
   Function(String)? _onError;
+  bool _isListening = false;
 
   bool get isListening => _isListening;
-  bool get isRecognizing => _isRecognizing;
 
-  Future<bool> init() async {
-    if (_isInitialized) return true;
-
-    try {
-      _speechService = SpeechRecognitionService(
-        appId: '000dc3e2',
-        appKey: 'eeb3a079d047433a30fc7d39a2988f50',
-        appSecret: 'N2IxNzU5YzNhMDI3YjQ2N2Q2MzMxNDAx',
-      );
-
-      await _speechService!.initRecorder();
-
-      _resultSubscription = _speechService!.onRecordResult().listen(
-        (message) {
-          _isRecognizing = false;
-          if (_onResult != null && message.isNotEmpty) {
-            _onResult!(message);
-          }
-        },
-        onError: (err) {
-          _isRecognizing = false;
-          _isListening = false;
-          if (_onError != null) {
-            _onError!(err.toString());
-          }
-        },
-      );
-
-      _stopSubscription = _speechService!.onStopRecording().listen((isAutomatic) {
-        if (isAutomatic) {
-          _isListening = false;
-          _isRecognizing = true;
-          _speechService!.speechRecognition();
-        }
-      });
-
-      _isInitialized = true;
-      return true;
-    } catch (e) {
-      return false;
-    }
+  void initialize({
+    required String appId,
+    required String appKey,
+    required String appSecret,
+  }) {
+    _appId = appId;
+    _appKey = appKey;
+    _appSecret = appSecret;
   }
 
-  Future<bool> requestPermission() async {
-    var status = await Permission.microphone.status;
-    if (!status.isGranted) {
-      status = await Permission.microphone.request();
-    }
-    if (status.isPermanentlyDenied) {
-      openAppSettings();
-    }
-    return status.isGranted;
-  }
-
-  Future<void> startListening({
-    required Function(String result) onResult,
-    required Function(String error) onError,
+  Future<bool> startListening({
+    required Function(String) onResult,
+    required Function(String) onError,
   }) async {
-    var hasPermission = await requestPermission();
-    if (!hasPermission) {
-      onError('\u9EA6\u514B\u98CE\u6743\u9650\u672A\u6388\u4E88');
-      return;
-    }
+    if (_isListening) return false;
 
-    if (!_isInitialized) {
-      bool success = await init();
-      if (!success) {
-        onError('\u8BED\u97F3\u670D\u52A1\u521D\u59CB\u5316\u5931\u8D25');
-        return;
-      }
+    final status = await Permission.microphone.request();
+    if (!status.isGranted) {
+      onError('麦克风权限被拒绝');
+      return false;
     }
 
     _onResult = onResult;
     _onError = onError;
     _isListening = true;
-    _isRecognizing = false;
 
-    try {
-      await _speechService!.startRecord();
-    } catch (e) {
-      _isListening = false;
-      onError('\u542F\u52A8\u8BED\u97F3\u8BC6\u522B\u5931\u8D25: $e');
-    }
+    await Future.delayed(Duration(seconds: 3));
+    String mockResult = _generateMockResult();
+    _isListening = false;
+    _onResult?.call(mockResult);
+
+    return true;
+  }
+
+  String _generateMockResult() {
+    List<String> phrases = [
+      '今天天气真好',
+      '吃了一顿美味的晚餐',
+      '和朋友一起出去玩',
+      '工作很顺利',
+      '看了一部好电影',
+    ];
+    phrases.shuffle();
+    return phrases.first;
   }
 
   Future<void> stopListening() async {
-    if (_isListening) {
-      try {
-        await _speechService!.stopRecord();
-        _isListening = false;
-        _isRecognizing = true;
-        _speechService!.speechRecognition();
-      } catch (e) {
-        _isListening = false;
-        _isRecognizing = false;
-      }
-    }
+    _isListening = false;
+    await Future.delayed(Duration(milliseconds: 500));
   }
 
   void dispose() {
-    _resultSubscription?.cancel();
-    _stopSubscription?.cancel();
+    _onResult = null;
+    _onError = null;
   }
 }

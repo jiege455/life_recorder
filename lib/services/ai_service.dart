@@ -1,15 +1,12 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 
 class AiService {
-  static const String _apiKey = 'sk-12dcf244168e445891d34b594b2fe799';
-  static const String _baseUrl = 'https://api.deepseek.com/v1/chat/completions';
+  static final AiService instance = AiService._();
+  static const String _apiKey = 'sk-0d6bb31f5d9c4f8da83f2f5f0e2c2a8d';
+  static const String _baseUrl = 'https://api.deepseek.com/chat/completions';
+  final Dio _dio = Dio();
 
-  final Dio _dio = Dio(BaseOptions(
-    connectTimeout: Duration(seconds: 15),
-    receiveTimeout: Duration(seconds: 30),
-    sendTimeout: Duration(seconds: 15),
-  ));
+  AiService._();
 
   Future<List<String>> generateTags(String content) async {
     try {
@@ -25,67 +22,62 @@ class AiService {
           'model': 'deepseek-chat',
           'messages': [
             {
+              'role': 'system',
+              'content': '你是一个生活记录助手，根据用户的内容生成3-5个简短的中文标签，每个标签2-4个字，用逗号分隔，不要包含其他内容。例如：工作, 学习, 健康, 娱乐'
+            },
+            {
               'role': 'user',
-              'content':
-                  '\u8BF7\u4E3A\u4EE5\u4E0B\u5185\u5BB9\u751F\u62103\u4E2A\u4EE5\u5185\u7684\u4E2D\u6587\u6807\u7B7E\uFF0C\u53EA\u8FD4\u56DEJSON\u6570\u7EC4\u683C\u5F0F\uFF0C\u4F8B\u5982[\"\u5DE5\u4F5C\",\"\u4F1A\u8BAE\"]\u3002\u4E0D\u8981\u8FD4\u56DE\u5176\u4ED6\u4EFB\u4F55\u6587\u5B57\u3002\u5185\u5BB9\uFF1A$content'
+              'content': content
             }
           ],
-          'temperature': 0.3
+          'temperature': 0.8,
+          'max_tokens': 100
         },
       );
 
       if (response.statusCode == 200) {
         final responseData = response.data;
-        String contentText = responseData['choices'][0]['message']['content'];
-        contentText = contentText.trim();
-
-        if (contentText.startsWith('```')) {
-          int firstNewline = contentText.indexOf('\n');
-          if (firstNewline != -1) {
-            contentText = contentText.substring(firstNewline + 1);
-          }
-        }
-        if (contentText.endsWith('```')) {
-          contentText = contentText.substring(0, contentText.length - 3);
-        }
-        contentText = contentText.trim();
-
-        int startIndex = contentText.indexOf('[');
-        int endIndex = contentText.lastIndexOf(']');
-        if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
-          contentText = contentText.substring(startIndex, endIndex + 1);
-        }
-
-        List<dynamic> decoded = jsonDecode(contentText);
-        return decoded.map((e) => e.toString()).toList();
+        String tagsText = responseData['choices'][0]['message']['content'];
+        tagsText = tagsText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9,]'), '');
+        List<String> tags = tagsText.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        return tags.take(5).toList();
       } else {
-        throw Exception('AI\u670D\u52A1\u8BF7\u6C42\u5931\u8D25');
+        throw Exception('AI服务请求失败');
       }
     } on DioException catch (e) {
-      String errorMsg = '\u7F51\u7EDC\u9519\u8BEF';
+      String errorMsg = '网络错误';
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.sendTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
-        errorMsg = '\u7F51\u7EDC\u8FDE\u63A5\u8D85\u65F6\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC';
+        errorMsg = '网络连接超时';
       } else if (e.type == DioExceptionType.connectionError) {
-        errorMsg = '\u7F51\u7EDC\u8FDE\u63A5\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u7F51\u7EDC';
+        errorMsg = '网络连接失败';
       }
       throw Exception(errorMsg);
     } catch (e) {
-      throw Exception('\u6807\u7B7E\u89E3\u6790\u5931\u8D25');
+      throw Exception('标签生成失败');
     }
   }
 
   Future<String> generateReport(List<Map<String, dynamic>> records, String period) async {
     try {
       StringBuffer sb = StringBuffer();
-      sb.writeln('$period\u751F\u6D3B\u8BB0\u5F55\uFF1A');
+      sb.writeln('$period生活记录：');
       for (var record in records) {
         DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
-        String dateStr = '${dt.month}\u6708${dt.day}\u65E5';
+        String dateStr = '${dt.month}月${dt.day}日';
         String mood = _moodLabel(record['mood']);
         String content = record['content']?.toString() ?? '';
-        sb.writeln('$dateStr [$mood]: $content');
+        String tagsStr = '';
+        if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
+          try {
+            List<dynamic> tags = jsonDecode(record['tags'].toString());
+            tagsStr = ' #${tags.join(' #')}';
+          } catch (e) {}
+        }
+        sb.writeln('$dateStr [$mood]$tagsStr');
+        sb.writeln(content);
+        sb.writeln('---');
       }
 
       final response = await _dio.post(
@@ -101,15 +93,15 @@ class AiService {
           'messages': [
             {
               'role': 'system',
-              'content': '\u4F60\u662F\u4E00\u4E2A\u6E29\u6696\u7684\u751F\u6D3B\u52A9\u624B\uFF0C\u8BF7\u6839\u636E\u7528\u6237\u7684\u751F\u6D3B\u8BB0\u5F55\u751F\u6210\u4E00\u4EFD\u6E29\u99A8\u7684\u751F\u6D3B\u603B\u7ED3\u62A5\u544A\u3002\u8BED\u6C14\u4EB2\u5207\u81EA\u7136\uFF0C\u50CF\u670B\u53CB\u4E00\u6837\u804A\u5929\u3002\u5305\u542B\uFF1A1.\u6574\u4F53\u5FC3\u60C5\u6982\u62EC 2.\u91CD\u70B9\u4E8B\u4EF6\u56DE\u987E 3.\u751F\u6D3B\u5EFA\u8BAE\u3002\u7528\u4E2D\u6587\u56DE\u7B54\u3002'
+              'content': '你是一个温暖的生活助手，请根据用户的一周或一月生活记录生成一份简洁的生活报告。语气温暖友好，像朋友聊天一样。包含：1.整体感受 2.有趣的记录 3.小建议。用中文回答，段落分明，总字数控制在300字以内。'
             },
             {
               'role': 'user',
               'content': sb.toString()
             }
           ],
-          'temperature': 0.7,
-          'max_tokens': 1000
+          'temperature': 0.8,
+          'max_tokens': 800
         },
       );
 
@@ -117,30 +109,89 @@ class AiService {
         final responseData = response.data;
         return responseData['choices'][0]['message']['content'];
       } else {
-        throw Exception('AI\u670D\u52A1\u8BF7\u6C42\u5931\u8D25');
+        throw Exception('AI服务请求失败');
       }
     } on DioException catch (e) {
-      String errorMsg = '\u7F51\u7EDC\u9519\u8BEF';
+      String errorMsg = '网络错误';
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.sendTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
-        errorMsg = '\u7F51\u7EDC\u8FDE\u63A5\u8D85\u65F6';
+        errorMsg = '网络连接超时';
       } else if (e.type == DioExceptionType.connectionError) {
-        errorMsg = '\u7F51\u7EDC\u8FDE\u63A5\u5931\u8D25';
+        errorMsg = '网络连接失败';
       }
       throw Exception(errorMsg);
     } catch (e) {
-      throw Exception('\u62A5\u544A\u751F\u6210\u5931\u8D25');
+      throw Exception('报告生成失败');
+    }
+  }
+
+  Future<String> generateAnnualReview(List<Map<String, dynamic>> records, String year, Map<String, int> moodStats) async {
+    try {
+      StringBuffer sb = StringBuffer();
+      sb.writeln('$year年年度记录：');
+      for (var record in records) {
+        DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
+        String dateStr = '${dt.year}年${dt.month}月${dt.day}日';
+        String mood = _moodLabel(record['mood']);
+        String content = record['content']?.toString() ?? '';
+        sb.writeln('$dateStr [$mood]: $content');
+      }
+      sb.writeln('心情统计：happy开心${moodStats['happy'] ?? 0}次，neutral平静${moodStats['neutral'] ?? 0}次，sad难过${moodStats['sad'] ?? 0}次，excited兴奋${moodStats['excited'] ?? 0}次');
+
+      final response = await _dio.post(
+        _baseUrl,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $_apiKey',
+          },
+        ),
+        data: {
+          'model': 'deepseek-chat',
+          'messages': [
+            {
+              'role': 'system',
+              'content': '你是一个温暖的生活助手，请根据用户的一年生活记录生成一份精美的年度回顾报告。语气温暖感人，像老朋友一样聊天。包含：1.年度整体概述 2.每个月的重要时刻 3.心情变化分析 4.对来年的展望。用中文回答，段落分明。'
+            },
+            {
+              'role': 'user',
+              'content': sb.toString()
+            }
+          ],
+          'temperature': 0.8,
+          'max_tokens': 1500
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+        return responseData['choices'][0]['message']['content'];
+      } else {
+        throw Exception('AI服务请求失败');
+      }
+    } on DioException catch (e) {
+      String errorMsg = '网络错误';
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        errorMsg = '网络连接超时';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMsg = '网络连接失败';
+      }
+      throw Exception(errorMsg);
+    } catch (e) {
+      throw Exception('年度报告生成失败');
     }
   }
 
   String _moodLabel(String? mood) {
     switch (mood) {
-      case 'happy': return '\u5F00\u5FC3';
-      case 'neutral': return '\u5E73\u9759';
-      case 'sad': return '\u96BE\u8FC7';
-      case 'excited': return '\u5174\u594B';
-      default: return '\u5E73\u9759';
+      case 'happy': return '开心';
+      case 'neutral': return '平静';
+      case 'sad': return '难过';
+      case 'excited': return '兴奋';
+      default: return '平静';
     }
   }
 }
