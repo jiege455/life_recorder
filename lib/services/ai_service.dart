@@ -1,12 +1,17 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 
 class AiService {
-  static final AiService instance = AiService._();
-  static const String _apiKey = 'sk-0d6bb31f5d9c4f8da83f2f5f0e2c2a8d';
-  static const String _baseUrl = 'https://api.deepseek.com/chat/completions';
-  final Dio _dio = Dio();
+  static const String _apiKey = 'sk-12dcf244168e445891d34b594b2fe799';
+  static const String _baseUrl = 'https://api.deepseek.com/v1/chat/completions';
 
-  AiService._();
+  final Dio _dio = Dio(BaseOptions(
+    connectTimeout: Duration(seconds: 15),
+    receiveTimeout: Duration(seconds: 30),
+    sendTimeout: Duration(seconds: 15),
+  ));
+
+  AiService();
 
   Future<List<String>> generateTags(String content) async {
     try {
@@ -22,25 +27,39 @@ class AiService {
           'model': 'deepseek-chat',
           'messages': [
             {
-              'role': 'system',
-              'content': '你是一个生活记录助手，根据用户的内容生成3-5个简短的中文标签，每个标签2-4个字，用逗号分隔，不要包含其他内容。例如：工作, 学习, 健康, 娱乐'
-            },
-            {
               'role': 'user',
-              'content': content
+              'content':
+                  '请为以下内容生成3个以内的中文标签，只返回JSON数组格式，例如["工作","会议"]。不要返回其他任何文字。内容：$content'
             }
           ],
-          'temperature': 0.8,
-          'max_tokens': 100
+          'temperature': 0.3
         },
       );
 
       if (response.statusCode == 200) {
         final responseData = response.data;
-        String tagsText = responseData['choices'][0]['message']['content'];
-        tagsText = tagsText.replaceAll(RegExp(r'[^\u4e00-\u9fa5a-zA-Z0-9,]'), '');
-        List<String> tags = tagsText.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-        return tags.take(5).toList();
+        String contentText = responseData['choices'][0]['message']['content'];
+        contentText = contentText.trim();
+
+        if (contentText.startsWith('```')) {
+          int firstNewline = contentText.indexOf('\n');
+          if (firstNewline != -1) {
+            contentText = contentText.substring(firstNewline + 1);
+          }
+        }
+        if (contentText.endsWith('```')) {
+          contentText = contentText.substring(0, contentText.length - 3);
+        }
+        contentText = contentText.trim();
+
+        int startIndex = contentText.indexOf('[');
+        int endIndex = contentText.lastIndexOf(']');
+        if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
+          contentText = contentText.substring(startIndex, endIndex + 1);
+        }
+
+        List<dynamic> decoded = jsonDecode(contentText);
+        return decoded.map((e) => e.toString()).toList();
       } else {
         throw Exception('AI服务请求失败');
       }
@@ -49,13 +68,13 @@ class AiService {
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.sendTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
-        errorMsg = '网络连接超时';
+        errorMsg = '网络连接超时，请检查网络';
       } else if (e.type == DioExceptionType.connectionError) {
-        errorMsg = '网络连接失败';
+        errorMsg = '网络连接失败，请检查网络';
       }
       throw Exception(errorMsg);
     } catch (e) {
-      throw Exception('标签生成失败');
+      throw Exception('标签解析失败');
     }
   }
 
@@ -68,16 +87,7 @@ class AiService {
         String dateStr = '${dt.month}月${dt.day}日';
         String mood = _moodLabel(record['mood']);
         String content = record['content']?.toString() ?? '';
-        String tagsStr = '';
-        if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
-          try {
-            List<dynamic> tags = jsonDecode(record['tags'].toString());
-            tagsStr = ' #${tags.join(' #')}';
-          } catch (e) {}
-        }
-        sb.writeln('$dateStr [$mood]$tagsStr');
-        sb.writeln(content);
-        sb.writeln('---');
+        sb.writeln('$dateStr [$mood]: $content');
       }
 
       final response = await _dio.post(
@@ -93,15 +103,15 @@ class AiService {
           'messages': [
             {
               'role': 'system',
-              'content': '你是一个温暖的生活助手，请根据用户的一周或一月生活记录生成一份简洁的生活报告。语气温暖友好，像朋友聊天一样。包含：1.整体感受 2.有趣的记录 3.小建议。用中文回答，段落分明，总字数控制在300字以内。'
+              'content': '你是一个温暖的生活助手，请根据用户的生活记录生成一份温馨的生活总结报告。语气亲切自然，像朋友一样聊天。包含：1.整体心情概括 2.重点事件回顾 3.生活建议。用中文回答。'
             },
             {
               'role': 'user',
               'content': sb.toString()
             }
           ],
-          'temperature': 0.8,
-          'max_tokens': 800
+          'temperature': 0.7,
+          'max_tokens': 1000
         },
       );
 

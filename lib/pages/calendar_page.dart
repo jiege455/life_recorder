@@ -189,7 +189,7 @@ class _CalendarPageState extends State<CalendarPage> {
       final isToday = DateTime.now().year == date.year &&
           DateTime.now().month == date.month &&
           DateTime.now().day == date.day;
-      final hasRecord = widget.recordCounts.containsKey(day);
+      final hasRecord = _recordCounts.containsKey(day);
 
       dayWidgets.add(
         GestureDetector(
