@@ -120,7 +120,7 @@ class DatabaseHelper {
     );
   }
 
-  Future<Map<String, dynamic>> getMoodStats() async {
+  Future<Map<String, int>> getMoodStats() async {
     final db = await database;
     final result = await db.rawQuery('SELECT mood, COUNT(*) as count FROM records GROUP BY mood');
     Map<String, int> stats = {};

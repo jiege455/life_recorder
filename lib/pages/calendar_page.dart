@@ -145,7 +145,7 @@ class _CalendarPageState extends State<CalendarPage> {
         ),
         headerStyle: HeaderStyle(
           formatButtonVisible: false,
-          titleCenterTitle: true,
+          titleCentered: true,
           titleTextStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A90E2)),
           leftChevronIcon: Icon(Icons.chevron_left, color: Color(0xFF4A90E2)),
           rightChevronIcon: Icon(Icons.chevron_right, color: Color(0xFF4A90E2)),
@@ -225,7 +225,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     Wrap(
                       spacing: 4,
                       runSpacing: 4,
-                      children: tags.take(3).asMap().entries.map((entry) =>
+                      children: tags.take(3).toList().asMap().entries.map((entry) =>
                         Chip(
                           label: Text(entry.value, style: TextStyle(fontSize: 10, color: Colors.white)),
                           backgroundColor: _getTagColor(entry.key),
