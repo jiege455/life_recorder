@@ -37,10 +37,10 @@ android {
                 keyAlias = System.getenv("KEY_ALIAS")
                 keyPassword = System.getenv("KEY_PASSWORD")
             } else {
-                storeFile = file("debug.keystore")
-                storePassword = "android"
-                keyAlias = "androiddebugkey"
-                keyPassword = "android"
+                storeFile = file("release.jks")
+                storePassword = "jiege2026"
+                keyAlias = "release"
+                keyPassword = "jiege2026"
             }
         }
     }
