@@ -2,67 +2,31 @@ import 'package:flutter/material.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: Text('隐私政策', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Color(0xFF4A90E2),
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('AI人生记录器隐私政策', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A90E2))),
-              SizedBox(height: 8),
-              Text('更新日期：2026年4月9日', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-              Text('生效日期：2026年4月9日', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-              SizedBox(height: 20),
-              _buildSection('一、我们收集的信息', 'AI人生记录器尊重并保护您的个人隐私。我们收集的信息如下：\n\n1. 您主动输入的内容：包括文字记录、心情选择、自定义标签等。\n2. 您主动上传的图片：您选择拍照或从相册选取的图片。\n3. 语音数据：当您使用语音输入功能时，语音数据将发送至讯飞语音识别服务进行文字转换，我们不会存储您的语音录音。\n4. 设备信息：应用仅在本地运行，不主动收集设备标识符等信息。'),
-              _buildSection('二、信息存储方式', '1. 所有记录数据（文字、心情、标签、图片路径）均存储在您的设备本地SQLite数据库中。\n2. 图片文件存储在您的设备应用文档目录中。\n3. 我们不设有中央服务器存储您的个人数据。\n4. 您可以随时通过应用的"导出数据"功能备份，或通过"清除所有数据"功能删除全部数据。'),
-              _buildSection('三、信息使用目的', '1. 为您提供生活记录、心情追踪等核心功能。\n2. 使用DeepSeek AI服务为您自动生成标签和报告。\n3. 使用讯飞语音识别服务将您的语音转换为文字。'),
-              _buildSection('四、第三方服务', '本应用使用以下第三方服务：\n\n1. DeepSeek AI（深度求索）\n   - 用途：AI标签生成、AI周报/月报生成、年度回顾\n   - 数据传输：您输入的文字内容会通过加密连接发送至DeepSeek服务器\n   - 隐私政策：https://www.deepseek.com/privacy\n\n2. 讯飞语音识别（科大讯飞）\n   - 用途：语音转文字功能\n   - 数据传输：语音数据通过加密连接发送至讯飞服务器\n   - 隐私政策：https://www.xfyun.cn/doc/policy/yinsi.html\n\n我们不会将您的数据出售或分享给其他第三方。'),
-              _buildSection('五、权限说明', '本应用申请以下权限：\n\n1. 麦克风权限：用于语音输入记录\n2. 相机权限：用于拍照记录\n3. 相册权限：用于选择图片记录\n4. 生物识别权限：用于隐私锁功能\n5. 通知权限：用于每日提醒功能\n6. 存储权限：用于数据备份与恢复\n\n所有权限仅在您主动使用相关功能时请求，您可以随时在系统设置中关闭。'),
-              _buildSection('六、数据安全', '1. 所有本地数据存储在应用沙盒中，其他应用无法访问。\n2. 网络传输均使用HTTPS加密。\n3. 提供隐私锁功能（指纹/Face ID）保护您的数据。\n4. 建议您定期使用数据导出功能进行备份。'),
-              _buildSection('七、您的权利', '1. 查看权：您可以随时查看所有记录数据。\n2. 导出权：您可以通过"导出数据"功能导出全部数据。\n3. 删除权：您可以删除单条记录，或通过"清除所有数据"功能删除全部数据。\n4. 撤回同意权：您可以随时在系统设置中关闭已授予的权限。'),
-              _buildSection('八、未成年人保护', '我们高度重视对未成年人个人信息的保护。若您是未满14周岁的未成年人，请在监护人的陪同和指导下使用本应用。'),
-              _buildSection('九、隐私政策更新', '我们可能会适时修订本隐私政策。政策更新后，我们会在应用内通知您。若您在政策更新后继续使用本应用，即视为您同意受修订后的隐私政策约束。'),
-              _buildSection('十、联系我们', '如果您对本隐私政策有任何疑问、意见或建议，请通过以下方式联系我们：\n\n开发者：杰哥网络科技\nQQ：2711793818'),
-            ],
-          ),
-        ),
-      ),
+      appBar: AppBar(title: Text('\u9690\u79C1\u653F\u7B56', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), backgroundColor: primaryColor, elevation: 0, centerTitle: true, leading: IconButton(icon: Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context))),
+      body: SingleChildScrollView(padding: EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _buildSection(context, '\u4E00\u3001\u5F15\u8A00', '\u6B22\u8FCE\u4F7F\u7528 AI \u4EBA\u751F\u8BB0\u5F55\u5668\uFF08\u4EE5\u4E0B\u7B80\u79F0\u201C\u672C\u5E94\u7528\u201D\uFF09\u3002\u6211\u4EEC\u975E\u5E38\u91CD\u89C6\u60A8\u7684\u9690\u79C1\u4FDD\u62A4\u3002\u672C\u9690\u79C1\u653F\u7B56\u8BF4\u660E\u6211\u4EEC\u5982\u4F55\u6536\u96C6\u3001\u4F7F\u7528\u3001\u5B58\u50A8\u548C\u4FDD\u62A4\u60A8\u7684\u4E2A\u4EBA\u4FE1\u606F\u3002\u8BF7\u60A8\u5728\u4F7F\u7528\u672C\u5E94\u7528\u524D\uFF0C\u4ED4\u7EC6\u9605\u8BFB\u5E76\u4E86\u89E3\u672C\u9690\u79C1\u653F\u7B56\u3002'),
+        _buildSection(context, '\u4E8C\u3001\u4FE1\u606F\u6536\u96C6', '1. \u60A8\u4E3B\u52A8\u63D0\u4F9B\u7684\u4FE1\u606F\uFF1A\n- \u60A8\u8BB0\u5F55\u7684\u65E5\u8BB0\u5185\u5BB9\n- \u60A8\u9009\u62E9\u7684\u5FC3\u60C5\u6807\u7B7E\n- \u60A8\u4E0A\u4F20\u7684\u56FE\u7247\n- \u60A8\u8BBE\u7F6E\u7684\u63D0\u9192\u65F6\u95F4\n- \u60A8\u81EA\u5B9A\u4E49\u7684\u6807\u7B7E\n\n2. \u81EA\u52A8\u6536\u96C6\u7684\u4FE1\u606F\uFF1A\n- \u8BBE\u5907\u4FE1\u606F\n- \u4F7F\u7528\u4E60\u60EF\u6570\u636E'),
+        _buildSection(context, '\u4E09\u3001\u4FE1\u606F\u4F7F\u7528', '\u6211\u4EEC\u4F7F\u7528\u6536\u96C6\u7684\u4FE1\u606F\u7528\u4E8E\uFF1A\n- \u63D0\u4F9B\u65E5\u8BB0\u8BB0\u5F55\u529F\u80FD\n- \u751F\u6210\u7EDF\u8BA1\u62A5\u544A\u548C AI \u5206\u6790\n- \u63D0\u4F9B\u65E5\u5386\u89C6\u56FE\n- \u53D1\u9001\u63D0\u9192\u901A\u77E5\n- \u6539\u8FDB\u7528\u6237\u4F53\u9A8C'),
+        _buildSection(context, '\u56DB\u3001\u4FE1\u606F\u5B58\u50A8', '1. \u672C\u5730\u5B58\u50A8\uFF1A\u6240\u6709\u6570\u636E\u4E3B\u8981\u5B58\u50A8\u5728\u60A8\u8BBE\u5907\u7684\u672C\u5730\u6570\u636E\u5E93\u4E2D\n2. \u5907\u4EFD\u5B58\u50A8\uFF1A\u5F53\u60A8\u4F7F\u7528\u5907\u4EFD\u529F\u80FD\u65F6\uFF0C\u6570\u636E\u4F1A\u52A0\u5BC6\u5B58\u50A8\n3. \u6211\u4EEC\u4E0D\u4F1A\u5C06\u60A8\u7684\u6570\u636E\u4E0A\u4F20\u5230\u6211\u4EEC\u7684\u670D\u52A1\u5668'),
+        _buildSection(context, '\u4E94\u3001\u4FE1\u606F\u4FDD\u62A4', '\u6211\u4EEC\u91C7\u53D6\u4EE5\u4E0B\u63AA\u65BD\u4FDD\u62A4\u60A8\u7684\u4FE1\u606F\u5B89\u5168\uFF1A\n- \u6570\u636E\u52A0\u5BC6\u5B58\u50A8\n- \u652F\u6301\u5BC6\u7801/\u751F\u7269\u8BC6\u522B\u9501\n- \u4E0D\u5411\u7B2C\u4E09\u65B9\u5171\u4EAB\u6570\u636E\n- \u5B9A\u671F\u5B89\u5168\u66F4\u65B0'),
+        _buildSection(context, '\u516D\u3001\u6743\u9650\u8BF4\u660E', '\u672C\u5E94\u7528\u53EF\u80FD\u9700\u8981\u4EE5\u4E0B\u6743\u9650\uFF1A\n- \u5B58\u50A8\u6743\u9650\uFF1A\u7528\u4E8E\u4FDD\u5B58\u56FE\u7247\n- \u76F8\u673A\u6743\u9650\uFF1A\u7528\u4E8E\u62CD\u7167\n- \u901A\u77E5\u6743\u9650\uFF1A\u7528\u4E8E\u53D1\u9001\u63D0\u9192\n- \u7F51\u7EDC\u6743\u9650\uFF1A\u7528\u4E8E AI \u529F\u80FD'),
+        _buildSection(context, '\u4E03\u3001\u7B2C\u4E09\u65B9\u670D\u52A1', '\u672C\u5E94\u7528\u96C6\u6210\u4E86\u4EE5\u4E0B\u7B2C\u4E09\u65B9\u670D\u52A1\uFF1A\n- DeepSeek AI\uFF1A\u7528\u4E8E\u751F\u6210\u667A\u80FD\u6807\u7B7E\u548C\u62A5\u544A\n- \u8BAF\u98DE\u8BED\u97F3\uFF1A\u7528\u4E8E\u8BED\u97F3\u8F93\u5165\n- \u8FD9\u4E9B\u670D\u52A1\u6709\u5176\u72EC\u7ACB\u7684\u9690\u79C1\u653F\u7B56'),
+        _buildSection(context, '\u516B\u3001\u9690\u79C1\u653F\u7B56\u66F4\u65B0', '\u6211\u4EEC\u53EF\u80FD\u4F1A\u4E0D\u65F6\u66F4\u65B0\u672C\u9690\u79C1\u653F\u7B56\u3002\u66F4\u65B0\u540E\u7684\u653F\u7B56\u5C06\u5728\u5E94\u7528\u5185\u53D1\u5E03\uFF0C\u5EFA\u8BAE\u60A8\u5B9A\u671F\u67E5\u770B\u3002'),
+        _buildSection(context, '\u4E5D\u3001\u8054\u7CFB\u6211\u4EEC', '\u5982\u60A8\u5BF9\u672C\u9690\u79C1\u653F\u7B56\u6709\u4EFB\u4F55\u7591\u95EE\u6216\u5EFA\u8BAE\uFF0C\u8BF7\u8054\u7CFB\uFF1A\n\n\u5F00\u53D1\u8005\uFF1A\u6770\u54E5\u7F51\u7EDC\u79D1\u6280\n\u8054\u7CFB\u65B9\u5F0F\uFF1AQQ 2711793818'),
+        SizedBox(height: 20), Text('\u6700\u540E\u66F4\u65B0\u65E5\u671F\uFF1A2026 \u5E74 1 \u6708', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+      ])),
     );
   }
 
-  Widget _buildSection(String title, String content) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[800])),
-          SizedBox(height: 8),
-          Text(content, style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.8)),
-        ],
-      ),
-    );
+  Widget _buildSection(BuildContext context, String title, String content) {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final primaryColor = theme.colorScheme.primary;
+    return Container(width: double.infinity, margin: EdgeInsets.only(bottom: 16), padding: EdgeInsets.all(16), decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor)), SizedBox(height: 8), Text(content, style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface, height: 1.6))]));
   }
 }
