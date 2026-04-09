@@ -129,6 +129,9 @@ class _CalendarPageState extends State<CalendarPage> {
           _loadDayRecords(selectedDay);
         },
         eventLoader: _getEventsForDay,
+        calendarFormat: CalendarFormat.month,
+        availableCalendarFormats: {CalendarFormat.month: '月'},
+        locale: 'zh_CN',
         calendarStyle: CalendarStyle(
           outsideDaysVisible: false,
           selectedDecoration: BoxDecoration(

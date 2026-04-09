@@ -41,13 +41,16 @@ class LockService {
       final isSupported = await isDeviceSupported();
       if (!isSupported) return false;
       return await _localAuth.authenticate(
-        localizedReason: '请验证身份以确认操作',
+        localizedReason: '请验证身份以进入应用',
         options: const AuthenticationOptions(
-          stickyAuth: true,
+          stickyAuth: false,
           biometricOnly: false,
         ),
-      ).timeout(Duration(seconds: 15), onTimeout: () => false);
-    } on PlatformException {
+      ).timeout(Duration(seconds: 30), onTimeout: () => false);
+    } on PlatformException catch (e) {
+      if (e.code == 'auth_in_progress' || e.code == 'locked_out') {
+        await Future.delayed(Duration(seconds: 2));
+      }
       return false;
     }
   }
@@ -67,5 +70,12 @@ class LockService {
     if (_lockEnabled) {
       _isLocked = true;
     }
+  }
+
+  Future<void> disableLock() async {
+    _lockEnabled = false;
+    _isLocked = false;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_lockKey, false);
   }
 }
