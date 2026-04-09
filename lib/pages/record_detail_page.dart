@@ -578,6 +578,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
   }
 
   Widget _buildEditMode() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

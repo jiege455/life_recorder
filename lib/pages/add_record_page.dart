@@ -487,6 +487,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildMoodSelector() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -609,6 +610,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildAITagSection() {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(16),
