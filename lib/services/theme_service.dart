@@ -64,6 +64,27 @@ class ThemeService extends ChangeNotifier {
       primary: Color(0xFF4A90E2),
       surface: Colors.white,
       onSurface: Colors.black87,
+      onSurfaceVariant: Colors.grey[600]!,
+    ),
+    textTheme: TextTheme(
+      bodyLarge: TextStyle(color: Colors.black87),
+      bodyMedium: TextStyle(color: Colors.black87),
+      bodySmall: TextStyle(color: Colors.grey[600]),
+      titleLarge: TextStyle(color: Colors.black87),
+      titleMedium: TextStyle(color: Colors.black87),
+      titleSmall: TextStyle(color: Colors.grey[700]),
+      labelLarge: TextStyle(color: Colors.black87),
+      labelMedium: TextStyle(color: Colors.grey[600]),
+      labelSmall: TextStyle(color: Colors.grey[500]),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: Colors.white,
+      selectedColor: Color(0xFF4A90E2).withOpacity(0.2),
+    ),
+    dividerColor: Colors.grey[200],
+    dividerTheme: DividerThemeData(color: Colors.grey[200]),
+    listTileTheme: ListTileThemeData(
+      textColor: Colors.black87,
     ),
   );
 
@@ -71,28 +92,61 @@ class ThemeService extends ChangeNotifier {
     primarySwatch: Colors.blue,
     useMaterial3: true,
     brightness: Brightness.dark,
-    scaffoldBackgroundColor: Color(0xFF1A1A2E),
+    scaffoldBackgroundColor: Color(0xFF121212),
     appBarTheme: AppBarTheme(
-      backgroundColor: Color(0xFF16213E),
+      backgroundColor: Color(0xFF1E1E2E),
       foregroundColor: Colors.white,
       elevation: 0,
     ),
     cardTheme: CardThemeData(
       elevation: 0,
-      color: Color(0xFF16213E),
+      color: Color(0xFF1E1E2E),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      backgroundColor: Color(0xFF16213E),
-      selectedItemColor: Color(0xFF4A90E2),
-      unselectedItemColor: Colors.grey,
+      backgroundColor: Color(0xFF1E1E2E),
+      selectedItemColor: Color(0xFF6DB3F2),
+      unselectedItemColor: Colors.grey[500],
     ),
     colorScheme: ColorScheme.dark(
-      primary: Color(0xFF4A90E2),
-      surface: Color(0xFF16213E),
-      onSurface: Colors.white70,
+      primary: Color(0xFF6DB3F2),
+      surface: Color(0xFF1E1E2E),
+      onSurface: Colors.white,
+      onSurfaceVariant: Colors.grey[400]!,
+    ),
+    textTheme: TextTheme(
+      bodyLarge: TextStyle(color: Colors.white),
+      bodyMedium: TextStyle(color: Colors.white),
+      bodySmall: TextStyle(color: Colors.grey[400]),
+      titleLarge: TextStyle(color: Colors.white),
+      titleMedium: TextStyle(color: Colors.white),
+      titleSmall: TextStyle(color: Colors.grey[300]),
+      labelLarge: TextStyle(color: Colors.white),
+      labelMedium: TextStyle(color: Colors.grey[400]),
+      labelSmall: TextStyle(color: Colors.grey[500]),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: Color(0xFF2A2A3E),
+      selectedColor: Color(0xFF6DB3F2).withOpacity(0.2),
+    ),
+    dividerColor: Colors.grey[700],
+    dividerTheme: DividerThemeData(color: Colors.grey[700]),
+    listTileTheme: ListTileThemeData(
+      textColor: Colors.white,
+    ),
+    dialogBackgroundColor: Color(0xFF1E1E2E),
+    popupMenuTheme: PopupMenuThemeData(color: Color(0xFF1E1E2E)),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return Color(0xFF6DB3F2);
+        return Colors.grey[600];
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return Color(0xFF6DB3F2).withOpacity(0.5);
+        return Colors.grey[700];
+      }),
     ),
   );
 }

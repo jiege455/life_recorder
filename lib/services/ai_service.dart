@@ -15,6 +15,9 @@ class AiService {
   AiService();
 
   Future<List<String>> generateTags(String content) async {
+    if (!ApiConfig.isDeepseekConfigured) {
+      throw Exception('DeepSeek API密钥未配置，请在编译时通过 --dart-define 设置 DEEPSEEK_API_KEY');
+    }
     try {
       final response = await _dio.post(
         _baseUrl,
@@ -29,8 +32,7 @@ class AiService {
           'messages': [
             {
               'role': 'user',
-              'content':
-                  '请为以下内容生成3个以内的中文标签，只返回JSON数组格式，例如["工作","会议"]。不要返回其他任何文字。内容：$content'
+              'content': '请为以下内容生成3个以内的中文标签，只返回JSON数组格式，例如["\u5DE5\u4F5C","\u4F1A\u8BAE"]。不要返回其他任何文字。内容：$content'
             }
           ],
           'temperature': 0.3
@@ -80,6 +82,9 @@ class AiService {
   }
 
   Future<String> generateReport(List<Map<String, dynamic>> records, String period) async {
+    if (!ApiConfig.isDeepseekConfigured) {
+      throw Exception('DeepSeek API密钥未配置');
+    }
     try {
       StringBuffer sb = StringBuffer();
       sb.writeln('$period生活记录：');
@@ -93,26 +98,14 @@ class AiService {
 
       final response = await _dio.post(
         _baseUrl,
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $_apiKey',
-          },
-        ),
+        options: Options(headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $_apiKey'}),
         data: {
           'model': 'deepseek-chat',
           'messages': [
-            {
-              'role': 'system',
-              'content': '你是一个温暖的生活助手，请根据用户的生活记录生成一份温馨的生活总结报告。语气亲切自然，像朋友一样聊天。包含：1.整体心情概括 2.重点事件回顾 3.生活建议。用中文回答。'
-            },
-            {
-              'role': 'user',
-              'content': sb.toString()
-            }
+            {'role': 'system', 'content': '你是一个温暖的生活助手，请根据用户的生活记录生成一份温馨的生活总结报告。语气亲切自然，像朋友一样聊天。包含：1.整体心情概括 2.重点事件回顾 3.生活建议。用中文回答。'},
+            {'role': 'user', 'content': sb.toString()}
           ],
-          'temperature': 0.7,
-          'max_tokens': 1000
+          'temperature': 0.7, 'max_tokens': 1000
         },
       );
 
@@ -124,20 +117,13 @@ class AiService {
       }
     } on DioException catch (e) {
       String errorMsg = '网络错误';
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.sendTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        errorMsg = '网络连接超时';
-      } else if (e.type == DioExceptionType.connectionError) {
-        errorMsg = '网络连接失败';
-      }
+      if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.sendTimeout || e.type == DioExceptionType.receiveTimeout) { errorMsg = '网络连接超时'; } else if (e.type == DioExceptionType.connectionError) { errorMsg = '网络连接失败'; }
       throw Exception(errorMsg);
-    } catch (e) {
-      throw Exception('报告生成失败');
-    }
+    } catch (e) { throw Exception('报告生成失败'); }
   }
 
   Future<String> generateAnnualReview(List<Map<String, dynamic>> records, String year, Map<String, int> moodStats) async {
+    if (!ApiConfig.isDeepseekConfigured) { throw Exception('DeepSeek API密钥未配置'); }
     try {
       StringBuffer sb = StringBuffer();
       sb.writeln('$year年年度记录：');
@@ -152,48 +138,26 @@ class AiService {
 
       final response = await _dio.post(
         _baseUrl,
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $_apiKey',
-          },
-        ),
+        options: Options(headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $_apiKey'}),
         data: {
           'model': 'deepseek-chat',
           'messages': [
-            {
-              'role': 'system',
-              'content': '你是一个温暖的生活助手，请根据用户的一年生活记录生成一份精美的年度回顾报告。语气温暖感人，像老朋友一样聊天。包含：1.年度整体概述 2.每个月的重要时刻 3.心情变化分析 4.对来年的展望。用中文回答，段落分明。'
-            },
-            {
-              'role': 'user',
-              'content': sb.toString()
-            }
+            {'role': 'system', 'content': '你是一个温暖的生活助手，请根据用户的一年生活记录生成一份精美的年度回顾报告。语气温暖感人，像老朋友一样聊天。包含：1.年度整体概述 2.每个月的重要时刻 3.心情变化分析 4.对来年的展望。用中文回答，段落分明。'},
+            {'role': 'user', 'content': sb.toString()}
           ],
-          'temperature': 0.8,
-          'max_tokens': 1500
+          'temperature': 0.8, 'max_tokens': 1500
         },
       );
 
       if (response.statusCode == 200) {
         final responseData = response.data;
         return responseData['choices'][0]['message']['content'];
-      } else {
-        throw Exception('AI服务请求失败');
-      }
+      } else { throw Exception('AI服务请求失败'); }
     } on DioException catch (e) {
       String errorMsg = '网络错误';
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.sendTimeout ||
-          e.type == DioExceptionType.receiveTimeout) {
-        errorMsg = '网络连接超时';
-      } else if (e.type == DioExceptionType.connectionError) {
-        errorMsg = '网络连接失败';
-      }
+      if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.sendTimeout || e.type == DioExceptionType.receiveTimeout) { errorMsg = '网络连接超时'; } else if (e.type == DioExceptionType.connectionError) { errorMsg = '网络连接失败'; }
       throw Exception(errorMsg);
-    } catch (e) {
-      throw Exception('年度报告生成失败');
-    }
+    } catch (e) { throw Exception('年度报告生成失败'); }
   }
 
   String _moodLabel(String? mood) {
