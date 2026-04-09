@@ -232,7 +232,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             children: [
               Icon(Icons.image, size: 18, color: theme.colorScheme.primary),
               SizedBox(width: 8),
-              Text('图片', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+              Text('图片', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
             ],
           ),
           SizedBox(height: 12),
@@ -379,7 +379,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddRecordPage(editMode: true, recordId: widget.recordId),
+        builder: (context) => const AddRecordPage(),
       ),
     );
     if (result == true) {
