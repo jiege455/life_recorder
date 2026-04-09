@@ -45,7 +45,7 @@ class LockService {
       final isSupported = await isDeviceSupported();
       if (!isSupported) return false;
       return await _localAuth.authenticate(
-        localizedReason: '\u8BF7\u9A8C\u8BC1\u8EAB\u4EFD\u4EE5\u8FDB\u5165\u5E94\u7528',
+        localizedReason: '请验证身份以进入应用',
         options: const AuthenticationOptions(
           stickyAuth: false,
           biometricOnly: true,
@@ -75,66 +75,14 @@ class LockService {
     return pin == savedPin;
   }
 
-  void showLockScreen(BuildContext context, {required VoidCallback onUnlocked}) {
-    if (!_lockEnabled) {
-      onUnlocked();
-      return;
-    }
-
-    getSavedPin().then((savedPin) {
-      if (savedPin == null || savedPin.isEmpty) {
-        onUnlocked();
-        return;
-      }
-
-      screenLock(
-        context: context,
-        correctString: savedPin,
-        canCancel: false,
-        useBlur: false,
-        title: const Text('\u8F93\u5165 PIN \u7801\u89E3\u9501'),
-        config: ScreenLockConfig(
-          backgroundColor: const Color(0xFF16213E),
-        ),
-        secretsConfig: SecretsConfig(
-          spacing: 16,
-          padding: const EdgeInsets.all(16),
-        ),
-        keyPadConfig: KeyPadConfig(
-          buttonConfig: KeyPadButtonConfig(
-            buttonStyle: OutlinedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-              foregroundColor: Colors.white,
-              side: const BorderSide(color: Colors.white24),
-            ),
-          ),
-        ),
-        customizedButtonChild: const Icon(Icons.fingerprint, color: Colors.white),
-        customizedButtonTap: () async {
-          final success = await authenticateWithBiometrics();
-          if (success && context.mounted) {
-            Navigator.of(context).pop();
-            unlock();
-            onUnlocked();
-          }
-        },
-        onUnlocked: () {
-          unlock();
-          onUnlocked();
-        },
-        onError: (value) {},
-      );
-    });
-  }
-
   void showCreatePinScreen(BuildContext context, {required VoidCallback onConfirmed}) {
     screenLockCreate(
       context: context,
       digits: 4,
       canCancel: true,
       useBlur: false,
-      title: const Text('\u8BBE\u7F6E PIN \u7801'),
-      confirmTitle: const Text('\u786E\u8BA4 PIN \u7801'),
+      title: const Text('设置 PIN 码'),
+      confirmTitle: const Text('确认 PIN 码'),
       config: ScreenLockConfig(
         backgroundColor: const Color(0xFF16213E),
       ),
