@@ -1,4 +1,4 @@
-﻿﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -401,7 +401,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     
     if (_record == null) {
       return Scaffold(
-        appBar: AppBar(backgroundColor: theme.colorScheme.primary)),
+        appBar: AppBar(backgroundColor: theme.colorScheme.primary),
         body: Center(child: CircularProgressIndicator()),
       );
     }

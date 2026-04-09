@@ -365,6 +365,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildContentInput() {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
