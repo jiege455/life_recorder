@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_screen_lock/flutter_screen_lock.dart';
 import 'package:local_auth/local_auth.dart';
 
 class LockService {
@@ -65,51 +64,90 @@ class LockService {
       return;
     }
 
-    String? enteredPin;
-    
-    ScreenLock(
-      correctString: '',
-      title: '输入 PIN 码',
-      customizedButtonChild: const Icon(Icons.fingerprint),
-      customizedButtonTap: () async {
-        final success = await authenticateWithBiometrics();
-        if (success && context.mounted) {
-          Navigator.of(context).pop(true);
-        }
-      },
-      onConfirmed: (pin) async {
-        enteredPin = pin;
-        final prefs = await SharedPreferences.getInstance();
-        final savedPin = prefs.getString(_pinKey);
+    // 使用简单的对话框作为 PIN 码输入界面
+    _showSimplePinDialog(context, onUnlocked);
+  }
 
-        if (savedPin == null || savedPin.isEmpty) {
-          // 首次设置 PIN
-          await prefs.setString(_pinKey, pin);
-          if (context.mounted) {
-            Navigator.of(context).pop(true);
-          }
-          return true;
-        } else if (pin == savedPin) {
-          // 验证成功
-          if (context.mounted) {
-            Navigator.of(context).pop(true);
-          }
-          return true;
-        } else {
-          // PIN 错误
-          return false;
-        }
-      },
-      footer: TextButton(
-        onPressed: () => _showResetDialog(context),
-        child: const Text('忘记密码？'),
+  Future<void> _showSimplePinDialog(BuildContext context, VoidCallback onUnlocked) async {
+    String pin = '';
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('输入 PIN 码'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: InputDecoration(
+                hintText: '请输入 4-6 位数字',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => pin = value,
+            ),
+            SizedBox(height: 8),
+            IconButton(
+              icon: Icon(Icons.fingerprint),
+              onPressed: () async {
+                final success = await authenticateWithBiometrics();
+                if (success && context.mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => _validateAndUnlock(context, pin, onUnlocked),
+            child: Text('确认'),
+          ),
+        ],
       ),
-    ).show(context).then((value) {
+    ).then((value) {
       if (value == true) {
         unlock();
         onUnlocked();
       }
     });
+  }
+
+  Future<void> _validateAndUnlock(BuildContext context, String pin, VoidCallback onUnlocked) async {
+    if (pin.isEmpty || pin.length < 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PIN 码至少需要 4 位数字')),
+      );
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final savedPin = prefs.getString(_pinKey);
+
+    if (savedPin == null || savedPin.isEmpty) {
+      // 首次设置 PIN
+      await prefs.setString(_pinKey, pin);
+      if (context.mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } else if (pin == savedPin) {
+      // 验证成功
+      if (context.mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } else {
+      // PIN 错误
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PIN 码错误，请重新输入')),
+      );
+    }
   }
 
   Future<void> _showResetDialog(BuildContext context) async {
