@@ -25,6 +25,9 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
+          # Ensure android/app directory exists
+          mkdir -p android/app
+          
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "Using keystore from Secrets"
             echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
