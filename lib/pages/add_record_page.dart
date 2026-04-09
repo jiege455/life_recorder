@@ -11,7 +11,20 @@ import '../services/speech_service.dart';
 import '../services/tag_service.dart';
 
 class AddRecordPage extends StatefulWidget {
-  const AddRecordPage({super.key});
+  final int? editRecordId;
+  final String editContent;
+  final String editMood;
+  final List<String> editTags;
+  final List<String> editImages;
+
+  const AddRecordPage({
+    super.key,
+    this.editRecordId,
+    this.editContent = '',
+    this.editMood = 'neutral',
+    this.editTags = const [],
+    this.editImages = const [],
+  });
 
   @override
   State<AddRecordPage> createState() => _AddRecordPageState();
@@ -32,18 +45,25 @@ class _AddRecordPageState extends State<AddRecordPage> {
   List<String> _generatedTags = [];
   List<String> _selectedImages = [];
   List<String> _customTags = [];
+  bool get _isEditMode => widget.editRecordId != null;
 
   List<Map<String, dynamic>> _moods = [
-    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '开心'},
-    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '平静'},
-    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '难过'},
-    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '兴奋'},
+    {'value': 'happy', 'emoji': '☺', 'label': '开心'},
+    {'value': 'neutral', 'emoji': '☹', 'label': '平静'},
+    {'value': 'sad', 'emoji': '☺', 'label': '难过'},
+    {'value': 'excited', 'emoji': '♥', 'label': '兴奋'},
   ];
 
   @override
   void initState() {
     super.initState();
     _loadCustomTags();
+    if (_isEditMode) {
+      _contentController.text = widget.editContent;
+      _selectedMood = widget.editMood;
+      _generatedTags = List.from(widget.editTags);
+      _selectedImages = List.from(widget.editImages);
+    }
   }
 
   void _loadCustomTags() {
@@ -145,9 +165,16 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   void _removeImage(int index) {
+    final imagePath = _selectedImages[index];
     setState(() {
       _selectedImages.removeAt(index);
     });
+    try {
+      final file = File(imagePath);
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
+    } catch (e) {}
   }
 
   void _showImageSourceDialog() {
@@ -163,14 +190,14 @@ class _AddRecordPageState extends State<AddRecordPage> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             SizedBox(height: 20),
-            Text('添加图片', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('添加图片', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             SizedBox(height: 8),
-            Text('应用需要访问相机或相册权限来添加图片', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+            Text('应用需要访问相机或相册权限来添加图片', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -204,7 +231,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             child: Icon(icon, color: Color(0xFF4A90E2), size: 28),
           ),
           SizedBox(height: 8),
-          Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+          Text(label, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -287,13 +314,22 @@ class _AddRecordPageState extends State<AddRecordPage> {
         }
       }
 
-      await _dbHelper.insertRecord({
-        'content': _contentController.text.trim(),
-        'mood': _selectedMood,
-        'tags': jsonEncode(tags),
-        'images': jsonEncode(_selectedImages),
-        'created_at': DateTime.now().millisecondsSinceEpoch,
-      });
+      if (_isEditMode) {
+        await _dbHelper.updateRecord(widget.editRecordId!, {
+          'content': _contentController.text.trim(),
+          'mood': _selectedMood,
+          'tags': jsonEncode(tags),
+          'images': jsonEncode(_selectedImages),
+        });
+      } else {
+        await _dbHelper.insertRecord({
+          'content': _contentController.text.trim(),
+          'mood': _selectedMood,
+          'tags': jsonEncode(tags),
+          'images': jsonEncode(_selectedImages),
+          'created_at': DateTime.now().millisecondsSinceEpoch,
+        });
+      }
 
       if (mounted) {
         Navigator.pop(context, true);
@@ -329,13 +365,12 @@ class _AddRecordPageState extends State<AddRecordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
         title: Text(
-          '添加记录',
+          _isEditMode ? '编辑记录' : '添加记录',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Color(0xFF4A90E2),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
@@ -366,9 +401,10 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildContentInput() {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -383,7 +419,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         maxLines: 6,
         decoration: InputDecoration(
           hintText: '今天发生了什么？',
-          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
+          hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5), fontSize: 16),
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(20),
         ),
@@ -393,9 +429,10 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildImageSection() {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -413,7 +450,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             children: [
               Icon(Icons.image, color: Color(0xFF4A90E2), size: 20),
               SizedBox(width: 8),
-              Text('添加图片', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[800])),
+              Text('添加图片', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
               Spacer(),
               TextButton.icon(
                 onPressed: _showImageSourceDialog,
@@ -444,7 +481,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                         margin: EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          color: Colors.grey[200],
+                          color: theme.colorScheme.surfaceContainerHighest,
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
@@ -452,7 +489,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                             File(_selectedImages[index]),
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              return Icon(Icons.image, color: Colors.grey[400], size: 40);
+                              return Icon(Icons.image, color: theme.colorScheme.onSurfaceVariant, size: 40);
                             },
                           ),
                         ),
@@ -479,7 +516,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             ),
           ] else ...[
             SizedBox(height: 8),
-            Text('点击添加图片，记录图文并茂的生活', style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+            Text('点击添加图片，记录图文并茂的生活', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
           ],
         ],
       ),
@@ -487,6 +524,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildMoodSelector() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -496,7 +534,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
               style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[700])),
+                  color: theme.colorScheme.onSurfaceVariant),
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -512,16 +550,16 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 duration: Duration(milliseconds: 200),
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? Color(0xFF4A90E2) : Colors.white,
+                  color: isSelected ? theme.colorScheme.primary : theme.cardColor,
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(
-                    color: isSelected ? Color(0xFF4A90E2) : Colors.grey[300]!,
+                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
                     width: 2,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: Color(0xFF4A90E2).withOpacity(0.3),
+                            color: theme.colorScheme.primary.withOpacity(0.3),
                             blurRadius: 8,
                             offset: Offset(0, 4),
                           )
@@ -536,7 +574,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                     Text(mood['label'],
                         style: TextStyle(
                             fontSize: 13,
-                            color: isSelected ? Colors.white : Colors.grey[600],
+                            color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
                             fontWeight:
                                 isSelected ? FontWeight.bold : FontWeight.normal)),
                   ],
@@ -550,6 +588,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildVoiceButton() {
+    final theme = Theme.of(context);
     return Column(
       children: [
         Center(
@@ -589,7 +628,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                   : Icon(
                       _isListening ? Icons.mic : Icons.mic_none,
                       size: 28,
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                     ),
             ),
           ),
@@ -600,7 +639,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             _isRecognizing ? '正在识别...' : '按住说话（需麦克风权限）',
             style: TextStyle(
               fontSize: 13,
-              color: _isRecognizing ? Colors.orange : Colors.grey[500],
+              color: _isRecognizing ? Colors.orange : theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -609,11 +648,12 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Widget _buildAITagSection() {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -634,7 +674,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[800])),
+                      color: theme.colorScheme.onSurfaceVariant)),
               Spacer(),
               _isGeneratingTags
                   ? SizedBox(
@@ -657,7 +697,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
           ),
           if (_customTags.isNotEmpty) ...[
             SizedBox(height: 8),
-            Text('常用标签：', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+            Text('常用标签：', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
             SizedBox(height: 4),
             Wrap(
               spacing: 6,
@@ -667,8 +707,8 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 return GestureDetector(
                   onTap: isSelected ? null : () => _addCustomTag(tag),
                   child: Chip(
-                    label: Text(tag, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : Colors.grey[700])),
-                    backgroundColor: isSelected ? Colors.grey[400] : Colors.grey[100],
+                    label: Text(tag, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : theme.colorScheme.onSurface)),
+                    backgroundColor: isSelected ? theme.colorScheme.primary.withOpacity(0.2) : theme.colorScheme.surfaceContainerHighest,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.symmetric(horizontal: 4),
@@ -696,8 +736,8 @@ class _AddRecordPageState extends State<AddRecordPage> {
             ),
           ] else if (!_isGeneratingTags) ...[
             SizedBox(height: 8),
-            Text('点击"生成标签"让AI自动为你打标签，或保存时自动生成',
-                style: TextStyle(fontSize: 12, color: Colors.grey[400])),
+            Text('点击"生成标签"让 AI 自动为你打标签，或保存时自动生成',
+                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
           ],
         ],
       ),
@@ -711,7 +751,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
       child: ElevatedButton(
         onPressed: _isLoading ? null : _saveRecord,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFF4A90E2),
+          backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 3,
         ),
@@ -732,7 +772,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                       style: TextStyle(fontSize: 16, color: Colors.white)),
                 ],
               )
-            : Text('保存记录',
+            : Text(_isEditMode ? '保存修改' : '保存记录',
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

@@ -79,10 +79,9 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
         title: Text('年度回顾', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Color(0xFF4A90E2),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
@@ -114,10 +113,11 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
   }
 
   Widget _buildYearSelector() {
+    final theme = Theme.of(context);
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
       ),
@@ -125,11 +125,11 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            icon: Icon(Icons.chevron_left, color: Colors.grey[600]),
-            onPressed: () {
+            icon: Icon(Icons.chevron_left, color: theme.colorScheme.onSurfaceVariant),
+            onPressed: _selectedYear > 2024 ? () {
               setState(() => _selectedYear--);
               _loadData();
-            },
+            } : null,
           ),
           Text(
             '$_selectedYear',
@@ -137,11 +137,11 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
           ),
           Text(
             ' 年',
-            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurfaceVariant),
           ),
           if (_selectedYear < DateTime.now().year)
             IconButton(
-              icon: Icon(Icons.chevron_right, color: Colors.grey[600]),
+              icon: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
               onPressed: () {
                 setState(() => _selectedYear++);
                 _loadData();
@@ -226,15 +226,16 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
   }
 
   Widget _buildMoodOverview() {
+    final theme = Theme.of(context);
     if (_moodStats.isEmpty) {
       return Container(
         padding: EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
-          child: Text('暂无心情数据', style: TextStyle(color: Colors.grey[400])),
+          child: Text('暂无心情数据', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
         ),
       );
     }
@@ -242,7 +243,7 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
       ),
@@ -268,9 +269,9 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
                     children: [
                       Text(_getMoodLabel(entry.key), style: TextStyle(fontSize: 14)),
                       Spacer(),
-                      Text('${entry.value}次', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+                      Text('${entry.value}次', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
                       SizedBox(width: 8),
-                      Text('${percent.toStringAsFixed(1)}%', style: TextStyle(fontSize: 13, color: Colors.grey[400])),
+                      Text('${percent.toStringAsFixed(1)}%', style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8))),
                     ],
                   ),
                   SizedBox(height: 4),
@@ -278,7 +279,7 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: percent / 100,
-                      backgroundColor: Colors.grey[200],
+                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
                       color: _getMoodColor(entry.key),
                       minHeight: 6,
                     ),
@@ -323,7 +324,7 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
         label: Text(_isGenerating ? '正在生成...' : '生成年度回顾报告',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFF4A90E2),
+          backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
@@ -336,7 +337,7 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
       width: double.infinity,
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
       ),
@@ -353,7 +354,7 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
           SizedBox(height: 16),
           SelectableText(
             _reviewContent!,
-            style: TextStyle(fontSize: 15, height: 1.8, color: Colors.grey[800]),
+            style: TextStyle(fontSize: 15, height: 1.8, color: Theme.of(context).colorScheme.onSurface),
           ),
         ],
       ),
