@@ -2,67 +2,32 @@ import 'package:flutter/material.dart';
 
 class UserAgreementPage extends StatelessWidget {
   const UserAgreementPage({super.key});
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: Text('用户协议', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Color(0xFF4A90E2),
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('AI人生记录器用户协议', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A90E2))),
-              SizedBox(height: 8),
-              Text('更新日期：2026年4月9日', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-              Text('生效日期：2026年4月9日', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-              SizedBox(height: 20),
-              _buildSection('一、服务说明', 'AI人生记录器（以下简称"本应用"）是由杰哥网络科技开发的生活记录应用，提供文字记录、语音输入、图片记录、AI智能标签、心情统计、数据备份等功能。本应用运行在您的设备本地，核心数据存储在设备端。'),
-              _buildSection('二、用户注册与账号', '本应用无需注册账号即可使用。所有数据存储在您的设备本地，不依赖云端账号系统。请您妥善保管设备，并定期使用数据备份功能。'),
-              _buildSection('三、用户行为规范', '1. 您应当合法合规地使用本应用，不得利用本应用从事任何违反法律法规的活动。\n2. 您对通过本应用记录的内容承担全部责任。\n3. 您应当妥善保管设备及数据，因设备丢失、损坏等导致的数据丢失，开发者不承担责任。'),
-              _buildSection('四、知识产权', '1. 本应用的所有知识产权（包括但不限于软件代码、界面设计、图标、文字等）归杰哥网络科技所有。\n2. 未经书面授权，您不得复制、修改、传播本应用的任何部分。\n3. 您通过本应用创建的记录内容，其知识产权归您所有。'),
-              _buildSection('五、免责声明', '1. 本应用提供的AI标签生成和报告功能基于DeepSeek AI服务，生成内容仅供参考，不构成任何专业建议。\n2. 因网络原因导致AI功能无法使用，开发者不承担责任。\n3. 因设备故障、系统更新等原因导致的数据丢失，开发者不承担责任，建议您定期备份数据。\n4. 本应用不保证持续无错误运行，开发者将尽力修复已知问题。'),
-              _buildSection('六、服务变更与终止', '1. 开发者有权根据需要修改或中断部分服务功能。\n2. 重大变更将通过应用内通知的方式告知您。\n3. 您可以随时停止使用本应用并删除设备上的数据。'),
-              _buildSection('七、隐私保护', '本应用重视您的隐私保护，具体内容请参阅《隐私政策》。使用本应用即表示您同意本协议及隐私政策。'),
-              _buildSection('八、争议解决', '1. 本协议的订立、执行和解释均适用中华人民共和国法律。\n2. 因本协议产生的争议，双方应友好协商解决；协商不成的，任何一方均可向开发者所在地有管辖权的人民法院提起诉讼。'),
-              _buildSection('九、其他', '1. 本协议构成您与开发者之间关于使用本应用的完整协议。\n2. 开发者未行使或延迟行使本协议项下的任何权利，不构成对该权利的放弃。\n3. 本协议中任何条款被认定为无效的，不影响其他条款的效力。'),
-              _buildSection('十、联系方式', '如果您对本协议有任何疑问，请通过以下方式联系我们：\n\n开发者：杰哥网络科技\nQQ：2711793818'),
-            ],
-          ),
-        ),
-      ),
+      appBar: AppBar(title: Text('\u7528\u6237\u534F\u8BAE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), backgroundColor: primaryColor, elevation: 0, centerTitle: true, leading: IconButton(icon: Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context))),
+      body: SingleChildScrollView(padding: EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _buildSection(context, '\u4E00\u3001\u534F\u8BAE\u7684\u63A5\u53D7\u4E0E\u4FEE\u6539', '1.1 \u6B22\u8FCE\u4F7F\u7528 AI \u4EBA\u751F\u8BB0\u5F55\u5668\uFF08\u4EE5\u4E0B\u7B80\u79F0\u201C\u672C\u5E94\u7528\u201D\uFF09\u3002\n\n1.2 \u5F53\u60A8\u4E0B\u8F7D\u3001\u5B89\u88C5\u3001\u4F7F\u7528\u672C\u5E94\u7528\u65F6\uFF0C\u5373\u8868\u793A\u60A8\u5DF2\u9605\u8BFB\u5E76\u540C\u610F\u672C\u7528\u6237\u534F\u8BAE\u7684\u6240\u6709\u5185\u5BB9\u3002\n\n1.3 \u5982\u679C\u60A8\u4E0D\u540C\u610F\u672C\u534F\u8BAE\u7684\u4EFB\u4F55\u6761\u6B3E\uFF0C\u8BF7\u7ACB\u5373\u505C\u6B62\u4F7F\u7528\u672C\u5E94\u7528\u3002\n\n1.4 \u6211\u4EEC\u4FDD\u7559\u968F\u65F6\u4FEE\u6539\u672C\u534F\u8BAE\u7684\u6743\u5229\u3002\u4FEE\u6539\u540E\u7684\u534F\u8BAE\u4E00\u7ECF\u516C\u5E03\u5373\u751F\u6548\u3002'),
+        _buildSection(context, '\u4E8C\u3001\u670D\u52A1\u5185\u5BB9', '2.1 \u672C\u5E94\u7528\u63D0\u4F9B\u4EE5\u4E0B\u670D\u52A1\uFF1A\n- \u65E5\u8BB0\u8BB0\u5F55\u529F\u80FD\n- \u5FC3\u60C5\u6807\u7B7E\u7BA1\u7406\n- \u56FE\u7247\u4E0A\u4F20\u548C\u5C55\u793A\n- \u65E5\u5386\u89C6\u56FE\n- \u6570\u636E\u7EDF\u8BA1\u548C\u56FE\u8868\n- AI \u667A\u80FD\u6807\u7B7E\u751F\u6210\n- AI \u5468\u62A5/\u6708\u62A5\u751F\u6210\n- \u8BED\u97F3\u8F93\u5165\u529F\u80FD\n- \u6570\u636E\u5907\u4EFD\u548C\u6062\u590D\n- \u6BCF\u65E5\u63D0\u9192\u529F\u80FD\n- \u5206\u4EAB\u529F\u80FD\n- \u9690\u79C1\u9501\u529F\u80FD\n- \u5E74\u5EA6\u56DE\u987E'),
+        _buildSection(context, '\u4E09\u3001\u7528\u6237\u884C\u4E3A\u89C4\u8303', '3.1 \u60A8\u5728\u4F7F\u7528\u672C\u5E94\u7528\u65F6\uFF0C\u4E0D\u5F97\uFF1A\n- \u53D1\u5E03\u8FDD\u53CD\u6CD5\u5F8B\u6CD5\u89C4\u7684\u5185\u5BB9\n- \u53D1\u5E03\u4FB5\u72AF\u4ED6\u4EBA\u6743\u76CA\u7684\u5185\u5BB9\n- \u53D1\u5E03\u865A\u5047\u3001\u8BEF\u5BFC\u6027\u4FE1\u606F\n- \u5229\u7528\u672C\u5E94\u7528\u4ECE\u4E8B\u8FDD\u6CD5\u72AF\u7F6A\u6D3B\u52A8\n- \u5BF9\u672C\u5E94\u7528\u8FDB\u884C\u53CD\u5411\u5DE5\u7A0B\u3001\u53CD\u7F16\u8BD1\n- \u4F7F\u7528\u4EFB\u4F55\u65B9\u5F0F\u5E72\u6270\u672C\u5E94\u7528\u7684\u6B63\u5E38\u8FD0\u884C'),
+        _buildSection(context, '\u56DB\u3001\u77E5\u8BC6\u4EA7\u6743', '4.1 \u672C\u5E94\u7528\u7684\u6240\u6709\u5185\u5BB9\uFF08\u5305\u62EC\u4F46\u4E0D\u9650\u4E8E\u4EE3\u7801\u3001\u754C\u9762\u8BBE\u8BA1\u3001\u56FE\u6807\u3001\u6587\u5B57\uFF09\u5747\u53D7\u77E5\u8BC6\u4EA7\u6743\u6CD5\u4FDD\u62A4\u3002\n\n4.2 \u60A8\u5728\u672C\u5E94\u7528\u4E2D\u521B\u5EFA\u7684\u5185\u5BB9\uFF08\u65E5\u8BB0\u3001\u56FE\u7247\u7B49\uFF09\u5F52\u60A8\u6240\u6709\u3002\n\n4.3 \u672A\u7ECF\u6211\u4EEC\u4E66\u9762\u8BB8\u53EF\uFF0C\u60A8\u4E0D\u5F97\u5C06\u672C\u5E94\u7528\u7684\u4EFB\u4F55\u5185\u5BB9\u7528\u4E8E\u5546\u4E1A\u76EE\u7684\u3002'),
+        _buildSection(context, '\u4E94\u3001\u9690\u79C1\u4FDD\u62A4', '5.1 \u6211\u4EEC\u91CD\u89C6\u60A8\u7684\u9690\u79C1\u4FDD\u62A4\u3002\n\n5.2 \u5173\u4E8E\u4E2A\u4EBA\u4FE1\u606F\u7684\u6536\u96C6\u3001\u4F7F\u7528\u548C\u4FDD\u62A4\uFF0C\u8BF7\u8BE6\u89C1\u300A\u9690\u79C1\u653F\u7B56\u300B\u3002\n\n5.3 \u60A8\u4F7F\u7528\u672C\u5E94\u7528\u5373\u8868\u793A\u60A8\u540C\u610F\u6211\u4EEC\u6309\u7167\u9690\u79C1\u653F\u7B56\u5904\u7406\u60A8\u7684\u4FE1\u606F\u3002'),
+        _buildSection(context, '\u516D\u3001\u514D\u8D23\u58F0\u660E', '6.1 \u672C\u5E94\u7528\u6309\u201C\u73B0\u72B6\u201D\u63D0\u4F9B\uFF0C\u4E0D\u4FDD\u8BC1\u5B8C\u5168\u65E0\u9519\u8BEF\u6216\u4E2D\u65AD\u3002\n\n6.2 \u5BF9\u4E8E\u56E0\u4E0D\u53EF\u6297\u529B\uFF08\u5982\u7F51\u7EDC\u6545\u969C\u3001\u8BBE\u5907\u95EE\u9898\u7B49\uFF09\u5BFC\u81F4\u7684\u6570\u636E\u4E22\u5931\uFF0C\u6211\u4EEC\u4E0D\u627F\u62C5\u8D23\u4EFB\u3002\n\n6.3 \u5EFA\u8BAE\u60A8\u5B9A\u671F\u5907\u4EFD\u91CD\u8981\u6570\u636E\u3002\n\n6.4 \u7B2C\u4E09\u65B9\u670D\u52A1\uFF08\u5982 AI \u670D\u52A1\u3001\u8BED\u97F3\u8BC6\u522B\uFF09\u7531\u5176\u63D0\u4F9B\u65B9\u8D1F\u8D23\uFF0C\u6211\u4EEC\u4E0D\u627F\u62C5\u76F8\u5173\u8D23\u4EFB\u3002'),
+        _buildSection(context, '\u4E03\u3001\u670D\u52A1\u7684\u53D8\u66F4\u4E0E\u7EC8\u6B62', '7.1 \u6211\u4EEC\u4FDD\u7559\u968F\u65F6\u53D8\u66F4\u3001\u4E2D\u65AD\u6216\u7EC8\u6B62\u670D\u52A1\u7684\u6743\u5229\u3002\n\n7.2 \u5982\u56E0\u6CD5\u5F8B\u6CD5\u89C4\u53D8\u5316\u6216\u8FD0\u8425\u7B56\u7565\u8C03\u6574\u9700\u8981\u7EC8\u6B62\u670D\u52A1\uFF0C\u6211\u4EEC\u5C06\u63D0\u524D\u901A\u77E5\u7528\u6237\u3002\n\n7.3 \u670D\u52A1\u7EC8\u6B62\u540E\uFF0C\u60A8\u4ECD\u53EF\u5BFC\u51FA\u672C\u5730\u6570\u636E\u3002'),
+        _buildSection(context, '\u516B\u3001\u4E89\u8BAE\u89E3\u51B3', '8.1 \u672C\u534F\u8BAE\u7684\u89E3\u91CA\u3001\u6548\u529B\u53CA\u7EA0\u7EB7\u7684\u89E3\u51B3\uFF0C\u9002\u7528\u4E2D\u534E\u4EBA\u6C11\u5171\u548C\u56FD\u6CD5\u5F8B\u3002\n\n8.2 \u82E5\u53D1\u751F\u4E89\u8BAE\uFF0C\u53CC\u65B9\u5E94\u53CB\u597D\u534F\u5546\u89E3\u51B3\u3002\n\n8.3 \u534F\u5546\u4E0D\u6210\u7684\uFF0C\u4EFB\u4F55\u4E00\u65B9\u53EF\u5411\u5F00\u53D1\u8005\u6240\u5728\u5730\u4EBA\u6C11\u6CD5\u9662\u63D0\u8D77\u8BC9\u8BBC\u3002'),
+        _buildSection(context, '\u4E5D\u3001\u5176\u4ED6\u6761\u6B3E', '9.1 \u672C\u534F\u8BAE\u6784\u6210\u53CC\u65B9\u5C31\u672C\u5E94\u7528\u670D\u52A1\u8FBE\u6210\u7684\u5B8C\u6574\u534F\u8BAE\u3002\n\n9.2 \u5982\u672C\u534F\u8BAE\u4EFB\u4F55\u6761\u6B3E\u88AB\u8BA4\u5B9A\u4E3A\u65E0\u6548\uFF0C\u4E0D\u5F71\u54CD\u5176\u4ED6\u6761\u6B3E\u7684\u6548\u529B\u3002\n\n9.3 \u6211\u4EEC\u672A\u884C\u4F7F\u6216\u6267\u884C\u672C\u534F\u8BAE\u4EFB\u4F55\u6743\u5229\u6216\u89C4\u5B9A\uFF0C\u4E0D\u6784\u6210\u5BF9\u8BE5\u6743\u5229\u6216\u89C4\u5B9A\u7684\u653E\u5F03\u3002'),
+        _buildSection(context, '\u5341\u3001\u8054\u7CFB\u6211\u4EEC', '\u5982\u60A8\u5BF9\u672C\u534F\u8BAE\u6709\u4EFB\u4F55\u7591\u95EE\u6216\u5EFA\u8BAE\uFF0C\u8BF7\u8054\u7CFB\uFF1A\n\n\u5F00\u53D1\u8005\uFF1A\u6770\u54E5\u7F51\u7EDC\u79D1\u6280\n\u8054\u7CFB\u65B9\u5F0F\uFF1AQQ 2711793818'),
+        SizedBox(height: 20), Text('\u6700\u540E\u66F4\u65B0\u65E5\u671F\uFF1A2026 \u5E74 1 \u6708', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+      ])),
     );
   }
 
-  Widget _buildSection(String title, String content) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[800])),
-          SizedBox(height: 8),
-          Text(content, style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.8)),
-        ],
-      ),
-    );
+  Widget _buildSection(BuildContext context, String title, String content) {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final primaryColor = theme.colorScheme.primary;
+    return Container(width: double.infinity, margin: EdgeInsets.only(bottom: 16), padding: EdgeInsets.all(16), decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor)), SizedBox(height: 8), Text(content, style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface, height: 1.6))]));
   }
 }
