@@ -69,7 +69,8 @@ class ReminderService {
     } else if (Platform.isIOS) {
       final iosPlugin = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
       if (iosPlugin != null) {
-        return await iosPlugin.checkPermissions()?.isEnabled ?? false;
+        final result = await iosPlugin.checkPermissions();
+        return result?.isEnabled ?? false;
       }
     }
     return false;
@@ -96,7 +97,7 @@ class ReminderService {
     } else if (Platform.isIOS) {
       final iosPlugin = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
       if (iosPlugin != null) {
-        return await iosPlugin.requestPermissions(alert: true, badge: true, sound: true);
+        return await iosPlugin.requestPermissions(alert: true, badge: true, sound: true) ?? false;
       }
     }
     return false;

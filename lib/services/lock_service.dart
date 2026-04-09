@@ -45,7 +45,7 @@ class LockService {
       final isSupported = await isDeviceSupported();
       if (!isSupported) return false;
       return await _localAuth.authenticate(
-        localizedReason: '请验证身份以进入应用',
+        localizedReason: '\u8BF7\u9A8C\u8BC1\u8EAB\u4EFD\u4EE5\u8FDB\u5165\u5E94\u7528',
         options: const AuthenticationOptions(
           stickyAuth: false,
           biometricOnly: true,
@@ -91,11 +91,10 @@ class LockService {
         context: context,
         correctString: savedPin,
         canCancel: false,
-        withBlur: false,
-        title: const Text('输入 PIN 码解锁'),
+        useBlur: false,
+        title: const Text('\u8F93\u5165 PIN \u7801\u89E3\u9501'),
         config: ScreenLockConfig(
           backgroundColor: const Color(0xFF16213E),
-          shape: InputButtonShape.circle,
         ),
         secretsConfig: SecretsConfig(
           spacing: 16,
@@ -133,12 +132,11 @@ class LockService {
       context: context,
       digits: 4,
       canCancel: true,
-      withBlur: false,
-      title: const Text('设置 PIN 码'),
-      confirmTitle: const Text('确认 PIN 码'),
+      useBlur: false,
+      title: const Text('\u8BBE\u7F6E PIN \u7801'),
+      confirmTitle: const Text('\u786E\u8BA4 PIN \u7801'),
       config: ScreenLockConfig(
         backgroundColor: const Color(0xFF16213E),
-        shape: InputButtonShape.circle,
       ),
       secretsConfig: SecretsConfig(
         spacing: 16,

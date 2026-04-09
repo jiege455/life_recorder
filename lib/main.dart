@@ -95,19 +95,19 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
           children: [
             Icon(Icons.notifications_off, color: Colors.orange, size: 24),
             SizedBox(width: 8),
-            Text('通知权限已关闭'),
+            Text('\u901A\u77E5\u6743\u9650\u5DF2\u5173\u95ED'),
           ],
         ),
         backgroundColor: theme.colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Text(
-          '您之前已启用每日提醒功能，但通知权限已被关闭。每日提醒将无法正常工作，请前往系统设置重新开启通知权限。',
+          '\u60A8\u4E4B\u524D\u5DF2\u542F\u7528\u6BCF\u65E5\u63D0\u9192\u529F\u80FD\uFF0C\u4F46\u901A\u77E5\u6743\u9650\u5DF2\u88AB\u5173\u95ED\u3002\u6BCF\u65E5\u63D0\u9192\u5C06\u65E0\u6CD5\u6B63\u5E38\u5DE5\u4F5C\uFF0C\u8BF7\u524D\u5F80\u7CFB\u7EDF\u8BBE\u7F6E\u91CD\u65B0\u5F00\u542F\u901A\u77E5\u6743\u9650\u3002',
           style: TextStyle(fontSize: 14, height: 1.6),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('暂不设置'),
+            child: Text('\u6682\u4E0D\u8BBE\u7F6E'),
           ),
           ElevatedButton.icon(
             onPressed: () {
@@ -115,7 +115,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
               ReminderService.instance.openNotificationSettings();
             },
             icon: Icon(Icons.settings, size: 18),
-            label: Text('去设置'),
+            label: Text('\u53BB\u8BBE\u7F6E'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF4A90E2),
               foregroundColor: Colors.white,
@@ -161,7 +161,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
       animation: widget.themeService,
       builder: (context, child) {
         return MaterialApp(
-          title: 'AI人生记录器',
+          title: 'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
           debugShowCheckedModeBanner: false,
           navigatorKey: navigatorKey,
           theme: ThemeService.lightTheme,
@@ -213,11 +213,10 @@ class _LockScreenState extends State<LockScreen> {
       context: context,
       correctString: savedPin,
       canCancel: false,
-      withBlur: false,
-      title: Text('输入 PIN 码解锁'),
+      useBlur: false,
+      title: Text('\u8F93\u5165 PIN \u7801\u89E3\u9501'),
       config: ScreenLockConfig(
         backgroundColor: const Color(0xFF16213E),
-        shape: InputButtonShape.circle,
       ),
       secretsConfig: SecretsConfig(
         spacing: 16,
@@ -260,17 +259,17 @@ class _LockScreenState extends State<LockScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text('紧急解锁'),
-        content: Text('这将关闭隐私锁功能并进入应用。您可以在设置中重新启用隐私锁。'),
+        title: Text('\u7D27\u6025\u89E3\u9501'),
+        content: Text('\u8FD9\u5C06\u5173\u95ED\u9690\u79C1\u9501\u529F\u80FD\u5E76\u8FDB\u5165\u5E94\u7528\u3002\u60A8\u53EF\u4EE5\u5728\u8BBE\u7F6E\u4E2D\u91CD\u65B0\u542F\u7528\u9690\u79C1\u9501\u3002'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('取消'),
+            child: Text('\u53D6\u6D88'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-            child: Text('确认解锁', style: TextStyle(color: Colors.white)),
+            child: Text('\u786E\u8BA4\u89E3\u9501', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -305,7 +304,7 @@ class _LockScreenState extends State<LockScreen> {
                     Icon(Icons.lock_outline, size: 80, color: Colors.white),
                     SizedBox(height: 24),
                     Text(
-                      'AI人生记录器',
+                      'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -314,13 +313,13 @@ class _LockScreenState extends State<LockScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      '已启用隐私保护',
+                      '\u5DF2\u542F\u7528\u9690\u79C1\u4FDD\u62A4',
                       style: TextStyle(fontSize: 16, color: Colors.white70),
                     ),
                     if (_failedAttempts > 0) ...[
                       SizedBox(height: 12),
                       Text(
-                        '验证失败 $_failedAttempts 次',
+                        '\u9A8C\u8BC1\u5931\u8D25 $_failedAttempts \u6B21',
                         style: TextStyle(fontSize: 14, color: Colors.orangeAccent),
                       ),
                     ],
@@ -328,7 +327,7 @@ class _LockScreenState extends State<LockScreen> {
                     ElevatedButton.icon(
                       onPressed: _showScreenLock,
                       icon: Icon(Icons.lock_open),
-                      label: Text('点击解锁'),
+                      label: Text('\u70B9\u51FB\u89E3\u9501'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Color(0xFF4A90E2),
@@ -344,13 +343,13 @@ class _LockScreenState extends State<LockScreen> {
                         onPressed: _emergencyUnlock,
                         icon: Icon(Icons.lock_open, color: Colors.orangeAccent),
                         label: Text(
-                          '紧急解锁',
+                          '\u7D27\u6025\u89E3\u9501',
                           style: TextStyle(color: Colors.orangeAccent, fontSize: 14),
                         ),
                       ),
                       SizedBox(height: 8),
                       Text(
-                        '连续验证失败5次后可使用紧急解锁',
+                        '\u8FDE\u7EED\u9A8C\u8BC1\u5931\u8D255\u6B21\u540E\u53EF\u4F7F\u7528\u7D27\u6025\u89E3\u9501',
                         style: TextStyle(fontSize: 11, color: Colors.white38),
                       ),
                     ],
@@ -390,12 +389,12 @@ class _PolicyConsentScreen extends StatelessWidget {
                 Icon(Icons.auto_stories, size: 80, color: Colors.white),
                 SizedBox(height: 24),
                 Text(
-                  'AI人生记录器',
+                  'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  '记录生活点滴，AI智能打标签',
+                  '\u8BB0\u5F55\u751F\u6D3B\u70B9\u6EF4\uFF0CAI\u667A\u80FD\u6253\u6807\u7B7E',
                   style: TextStyle(fontSize: 16, color: Colors.white70),
                 ),
                 Spacer(flex: 1),
@@ -413,15 +412,15 @@ class _PolicyConsentScreen extends StatelessWidget {
                         children: [
                           Icon(Icons.security, color: Colors.white, size: 20),
                           SizedBox(width: 8),
-                          Text('隐私保护说明', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
+                          Text('\u9690\u79C1\u4FDD\u62A4\u8BF4\u660E', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white)),
                         ],
                       ),
                       SizedBox(height: 12),
                       Text(
-                        '1. 您的数据存储在设备本地，我们不会上传至服务器\n'
-                        '2. AI标签和报告功能会将文字发送至DeepSeek服务\n'
-                        '3. 语音输入功能会将语音发送至讯飞服务\n'
-                        '4. 您可以随时导出或删除全部数据',
+                        '1. \u60A8\u7684\u6570\u636E\u5B58\u50A8\u5728\u8BBE\u5907\u672C\u5730\uFF0C\u6211\u4EEC\u4E0D\u4F1A\u4E0A\u4F20\u81F3\u670D\u52A1\u5668\n'
+                        '2. AI\u6807\u7B7E\u548C\u62A5\u544A\u529F\u80FD\u4F1A\u5C06\u6587\u5B57\u53D1\u9001\u81F3DeepSeek\u670D\u52A1\n'
+                        '3. \u8BED\u97F3\u8F93\u5165\u529F\u80FD\u4F1A\u5C06\u8BED\u97F3\u53D1\u9001\u81F3\u8BAF\u98DE\u670D\u52A1\n'
+                        '4. \u60A8\u53EF\u4EE5\u968F\u65F6\u5BFC\u51FA\u6216\u5220\u9664\u5168\u90E8\u6570\u636E',
                         style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.9), height: 1.8),
                       ),
                     ],
@@ -434,19 +433,19 @@ class _PolicyConsentScreen extends StatelessWidget {
                   child: Wrap(
                     alignment: WrapAlignment.center,
                     children: [
-                      Text('请阅读', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                      Text('\u8BF7\u9605\u8BFB', style: TextStyle(fontSize: 12, color: Colors.white70)),
                       GestureDetector(
                         onTap: () {
                           Navigator.push(context, MaterialPageRoute(builder: (context) => PrivacyPolicyPage()));
                         },
-                        child: Text('《隐私政策》', style: TextStyle(fontSize: 12, color: Color(0xFF64B5F6), decoration: TextDecoration.underline)),
+                        child: Text('\u300A\u9690\u79C1\u653F\u7B56\u300B', style: TextStyle(fontSize: 12, color: Color(0xFF64B5F6), decoration: TextDecoration.underline)),
                       ),
-                      Text('和', style: TextStyle(fontSize: 12, color: Colors.white70)),
+                      Text('\u548C', style: TextStyle(fontSize: 12, color: Colors.white70)),
                       GestureDetector(
                         onTap: () {
                           Navigator.push(context, MaterialPageRoute(builder: (context) => UserAgreementPage()));
                         },
-                        child: Text('《用户协议》', style: TextStyle(fontSize: 12, color: Color(0xFF64B5F6), decoration: TextDecoration.underline)),
+                        child: Text('\u300A\u7528\u6237\u534F\u8BAE\u300B', style: TextStyle(fontSize: 12, color: Color(0xFF64B5F6), decoration: TextDecoration.underline)),
                       ),
                     ],
                   ),
@@ -462,13 +461,13 @@ class _PolicyConsentScreen extends StatelessWidget {
                       foregroundColor: Color(0xFF4A90E2),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                     ),
-                    child: Text('同意并继续', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: Text('\u540C\u610F\u5E76\u7EE7\u7EED', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 SizedBox(height: 8),
                 TextButton(
                   onPressed: () => SystemNavigator.pop(),
-                  child: Text('不同意并退出', style: TextStyle(fontSize: 13, color: Colors.white54)),
+                  child: Text('\u4E0D\u540C\u610F\u5E76\u9000\u51FA', style: TextStyle(fontSize: 13, color: Colors.white54)),
                 ),
                 Spacer(flex: 1),
               ],
