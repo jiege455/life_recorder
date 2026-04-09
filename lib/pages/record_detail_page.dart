@@ -379,7 +379,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddRecordPage(editMode: true, recordId: widget.recordId),
+        builder: (context) => const AddRecordPage(),
       ),
     );
     if (result == true) {
