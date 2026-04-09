@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:convert';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tzdata;
@@ -50,25 +51,69 @@ class ReminderService {
     }
   }
 
+  Future<bool> isNotificationPermissionGranted() async {
+    try {
+      if (Platform.isAndroid) {
+        final status = await Permission.notification.status;
+        return status.isGranted;
+      } else if (Platform.isIOS) {
+        final status = await Permission.notification.status;
+        return status.isGranted;
+      }
+    } catch (e) {
+      return false;
+    }
+    return true;
+  }
+
+  Future<bool> isNotificationPermissionPermanentlyDenied() async {
+    try {
+      final status = await Permission.notification.status;
+      return status.isPermanentlyDenied;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> openNotificationSettings() async {
+    await openAppSettings();
+  }
+
   Future<bool> requestNotificationPermission() async {
     try {
       if (Platform.isAndroid) {
-        final androidPlugin = _notifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-        if (androidPlugin != null) {
-          final granted = await androidPlugin.requestNotificationsPermission()
-              .timeout(Duration(seconds: 10), onTimeout: () => true);
-          if (granted == false) return false;
-        }
+        final status = await Permission.notification.status;
+        if (status.isGranted) return true;
+        if (status.isPermanentlyDenied) return false;
+        final result = await Permission.notification.request();
+        if (result.isGranted) return true;
+        if (result.isPermanentlyDenied) return false;
+        return result.isGranted;
       } else if (Platform.isIOS) {
         final iosPlugin = _notifications.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
         if (iosPlugin != null) {
           final granted = await iosPlugin.requestPermissions(alert: true, badge: true, sound: true)
-              .timeout(Duration(seconds: 10), onTimeout: () => true);
+              .timeout(Duration(seconds: 10), onTimeout: () => false);
           if (granted == false) return false;
         }
       }
     } catch (e) {
-      return true;
+      return false;
+    }
+    return true;
+  }
+
+  Future<bool> checkAndFixReminderState() async {
+    if (!_enabled) return true;
+    final hasPermission = await isNotificationPermissionGranted();
+    if (!hasPermission && _enabled) {
+      _enabled = false;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_reminderKey, false);
+      try {
+        await _notifications.cancelAll();
+      } catch (e) {}
+      return false;
     }
     return true;
   }

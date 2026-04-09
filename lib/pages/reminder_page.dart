@@ -159,13 +159,7 @@ class _ReminderPageState extends State<ReminderPage> {
         setState(() {
           _reminderEnabled = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('需要通知权限才能启用提醒，请在系统设置中开启'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
+        _showPermissionDeniedDialog();
       }
     }).catchError((e) {
       if (!mounted) return;
@@ -176,6 +170,69 @@ class _ReminderPageState extends State<ReminderPage> {
         SnackBar(content: Text('操作失败，请重试'), backgroundColor: Colors.red),
       );
     });
+  }
+
+  Future<void> _showPermissionDeniedDialog() async {
+    final isPermanentlyDenied = await _reminderService.isNotificationPermissionPermanentlyDenied();
+    if (!mounted) return;
+
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.notifications_off, color: Colors.orange, size: 24),
+            SizedBox(width: 8),
+            Text('通知权限未开启'),
+          ],
+        ),
+        backgroundColor: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Text(
+          isPermanentlyDenied
+              ? '通知权限已被禁止，需要前往系统设置中手动开启通知权限，才能使用每日提醒功能。'
+              : '需要通知权限才能启用每日提醒，请允许通知权限。',
+          style: TextStyle(fontSize: 14, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('取消'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              if (isPermanentlyDenied) {
+                await _reminderService.openNotificationSettings();
+              } else {
+                final granted = await _reminderService.requestNotificationPermission();
+                if (granted && mounted) {
+                  final success = await _reminderService.setEnabled(true);
+                  if (success && mounted) {
+                    setState(() {
+                      _reminderEnabled = true;
+                      _hour = _reminderService.hour;
+                      _minute = _reminderService.minute;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('提醒已启用'), backgroundColor: Colors.green),
+                    );
+                  }
+                }
+              }
+            },
+            icon: Icon(isPermanentlyDenied ? Icons.settings : Icons.notifications_active, size: 18),
+            label: Text(isPermanentlyDenied ? '去设置' : '允许'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF4A90E2),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatTime(int hour, int minute) {

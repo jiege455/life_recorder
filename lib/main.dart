@@ -9,6 +9,8 @@ import 'services/lock_service.dart';
 import 'services/reminder_service.dart';
 import 'services/tag_service.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -39,6 +41,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
   bool _isLocked = false;
   bool _lockEnabled = false;
   bool _agreedToPolicy = false;
+  bool _hasCheckedPermission = false;
 
   @override
   void initState() {
@@ -67,6 +70,60 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
         _agreedToPolicy = true;
       });
     }
+  }
+
+  void _checkNotificationPermissionOnStart() {
+    if (_hasCheckedPermission) return;
+    _hasCheckedPermission = true;
+    ReminderService.instance.checkAndFixReminderState().then((ok) {
+      if (!ok && mounted) {
+        final context = navigatorKey.currentContext;
+        if (context != null) {
+          _showPermissionRevokedDialog(context);
+        }
+      }
+    });
+  }
+
+  void _showPermissionRevokedDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.notifications_off, color: Colors.orange, size: 24),
+            SizedBox(width: 8),
+            Text('通知权限已关闭'),
+          ],
+        ),
+        backgroundColor: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Text(
+          '您之前已启用每日提醒功能，但通知权限已被关闭。每日提醒将无法正常工作，请前往系统设置重新开启通知权限。',
+          style: TextStyle(fontSize: 14, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('暂不设置'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              ReminderService.instance.openNotificationSettings();
+            },
+            icon: Icon(Icons.settings, size: 18),
+            label: Text('去设置'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF4A90E2),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -105,6 +162,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
         return MaterialApp(
           title: 'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
           debugShowCheckedModeBanner: false,
+          navigatorKey: navigatorKey,
           theme: ThemeService.lightTheme,
           darkTheme: ThemeService.darkTheme,
           themeMode: widget.themeService.themeMode,
@@ -121,6 +179,9 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
     if (_isLocked && _lockEnabled) {
       return LockScreen(onUnlock: _unlock);
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkNotificationPermissionOnStart();
+    });
     return const HomePage();
   }
 }
