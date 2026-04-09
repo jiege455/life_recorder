@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz_data;
 
 class ReminderService {
   static final ReminderService instance = ReminderService._();
@@ -16,27 +18,31 @@ class ReminderService {
   int _hour = 20;
   int _minute = 0;
 
+  final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+
   bool get enabled => _enabled;
   int get hour => _hour;
   int get minute => _minute;
 
   Future<void> initialize() async {
-    await AwesomeNotifications().initialize(
-      null,
-      [
-        NotificationChannel(
-          channelKey: 'daily_reminder',
-          channelName: '每日提醒',
-          channelDescription: '每日记录提醒',
-          defaultColor: Color(0xFF4A90E2),
-          ledColor: Color(0xFF4A90E2),
-          importance: NotificationImportance.High,
-          channelShowBadge: true,
-          onlyAlertOnce: true,
-        ),
-      ],
+    tz_data.initializeTimeZones();
+
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
-    
+    const initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+
+    await _plugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {},
+    );
+
     await loadSettings();
     await checkAndFixReminderState();
   }
@@ -55,7 +61,18 @@ class ReminderService {
   }
 
   Future<bool> isNotificationPermissionGranted() async {
-    return await AwesomeNotifications().isNotificationAllowed();
+    if (Platform.isAndroid) {
+      final androidPlugin = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        return await androidPlugin.areNotificationsEnabled() ?? false;
+      }
+    } else if (Platform.isIOS) {
+      final iosPlugin = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+      if (iosPlugin != null) {
+        return await iosPlugin.checkPermissions()?.isEnabled ?? false;
+      }
+    }
+    return false;
   }
 
   Future<bool> isNotificationPermissionPermanentlyDenied() async {
@@ -71,26 +88,33 @@ class ReminderService {
   }
 
   Future<bool> requestNotificationPermission() async {
-    bool isAllowed = await AwesomeNotifications().isNotificationAllowed();
-    if (!isAllowed) {
-      isAllowed = await AwesomeNotifications().requestPermissionToSendNotifications();
+    if (Platform.isAndroid) {
+      final androidPlugin = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        return await androidPlugin.requestNotificationsPermission() ?? false;
+      }
+    } else if (Platform.isIOS) {
+      final iosPlugin = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+      if (iosPlugin != null) {
+        return await iosPlugin.requestPermissions(alert: true, badge: true, sound: true);
+      }
     }
-    return isAllowed;
+    return false;
   }
 
   Future<bool> checkAndFixReminderState() async {
     if (!_enabled) return true;
-    
+
     final hasPermission = await isNotificationPermissionGranted();
     if (!hasPermission && _enabled) {
       _enabled = false;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_reminderKey, false);
-      
+
       try {
-        await AwesomeNotifications().cancelAllSchedules();
+        await _plugin.cancelAll();
       } catch (e) {}
-      
+
       return false;
     }
     return true;
@@ -119,7 +143,7 @@ class ReminderService {
       }
     } else {
       try {
-        await AwesomeNotifications().cancelAllSchedules();
+        await _plugin.cancelAll();
       } catch (e) {}
     }
 
@@ -131,7 +155,7 @@ class ReminderService {
     _minute = minute;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_timeKey, jsonEncode({'hour': hour, 'minute': minute}));
-    
+
     if (_enabled) {
       try {
         await _scheduleNotification();
@@ -140,23 +164,50 @@ class ReminderService {
   }
 
   Future<void> _scheduleNotification() async {
-    await AwesomeNotifications().cancelAllSchedules();
+    await _plugin.cancelAll();
 
-    await AwesomeNotifications().createNotification(
-      content: NotificationContent(
-        id: 1,
-        channelKey: 'daily_reminder',
-        title: 'AI人生记录器',
-        body: '今天发生了什么新鲜事？来记录一下吧~',
-        notificationLayout: NotificationLayout.Default,
-        category: NotificationCategory.Reminder,
-      ),
-      schedule: NotificationCalendar(
-        hour: _hour,
-        minute: _minute,
-        second: 0,
-        repeats: true,
-      ),
+    const androidDetails = AndroidNotificationDetails(
+      'daily_reminder',
+      '每日提醒',
+      channelDescription: '每日记录提醒',
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+      enableVibration: true,
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      _hour,
+      _minute,
+    );
+
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+
+    await _plugin.zonedSchedule(
+      1,
+      'AI人生记录器',
+      '今天发生了什么新鲜事？来记录一下吧~',
+      scheduledDate,
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      matchDateTimeComponents: DateTimeComponents.time,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 }

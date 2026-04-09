@@ -8,6 +8,7 @@ import 'services/theme_service.dart';
 import 'services/lock_service.dart';
 import 'services/reminder_service.dart';
 import 'services/tag_service.dart';
+import 'package:flutter_screen_lock/flutter_screen_lock.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -160,7 +161,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
       animation: widget.themeService,
       builder: (context, child) {
         return MaterialApp(
-          title: 'AI人生记录器',
+          title: 'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
           debugShowCheckedModeBanner: false,
           navigatorKey: navigatorKey,
           theme: ThemeService.lightTheme,
@@ -196,37 +197,62 @@ class LockScreen extends StatefulWidget {
 }
 
 class _LockScreenState extends State<LockScreen> {
-  bool _isAuthenticating = false;
   int _failedAttempts = 0;
   bool _showEmergencyUnlock = false;
 
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(Duration(milliseconds: 500), () {
-      if (mounted) _authenticate();
-    });
-  }
-
-  Future<void> _authenticate() async {
-    if (_isAuthenticating) return;
-    setState(() => _isAuthenticating = true);
-
+  void _showScreenLock() async {
     final lockService = LockService.instance;
-    final success = await lockService.authenticateWithBiometrics();
-
-    if (!mounted) return;
-    setState(() => _isAuthenticating = false);
-
-    if (success) {
-      _failedAttempts = 0;
+    final savedPin = await lockService.getSavedPin();
+    if (savedPin == null || savedPin.isEmpty) {
+      lockService.unlock();
       widget.onUnlock();
-    } else {
-      _failedAttempts++;
-      if (_failedAttempts >= 5) {
-        setState(() => _showEmergencyUnlock = true);
-      }
+      return;
     }
+
+    screenLock(
+      context: context,
+      correctString: savedPin,
+      canCancel: false,
+      withBlur: false,
+      title: Text('输入 PIN 码解锁'),
+      config: ScreenLockConfig(
+        backgroundColor: const Color(0xFF16213E),
+        shape: InputButtonShape.circle,
+      ),
+      secretsConfig: SecretsConfig(
+        spacing: 16,
+        padding: const EdgeInsets.all(16),
+      ),
+      keyPadConfig: KeyPadConfig(
+        buttonConfig: KeyPadButtonConfig(
+          buttonStyle: OutlinedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            foregroundColor: Colors.white,
+            side: const BorderSide(color: Colors.white24),
+          ),
+        ),
+      ),
+      customizedButtonChild: const Icon(Icons.fingerprint, color: Colors.white),
+      customizedButtonTap: () async {
+        final success = await lockService.authenticateWithBiometrics();
+        if (success && mounted) {
+          Navigator.of(context).pop();
+          lockService.unlock();
+          widget.onUnlock();
+        }
+      },
+      onUnlocked: () {
+        _failedAttempts = 0;
+        lockService.unlock();
+        widget.onUnlock();
+      },
+      onError: (value) {
+        _failedAttempts++;
+        if (_failedAttempts >= 5) {
+          setState(() => _showEmergencyUnlock = true);
+        }
+      },
+    );
   }
 
   Future<void> _emergencyUnlock() async {
@@ -300,18 +326,9 @@ class _LockScreenState extends State<LockScreen> {
                     ],
                     SizedBox(height: 48),
                     ElevatedButton.icon(
-                      onPressed: _isAuthenticating ? null : _authenticate,
-                      icon: _isAuthenticating
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : Icon(Icons.fingerprint),
-                      label: Text(_isAuthenticating ? '验证中...' : '点击验证'),
+                      onPressed: _showScreenLock,
+                      icon: Icon(Icons.lock_open),
+                      label: Text('点击解锁'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Color(0xFF4A90E2),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:flutter_screen_lock/flutter_screen_lock.dart';
 
 class LockService {
   static final LockService instance = LockService._();
@@ -58,109 +59,108 @@ class LockService {
     }
   }
 
+  Future<String?> getSavedPin() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_pinKey);
+  }
+
+  Future<void> setPin(String pin) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_pinKey, pin);
+  }
+
+  Future<bool> verifyPin(String pin) async {
+    final savedPin = await getSavedPin();
+    if (savedPin == null || savedPin.isEmpty) return false;
+    return pin == savedPin;
+  }
+
   void showLockScreen(BuildContext context, {required VoidCallback onUnlocked}) {
     if (!_lockEnabled) {
       onUnlocked();
       return;
     }
-    _showPinDialog(context, onUnlocked);
+
+    getSavedPin().then((savedPin) {
+      if (savedPin == null || savedPin.isEmpty) {
+        onUnlocked();
+        return;
+      }
+
+      screenLock(
+        context: context,
+        correctString: savedPin,
+        canCancel: false,
+        withBlur: false,
+        title: const Text('输入 PIN 码解锁'),
+        config: ScreenLockConfig(
+          backgroundColor: const Color(0xFF16213E),
+          shape: InputButtonShape.circle,
+        ),
+        secretsConfig: SecretsConfig(
+          spacing: 16,
+          padding: const EdgeInsets.all(16),
+        ),
+        keyPadConfig: KeyPadConfig(
+          buttonConfig: KeyPadButtonConfig(
+            buttonStyle: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Colors.white24),
+            ),
+          ),
+        ),
+        customizedButtonChild: const Icon(Icons.fingerprint, color: Colors.white),
+        customizedButtonTap: () async {
+          final success = await authenticateWithBiometrics();
+          if (success && context.mounted) {
+            Navigator.of(context).pop();
+            unlock();
+            onUnlocked();
+          }
+        },
+        onUnlocked: () {
+          unlock();
+          onUnlocked();
+        },
+        onError: (value) {},
+      );
+    });
   }
 
-  void _showPinDialog(BuildContext context, VoidCallback onUnlocked) {
-    String pin = '';
-    showDialog(
+  void showCreatePinScreen(BuildContext context, {required VoidCallback onConfirmed}) {
+    screenLockCreate(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text('输入 PIN 码'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    obscureText: true,
-                    keyboardType: TextInputType.number,
-                    maxLength: 6,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      hintText: '请输入 4-6 位 PIN 码',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (value) {
-                      pin = value;
-                    },
-                    onSubmitted: (value) async {
-                      final success = await _validatePin(value);
-                      if (success && dialogContext.mounted) {
-                        Navigator.of(dialogContext).pop();
-                        unlock();
-                        onUnlocked();
-                      }
-                    },
-                  ),
-                  SizedBox(height: 12),
-                  FutureBuilder<bool>(
-                    future: canCheckBiometrics(),
-                    builder: (context, snapshot) {
-                      if (snapshot.data == true) {
-                        return TextButton.icon(
-                          onPressed: () async {
-                            final success = await authenticateWithBiometrics();
-                            if (success && dialogContext.mounted) {
-                              Navigator.of(dialogContext).pop();
-                              unlock();
-                              onUnlocked();
-                            }
-                          },
-                          icon: Icon(Icons.fingerprint),
-                          label: Text('使用生物识别'),
-                        );
-                      }
-                      return SizedBox.shrink();
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text('取消'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    final success = await _validatePin(pin);
-                    if (success && dialogContext.mounted) {
-                      Navigator.of(dialogContext).pop();
-                      unlock();
-                      onUnlocked();
-                    } else if (dialogContext.mounted) {
-                      ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        SnackBar(content: Text('PIN 码错误'), backgroundColor: Colors.red),
-                      );
-                    }
-                  },
-                  child: Text('确认'),
-                ),
-              ],
-            );
-          },
-        );
+      digits: 4,
+      canCancel: true,
+      withBlur: false,
+      title: const Text('设置 PIN 码'),
+      confirmTitle: const Text('确认 PIN 码'),
+      config: ScreenLockConfig(
+        backgroundColor: const Color(0xFF16213E),
+        shape: InputButtonShape.circle,
+      ),
+      secretsConfig: SecretsConfig(
+        spacing: 16,
+        padding: const EdgeInsets.all(16),
+      ),
+      keyPadConfig: KeyPadConfig(
+        buttonConfig: KeyPadButtonConfig(
+          buttonStyle: OutlinedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            foregroundColor: Colors.white,
+            side: const BorderSide(color: Colors.white24),
+          ),
+        ),
+      ),
+      onConfirmed: (pin) async {
+        await setPin(pin);
+        if (context.mounted) {
+          Navigator.of(context).pop();
+          onConfirmed();
+        }
       },
     );
-  }
-
-  Future<bool> _validatePin(String inputPin) async {
-    if (inputPin.isEmpty) return false;
-    final prefs = await SharedPreferences.getInstance();
-    final savedPin = prefs.getString(_pinKey);
-
-    if (savedPin == null || savedPin.isEmpty) {
-      await prefs.setString(_pinKey, inputPin);
-      return true;
-    }
-    return inputPin == savedPin;
   }
 
   Future<void> setLockEnabled(bool enabled) async {

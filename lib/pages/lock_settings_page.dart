@@ -9,88 +9,191 @@ class LockSettingsPage extends StatefulWidget {
 }
 
 class _LockSettingsPageState extends State<LockSettingsPage> {
-  final LockService _lockService = LockService.instance;
-  bool _canUseBiometrics = false;
-  bool _isLoading = true;
+  bool _lockEnabled = false;
+  bool _hasPinSet = false;
 
   @override
   void initState() {
     super.initState();
-    _checkBiometrics();
+    _loadSettings();
   }
 
-  Future<void> _checkBiometrics() async {
-    final canCheck = await _lockService.canCheckBiometrics();
-    final isSupported = await _lockService.isDeviceSupported();
+  Future<void> _loadSettings() async {
+    final lockService = LockService.instance;
     setState(() {
-      _canUseBiometrics = canCheck && isSupported;
-      _isLoading = false;
+      _lockEnabled = lockService.lockEnabled;
+      _hasPinSet = false;
     });
+
+    final hasPin = await lockService.hasPinSet();
+    if (mounted) {
+      setState(() {
+        _hasPinSet = hasPin;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final cardColor = theme.cardColor;
+
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text('\u9690\u79C1\u9501', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Color(0xFF4A90E2),
+        title: Text('隐私锁设置', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: primaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+        leading: IconButton(icon: Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildLockToggleCard(context, cardColor, primaryColor),
+            SizedBox(height: 16),
+            if (_lockEnabled) ...[
+              _buildPinCard(context, cardColor, primaryColor),
+              SizedBox(height: 16),
+              _buildInfoCard(context, cardColor, primaryColor),
+            ],
+            SizedBox(height: 24),
+          ],
         ),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildInfoCard(),
-                  SizedBox(height: 24),
-                  _buildLockToggle(),
-                  if (_lockService.lockEnabled) ...[
-                    SizedBox(height: 16),
-                    _buildTestButton(),
-                  ],
-                ],
-              ),
-            ),
     );
   }
 
-  Widget _buildInfoCard() {
+  Widget _buildLockToggleCard(BuildContext context, Color cardColor, Color primaryColor) {
+    final theme = Theme.of(context);
+
     return Container(
-      padding: EdgeInsets.all(20),
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.security, size: 48, color: Colors.white),
-          SizedBox(width: 16),
+          Row(
+            children: [
+              Icon(Icons.lock, size: 20, color: primaryColor),
+              SizedBox(width: 8),
+              Text('隐私锁开关', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+            ],
+          ),
+          SizedBox(height: 12),
+          Text('开启后，每次启动应用都需要输入 PIN 码或使用生物识别验证', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
+          SizedBox(height: 12),
+          SwitchListTile(
+            title: Text(_lockEnabled ? '已开启' : '已关闭', style: TextStyle(fontSize: 15)),
+            subtitle: Text(_lockEnabled ? '应用已保护' : '点击开启保护', style: TextStyle(fontSize: 13)),
+            value: _lockEnabled,
+            onChanged: (value) => _toggleLock(value),
+            activeColor: primaryColor,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPinCard(BuildContext context, Color cardColor, Color primaryColor) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.pin, size: 20, color: primaryColor),
+              SizedBox(width: 8),
+              Text('PIN 码管理', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+            ],
+          ),
+          SizedBox(height: 16),
+          Text(_hasPinSet ? '已设置 PIN 码' : '未设置 PIN 码', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
+          SizedBox(height: 12),
+          if (_hasPinSet)
+            ElevatedButton.icon(
+              onPressed: () => _resetPin(),
+              icon: Icon(Icons.refresh, size: 18),
+              label: Text('重置 PIN 码'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            )
+          else
+            ElevatedButton.icon(
+              onPressed: () => _setupPin(),
+              icon: Icon(Icons.add, size: 18),
+              label: Text('设置 PIN 码'),
+              style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(BuildContext context, Color cardColor, Color primaryColor) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, size: 20, color: primaryColor),
+              SizedBox(width: 8),
+              Text('功能说明', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+            ],
+          ),
+          SizedBox(height: 12),
+          _buildInfoItem('PIN 码验证', '4位数字密码，安全键盘输入'),
+          _buildInfoItem('生物识别', '支持指纹、面部识别'),
+          _buildInfoItem('忘记密码', '连续失败5次可紧急解锁'),
+          _buildInfoItem('安全性', 'PIN 码加密存储在本地'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(String label, String value) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('• ', style: TextStyle(fontSize: 14, color: theme.colorScheme.primary)),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '\u4FDD\u62A4\u4F60\u7684\u9690\u79C1',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  '\u542F\u7528\u540E\uFF0C\u8FDB\u5165\u5E94\u7528\u9700\u8981\u9A8C\u8BC1\u6307\u7EB9\u6216\u5BC6\u7801',
-                  style: TextStyle(fontSize: 13, color: Colors.white70),
-                ),
-              ],
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface),
+                children: [
+                  TextSpan(text: '$label：', style: TextStyle(fontWeight: FontWeight.w500)),
+                  TextSpan(text: value, style: TextStyle(fontWeight: FontWeight.normal)),
+                ],
+              ),
             ),
           ),
         ],
@@ -98,83 +201,62 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
     );
   }
 
-  Widget _buildLockToggle() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
-      ),
-      child: SwitchListTile(
-        title: Text('\u542F\u7528\u9690\u79C1\u9501', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-        subtitle: Text(
-          _canUseBiometrics ? '\u652F\u6301\u6307\u7EB9\u548C\u5BC6\u7801\u9A8C\u8BC1' : '\u4EC5\u652F\u6301\u5BC6\u7801\u9A8C\u8BC1',
-          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-        ),
-        value: _lockService.lockEnabled,
-        activeColor: Color(0xFF4A90E2),
-        onChanged: (value) async {
-          if (value) {
-            if (!_canUseBiometrics) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('\u5F53\u524D\u8BBE\u5907\u4E0D\u652F\u6301\u751F\u7269\u8BC6\u522B'), backgroundColor: Colors.orange),
-                );
-              }
-              return;
-            }
-            final success = await _lockService.authenticate();
-            if (success) {
-              await _lockService.setLockEnabled(true);
-              setState(() {});
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('\u9690\u79C1\u9501\u5DF2\u542F\u7528'), backgroundColor: Colors.green),
-                );
-              }
-            }
-          } else {
-            final success = await _lockService.authenticate();
-            if (success) {
-              await _lockService.setLockEnabled(false);
-              setState(() {});
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('\u9690\u79C1\u9501\u5DF2\u5173\u95ED'), backgroundColor: Colors.orange),
-                );
-              }
-            }
-          }
-        },
-      ),
+  Future<void> _toggleLock(bool value) async {
+    await LockService.instance.setLockEnabled(value);
+    setState(() {
+      _lockEnabled = value;
+      if (!value) _hasPinSet = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(value ? '隐私锁已开启' : '隐私锁已关闭')),
+    );
+
+    if (value && !_hasPinSet) {
+      Future.delayed(Duration(seconds: 1), () => _setupPin());
+    }
+  }
+
+  void _setupPin() {
+    LockService.instance.showCreatePinScreen(
+      context,
+      onConfirmed: () {
+        _loadSettings();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PIN 码设置成功')),
+        );
+      },
     );
   }
 
-  Widget _buildTestButton() {
-    return Container(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () async {
-          final success = await _lockService.authenticate();
-          if (success && mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('\u9A8C\u8BC1\u6210\u529F'), backgroundColor: Colors.green),
-            );
-          } else if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('\u9A8C\u8BC1\u5931\u8D25'), backgroundColor: Colors.red),
-            );
-          }
-        },
-        icon: Icon(Icons.fingerprint),
-        label: Text('\u6D4B\u8BD5\u9A8C\u8BC1'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFF4A90E2),
-          foregroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+  void _resetPin() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('重置 PIN 码'),
+        content: Text('确定要重置 PIN 码吗？需要重新设置新的 PIN 码。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('确定', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
+
+    if (confirm == true) {
+      await LockService.instance.disableLock();
+      await LockService.instance.setLockEnabled(true);
+
+      setState(() {
+        _hasPinSet = false;
+      });
+
+      Future.delayed(Duration(seconds: 1), () => _setupPin());
+    }
   }
 }
