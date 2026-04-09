@@ -48,10 +48,10 @@ class _AddRecordPageState extends State<AddRecordPage> {
   bool get _isEditMode => widget.editRecordId != null;
 
   List<Map<String, dynamic>> _moods = [
-    {'value': 'happy', 'emoji': '☺', 'label': '开心'},
-    {'value': 'neutral', 'emoji': '☹', 'label': '平静'},
-    {'value': 'sad', 'emoji': '☺', 'label': '难过'},
-    {'value': 'excited', 'emoji': '♥', 'label': '兴奋'},
+    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '\u5F00\u5FC3'},
+    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '\u5E73\u9759'},
+    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '\u96BE\u8FC7'},
+    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '\u5174\u594B'},
   ];
 
   @override
@@ -101,7 +101,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('语音识别错误: $error'),
+                content: Text('\u8BED\u97F3\u8BC6\u522B\u9519\u8BEF: $error'),
                 backgroundColor: Colors.orange,
                 duration: Duration(seconds: 3),
               ),
@@ -150,7 +150,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('图片保存失败，请重试'), backgroundColor: Colors.red),
+              SnackBar(content: Text('\u56FE\u7247\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5'), backgroundColor: Colors.red),
             );
           }
         }
@@ -158,7 +158,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('选择图片失败'), backgroundColor: Colors.red),
+          SnackBar(content: Text('\u9009\u62E9\u56FE\u7247\u5931\u8D25'), backgroundColor: Colors.red),
         );
       }
     }
@@ -195,15 +195,15 @@ class _AddRecordPageState extends State<AddRecordPage> {
               ),
             ),
             SizedBox(height: 20),
-            Text('添加图片', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+            Text('\u6DFB\u52A0\u56FE\u7247', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             SizedBox(height: 8),
-            Text('应用需要访问相机或相册权限来添加图片', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            Text('\u5E94\u7528\u9700\u8981\u8BBF\u95EE\u76F8\u673A\u6216\u76F8\u518C\u6743\u9650\u6765\u6DFB\u52A0\u56FE\u7247', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildImageSourceOption(Icons.camera_alt, '拍照', ImageSource.camera),
-                _buildImageSourceOption(Icons.photo_library, '相册', ImageSource.gallery),
+                _buildImageSourceOption(Icons.camera_alt, '\u62CD\u7167', ImageSource.camera),
+                _buildImageSourceOption(Icons.photo_library, '\u76F8\u518C', ImageSource.gallery),
               ],
             ),
             SizedBox(height: 20),
@@ -240,7 +240,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   Future<void> _generateTags() async {
     if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('请先输入内容再生成标签')),
+        SnackBar(content: Text('\u8BF7\u5148\u8F93\u5165\u5185\u5BB9\u518D\u751F\u6210\u6807\u7B7E')),
       );
       return;
     }
@@ -255,7 +255,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('已生成${tags.length}个标签'),
+            content: Text('\u5DF2\u751F\u6210${tags.length}\u4E2A\u6807\u7B7E'),
             backgroundColor: Colors.green,
           ),
         );
@@ -265,7 +265,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         setState(() => _isGeneratingTags = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('标签生成失败：$e'),
+            content: Text('\u6807\u7B7E\u751F\u6210\u5931\u8D25\uFF1A$e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -290,7 +290,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   Future<void> _saveRecord() async {
     if (_contentController.text.trim().isEmpty && _selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('请输入记录内容或添加图片')),
+        SnackBar(content: Text('\u8BF7\u8F93\u5165\u8BB0\u5F55\u5185\u5BB9\u6216\u6DFB\u52A0\u56FE\u7247')),
       );
       return;
     }
@@ -307,7 +307,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content: Text('标签自动生成失败，已保存无标签记录'),
+                  content: Text('\u6807\u7B7E\u81EA\u52A8\u751F\u6210\u5931\u8D25\uFF0C\u5DF2\u4FDD\u5B58\u65E0\u6807\u7B7E\u8BB0\u5F55'),
                   backgroundColor: Colors.orange),
             );
           }
@@ -338,7 +338,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('保存失败，请重试'),
+            content: Text('\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5'),
             backgroundColor: Colors.red,
           ),
         );
@@ -367,7 +367,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditMode ? '编辑记录' : '添加记录',
+          _isEditMode ? '\u7F16\u8F91\u8BB0\u5F55' : '\u6DFB\u52A0\u8BB0\u5F55',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
@@ -418,7 +418,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         controller: _contentController,
         maxLines: 6,
         decoration: InputDecoration(
-          hintText: '今天发生了什么？',
+          hintText: '\u4ECA\u5929\u53D1\u751F\u4E86\u4EC0\u4E48\uFF1F',
           hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5), fontSize: 16),
           border: InputBorder.none,
           contentPadding: EdgeInsets.all(20),
@@ -450,12 +450,12 @@ class _AddRecordPageState extends State<AddRecordPage> {
             children: [
               Icon(Icons.image, color: Color(0xFF4A90E2), size: 20),
               SizedBox(width: 8),
-              Text('添加图片', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+              Text('\u6DFB\u52A0\u56FE\u7247', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
               Spacer(),
               TextButton.icon(
                 onPressed: _showImageSourceDialog,
                 icon: Icon(Icons.add_photo_alternate, size: 16),
-                label: Text('添加'),
+                label: Text('\u6DFB\u52A0'),
                 style: TextButton.styleFrom(
                   foregroundColor: Color(0xFF4A90E2),
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -516,7 +516,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             ),
           ] else ...[
             SizedBox(height: 8),
-            Text('点击添加图片，记录图文并茂的生活', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+            Text('\u70B9\u51FB\u6DFB\u52A0\u56FE\u7247\uFF0C\u8BB0\u5F55\u56FE\u6587\u5E76\u8302\u7684\u751F\u6D3B', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
           ],
         ],
       ),
@@ -530,11 +530,11 @@ class _AddRecordPageState extends State<AddRecordPage> {
       children: [
         Padding(
           padding: EdgeInsets.only(left: 4, bottom: 12),
-          child: Text('选择心情',
+          child: Text('\u9009\u62E9\u5FC3\u60C5',
               style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurfaceVariant),
+                  color: theme.colorScheme.onSurfaceVariant)),
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -636,7 +636,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         Padding(
           padding: EdgeInsets.only(top: 8),
           child: Text(
-            _isRecognizing ? '正在识别...' : '按住说话（需麦克风权限）',
+            _isRecognizing ? '\u6B63\u5728\u8BC6\u522B...' : '\u6309\u4F4F\u8BF4\u8BDD\uFF08\u9700\u9EA6\u514B\u98CE\u6743\u9650\uFF09',
             style: TextStyle(
               fontSize: 13,
               color: _isRecognizing ? Colors.orange : theme.colorScheme.onSurfaceVariant,
@@ -670,7 +670,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             children: [
               Icon(Icons.auto_awesome, color: Color(0xFF4A90E2), size: 20),
               SizedBox(width: 8),
-              Text('AI智能标签',
+              Text('AI\u667A\u80FD\u6807\u7B7E',
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -685,7 +685,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                   : TextButton.icon(
                       onPressed: _generateTags,
                       icon: Icon(Icons.auto_awesome, size: 16),
-                      label: Text('生成标签'),
+                      label: Text('\u751F\u6210\u6807\u7B7E'),
                       style: TextButton.styleFrom(
                         foregroundColor: Color(0xFF4A90E2),
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -697,7 +697,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
           ),
           if (_customTags.isNotEmpty) ...[
             SizedBox(height: 8),
-            Text('常用标签：', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+            Text('\u5E38\u7528\u6807\u7B7E\uFF1A', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
             SizedBox(height: 4),
             Wrap(
               spacing: 6,
@@ -736,7 +736,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             ),
           ] else if (!_isGeneratingTags) ...[
             SizedBox(height: 8),
-            Text('点击"生成标签"让 AI 自动为你打标签，或保存时自动生成',
+            Text('\u70B9\u51FB\u201C\u751F\u6210\u6807\u7B7E\u201D\u8BA9 AI \u81EA\u52A8\u4E3A\u4F60\u6253\u6807\u7B7E\uFF0C\u6216\u4FDD\u5B58\u65F6\u81EA\u52A8\u751F\u6210',
                 style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
           ],
         ],
@@ -768,11 +768,11 @@ class _AddRecordPageState extends State<AddRecordPage> {
                     ),
                   ),
                   SizedBox(width: 12),
-                  Text('正在保存...',
+                  Text('\u6B63\u5728\u4FDD\u5B58...',
                       style: TextStyle(fontSize: 16, color: Colors.white)),
                 ],
               )
-            : Text(_isEditMode ? '保存修改' : '保存记录',
+            : Text(_isEditMode ? '\u4FDD\u5B58\u4FEE\u6539' : '\u4FDD\u5B58\u8BB0\u5F55',
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
