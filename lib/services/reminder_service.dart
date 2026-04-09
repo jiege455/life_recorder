@@ -168,8 +168,8 @@ class ReminderService {
 
     const androidDetails = AndroidNotificationDetails(
       'daily_reminder',
-      '每日提醒',
-      channelDescription: '每日记录提醒',
+      '\u6BCF\u65E5\u63D0\u9192',
+      channelDescription: '\u6BCF\u65E5\u8BB0\u5F55\u63D0\u9192',
       importance: Importance.high,
       priority: Priority.high,
       showWhen: true,
@@ -201,8 +201,8 @@ class ReminderService {
 
     await _plugin.zonedSchedule(
       1,
-      'AI人生记录器',
-      '今天发生了什么新鲜事？来记录一下吧~',
+      'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
+      '\u4ECA\u5929\u53D1\u751F\u4E86\u4EC0\u4E48\u65B0\u9C9C\u4E8B\uFF1F\u6765\u8BB0\u5F55\u4E00\u4E0B\u5427~',
       scheduledDate,
       notificationDetails,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,

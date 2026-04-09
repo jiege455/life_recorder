@@ -23,6 +23,10 @@ class SpeechService {
   Future<bool> init() async {
     if (_isInitialized) return true;
 
+    if (!ApiConfig.isIflyConfigured) {
+      return false;
+    }
+
     try {
       _speechService = SpeechRecognitionService(
         appId: ApiConfig.iflyAppId,
@@ -80,14 +84,14 @@ class SpeechService {
   }) async {
     var hasPermission = await requestPermission();
     if (!hasPermission) {
-      onError('麦克风权限未授予');
+      onError('\u9EA6\u514B\u98CE\u6743\u9650\u672A\u6388\u4E88');
       return;
     }
 
     if (!_isInitialized) {
       bool success = await init();
       if (!success) {
-        onError('语音服务初始化失败');
+        onError('\u8BED\u97F3\u670D\u52A1\u521D\u59CB\u5316\u5931\u8D25');
         return;
       }
     }
@@ -101,7 +105,7 @@ class SpeechService {
       await _speechService!.startRecord();
     } catch (e) {
       _isListening = false;
-      onError('启动语音识别失败: $e');
+      onError('\u542F\u52A8\u8BED\u97F3\u8BC6\u522B\u5931\u8D25: $e');
     }
   }
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -58,12 +59,34 @@ class DatabaseHelper {
 
   Future<int> deleteRecord(int id) async {
     final db = await database;
+    final record = await getRecordById(id);
+    if (record != null) {
+      _cleanupRecordImages(record);
+    }
     return await db.delete('records', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<int> deleteAllRecords() async {
     final db = await database;
+    final records = await getAllRecords();
+    for (var record in records) {
+      _cleanupRecordImages(record);
+    }
     return await db.delete('records');
+  }
+
+  void _cleanupRecordImages(Map<String, dynamic> record) {
+    if (record['images'] != null && record['images'].toString().isNotEmpty) {
+      try {
+        List<dynamic> images = jsonDecode(record['images'].toString());
+        for (var imgPath in images) {
+          final file = File(imgPath.toString());
+          if (file.existsSync()) {
+            file.deleteSync();
+          }
+        }
+      } catch (e) {}
+    }
   }
 
   Future<int> updateRecord(int id, Map<String, dynamic> record) async {
