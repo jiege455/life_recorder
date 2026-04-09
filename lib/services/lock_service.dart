@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_screen_lock/flutter_screen_lock.dart';
 import 'package:local_auth/local_auth.dart';
@@ -67,7 +68,6 @@ class LockService {
     ScreenLock(
       correctString: '',
       title: '输入 PIN 码',
-      confirmTitle: '再次输入',
       customizedButtonChild: const Icon(Icons.fingerprint),
       customizedButtonTap: () async {
         final success = await authenticateWithBiometrics();
