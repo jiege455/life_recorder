@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
 import '../database/database_helper.dart';
 import 'record_detail_page.dart';
 
@@ -14,38 +16,62 @@ class _CalendarPageState extends State<CalendarPage> {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  Map<int, int> _recordCounts = {};
+  Map<DateTime, List<Map<String, dynamic>>> _events = {};
   List<Map<String, dynamic>> _selectedDayRecords = [];
-  bool _isLoading = true;
-
-  final List<String> _monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
 
   @override
   void initState() {
     super.initState();
-    _selectedDay = DateTime.now();
-    _loadMonthData();
-    _loadDayRecords();
+    _selectedDay = _focusedDay;
+    _loadEvents();
   }
 
-  Future<void> _loadMonthData() async {
-    final counts = await _dbHelper.getDailyRecordCounts(_focusedDay.year, _focusedDay.month);
+  Future<void> _loadEvents() async {
+    final records = await _dbHelper.getAllRecords();
+    Map<DateTime, List<Map<String, dynamic>>> events = {};
+
+    for (var record in records) {
+      try {
+        final createdAt = record['created_at'];
+        DateTime dt;
+        if (createdAt is int) {
+          dt = DateTime.fromMillisecondsSinceEpoch(createdAt);
+        } else if (createdAt is String) {
+          dt = DateTime.parse(createdAt);
+        } else {
+          continue;
+        }
+        DateTime day = DateTime(dt.year, dt.month, dt.day);
+        if (!events.containsKey(day)) {
+          events[day] = [];
+        }
+        events[day]!.add(record);
+      } catch (e) {
+        continue;
+      }
+    }
+
     if (mounted) {
       setState(() {
-        _recordCounts = counts;
-        _isLoading = false;
+        _events = events;
       });
+      if (_selectedDay != null) {
+        _loadDayRecords(_selectedDay!);
+      }
     }
   }
 
-  Future<void> _loadDayRecords() async {
-    if (_selectedDay == null) return;
-    final records = await _dbHelper.getRecordsByDate(_selectedDay!);
+  Future<void> _loadDayRecords(DateTime day) async {
+    final records = await _dbHelper.getRecordsByDate(day);
     if (mounted) {
       setState(() {
         _selectedDayRecords = records;
       });
     }
+  }
+
+  List<Map<String, dynamic>> _getEventsForDay(DateTime day) {
+    return _events[DateTime(day.year, day.month, day.day)] ?? [];
   }
 
   IconData _getMoodIcon(String? mood) {
@@ -68,194 +94,101 @@ class _CalendarPageState extends State<CalendarPage> {
     }
   }
 
+  Color _getTagColor(int index) {
+    final colors = [Colors.blue, Colors.green, Colors.orange, Colors.purple, Colors.teal, Colors.red];
+    return colors[index % colors.length];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text('日历', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Color(0xFF4A90E2),
+        title: Text('日历视图', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildCalendar(),
-                Expanded(child: _buildDayRecords()),
-              ],
-            ),
+      body: Column(
+        children: [
+          _buildCalendar(),
+          Expanded(child: _buildDayRecords()),
+        ],
+      ),
     );
   }
 
   Widget _buildCalendar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.colorScheme.primary;
     return Container(
       margin: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
-      ),
-      child: Column(
-        children: [
-          _buildMonthHeader(),
-          _buildWeekdayHeader(),
-          _buildCalendarGrid(),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))
         ],
       ),
-    );
-  }
-
-  Widget _buildMonthHeader() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            icon: Icon(Icons.chevron_left, color: Color(0xFF4A90E2)),
-            onPressed: () {
-              setState(() {
-                _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1);
-              });
-              _loadMonthData();
-            },
+      child: TableCalendar(
+        firstDay: DateTime(2024, 1, 1),
+        lastDay: DateTime(2030, 12, 31),
+        focusedDay: _focusedDay,
+        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+        onDaySelected: (selectedDay, focusedDay) {
+          setState(() {
+            _selectedDay = selectedDay;
+            _focusedDay = focusedDay;
+          });
+          _loadDayRecords(selectedDay);
+        },
+        eventLoader: _getEventsForDay,
+        calendarFormat: CalendarFormat.month,
+        availableCalendarFormats: {CalendarFormat.month: '月'},
+        locale: 'zh_CN',
+        calendarStyle: CalendarStyle(
+          outsideDaysVisible: false,
+          selectedDecoration: BoxDecoration(
+            color: primaryColor,
+            shape: BoxShape.circle,
           ),
-          Row(
-            children: [
-              Text(
-                '${_focusedDay.year}年',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A90E2)),
-              ),
-              SizedBox(width: 4),
-              Text(
-                _monthNames[_focusedDay.month - 1],
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF4A90E2)),
-              ),
-            ],
+          todayDecoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.3),
+            shape: BoxShape.circle,
           ),
-          IconButton(
-            icon: Icon(Icons.chevron_right, color: Color(0xFF4A90E2)),
-            onPressed: () {
-              setState(() {
-                _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);
-              });
-              _loadMonthData();
-            },
+          markerDecoration: BoxDecoration(
+            color: Color(0xFFFF6B6B),
+            shape: BoxShape.circle,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWeekdayHeader() {
-    final weekdays = ['一', '二', '三', '四', '五', '六', '日'];
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: weekdays.map((day) {
-          return Expanded(
-            child: Center(
-              child: Text(
-                day,
-                style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.w500),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildCalendarGrid() {
-    final firstDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month, 1);
-    final lastDayOfMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0);
-    int startingWeekday = firstDayOfMonth.weekday;
-    int daysInMonth = lastDayOfMonth.day;
-
-    List<Widget> dayWidgets = [];
-
-    for (int i = 1; i < startingWeekday; i++) {
-      dayWidgets.add(Container());
-    }
-
-    for (int day = 1; day <= daysInMonth; day++) {
-      final date = DateTime(_focusedDay.year, _focusedDay.month, day);
-      final isSelected = _selectedDay != null &&
-          _selectedDay!.year == date.year &&
-          _selectedDay!.month == date.month &&
-          _selectedDay!.day == date.day;
-      final isToday = DateTime.now().year == date.year &&
-          DateTime.now().month == date.month &&
-          DateTime.now().day == date.day;
-      final hasRecord = _recordCounts.containsKey(day);
-
-      dayWidgets.add(
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedDay = date;
-            });
-            _loadDayRecords();
-          },
-          child: Container(
-            margin: EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              color: isSelected ? Color(0xFF4A90E2) : (isToday ? Color(0xFF4A90E2).withOpacity(0.1) : null),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  day.toString(),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: isToday || isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? Colors.white : (isToday ? Color(0xFF4A90E2) : Colors.grey[700]),
-                  ),
-                ),
-                if (hasRecord)
-                  Container(
-                    margin: EdgeInsets.only(top: 2),
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.white : Color(0xFFFF6B6B),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-              ],
-            ),
-          ),
+          markerSize: 5,
         ),
-      );
-    }
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      child: GridView.count(
-        crossAxisCount: 7,
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        childAspectRatio: 1,
-        children: dayWidgets,
+        headerStyle: HeaderStyle(
+          formatButtonVisible: false,
+          titleCentered: true,
+          titleTextStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
+          leftChevronIcon: Icon(Icons.chevron_left, color: primaryColor),
+          rightChevronIcon: Icon(Icons.chevron_right, color: primaryColor),
+        ),
+        daysOfWeekStyle: DaysOfWeekStyle(
+          weekdayStyle: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
+          weekendStyle: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7)),
+        ),
       ),
     );
   }
 
   Widget _buildDayRecords() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     if (_selectedDayRecords.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_busy, size: 60, color: Colors.grey[300]),
+            Icon(Icons.event_busy, size: 60, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5)),
             SizedBox(height: 12),
-            Text('这天没有记录', style: TextStyle(fontSize: 16, color: Colors.grey[400])),
-            SizedBox(height: 4),
-            Text('选择其他日期查看记录', style: TextStyle(fontSize: 13, color: Colors.grey[300])),
+            Text('这天没有记录', style: TextStyle(fontSize: 16, color: theme.colorScheme.onSurfaceVariant)),
           ],
         ),
       );
@@ -265,17 +198,38 @@ class _CalendarPageState extends State<CalendarPage> {
       padding: EdgeInsets.symmetric(horizontal: 16),
       itemCount: _selectedDayRecords.length,
       itemBuilder: (context, index) {
-        var record = _selectedDayRecords[index];
-        String content = record['content']?.toString() ?? '';
+        final record = _selectedDayRecords[index];
         int recordId = record['id'] ?? 0;
-        DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
+        DateTime dt;
+        try {
+          final createdAt = record['created_at'];
+          if (createdAt is int) {
+            dt = DateTime.fromMillisecondsSinceEpoch(createdAt);
+          } else if (createdAt is String) {
+            dt = DateTime.parse(createdAt);
+          } else {
+            dt = DateTime.now();
+          }
+        } catch (e) {
+          dt = DateTime.now();
+        }
         String timeStr = DateFormat('HH:mm').format(dt);
+        String content = record['content']?.toString() ?? '';
+        String? mood = record['mood']?.toString();
+
+        List<String> tags = [];
+        if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
+          try {
+            List<dynamic> decoded = jsonDecode(record['tags'].toString());
+            tags = decoded.map((e) => e.toString()).toList();
+          } catch (e) {}
+        }
 
         return Card(
           elevation: 0,
-          margin: EdgeInsets.only(bottom: 10),
+          margin: EdgeInsets.only(bottom: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          color: Colors.white,
+          color: theme.cardColor,
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: () async {
@@ -284,27 +238,39 @@ class _CalendarPageState extends State<CalendarPage> {
                 MaterialPageRoute(builder: (context) => RecordDetailPage(recordId: recordId)),
               );
               if (result == true) {
-                _loadMonthData();
-                _loadDayRecords();
+                _loadEvents();
               }
             },
             child: Padding(
               padding: EdgeInsets.all(14),
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(_getMoodIcon(record['mood']), color: _getMoodColor(record['mood']), size: 24),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(timeStr, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-                        SizedBox(height: 4),
-                        Text(content, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14)),
-                      ],
-                    ),
+                  Row(
+                    children: [
+                      Icon(_getMoodIcon(mood), color: _getMoodColor(mood), size: 20),
+                      SizedBox(width: 6),
+                      Text(timeStr, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
+                    ],
                   ),
+                  SizedBox(height: 8),
+                  Text(content, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, height: 1.4)),
+                  if (tags.isNotEmpty) ...[
+                    SizedBox(height: 6),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: tags.take(3).toList().asMap().entries.map((entry) =>
+                        Chip(
+                          label: Text(entry.value, style: TextStyle(fontSize: 10, color: Colors.white)),
+                          backgroundColor: _getTagColor(entry.key),
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.symmetric(horizontal: 6),
+                        ),
+                      ).toList(),
+                    ),
+                  ],
                 ],
               ),
             ),

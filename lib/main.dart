@@ -9,6 +9,8 @@ import 'services/lock_service.dart';
 import 'services/reminder_service.dart';
 import 'services/tag_service.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -39,6 +41,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
   bool _isLocked = false;
   bool _lockEnabled = false;
   bool _agreedToPolicy = false;
+  bool _hasCheckedPermission = false;
 
   @override
   void initState() {
@@ -67,6 +70,60 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
         _agreedToPolicy = true;
       });
     }
+  }
+
+  void _checkNotificationPermissionOnStart() {
+    if (_hasCheckedPermission) return;
+    _hasCheckedPermission = true;
+    ReminderService.instance.checkAndFixReminderState().then((ok) {
+      if (!ok && mounted) {
+        final context = navigatorKey.currentContext;
+        if (context != null) {
+          _showPermissionRevokedDialog(context);
+        }
+      }
+    });
+  }
+
+  void _showPermissionRevokedDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.notifications_off, color: Colors.orange, size: 24),
+            SizedBox(width: 8),
+            Text('通知权限已关闭'),
+          ],
+        ),
+        backgroundColor: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Text(
+          '您之前已启用每日提醒功能，但通知权限已被关闭。每日提醒将无法正常工作，请前往系统设置重新开启通知权限。',
+          style: TextStyle(fontSize: 14, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('暂不设置'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              ReminderService.instance.openNotificationSettings();
+            },
+            icon: Icon(Icons.settings, size: 18),
+            label: Text('去设置'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF4A90E2),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -103,8 +160,9 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
       animation: widget.themeService,
       builder: (context, child) {
         return MaterialApp(
-          title: 'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
+          title: 'AI人生记录器',
           debugShowCheckedModeBanner: false,
+          navigatorKey: navigatorKey,
           theme: ThemeService.lightTheme,
           darkTheme: ThemeService.darkTheme,
           themeMode: widget.themeService.themeMode,
@@ -121,6 +179,9 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
     if (_isLocked && _lockEnabled) {
       return LockScreen(onUnlock: _unlock);
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkNotificationPermissionOnStart();
+    });
     return const HomePage();
   }
 }
@@ -136,82 +197,149 @@ class LockScreen extends StatefulWidget {
 
 class _LockScreenState extends State<LockScreen> {
   bool _isAuthenticating = false;
+  int _failedAttempts = 0;
+  bool _showEmergencyUnlock = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: 500), () {
+      if (mounted) _authenticate();
+    });
+  }
 
   Future<void> _authenticate() async {
     if (_isAuthenticating) return;
     setState(() => _isAuthenticating = true);
 
     final lockService = LockService.instance;
-    final success = await lockService.authenticate();
+    final success = await lockService.authenticateWithBiometrics();
 
+    if (!mounted) return;
     setState(() => _isAuthenticating = false);
 
     if (success) {
+      _failedAttempts = 0;
       widget.onUnlock();
     } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('\u9A8C\u8BC1\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5'), backgroundColor: Colors.red),
-        );
+      _failedAttempts++;
+      if (_failedAttempts >= 5) {
+        setState(() => _showEmergencyUnlock = true);
       }
+    }
+  }
+
+  Future<void> _emergencyUnlock() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('紧急解锁'),
+        content: Text('这将关闭隐私锁功能并进入应用。您可以在设置中重新启用隐私锁。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: Text('确认解锁', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await LockService.instance.disableLock();
+      widget.onUnlock();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF4A90E2), Color(0xFF16213E)],
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF4A90E2), Color(0xFF16213E)],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.lock_outline, size: 80, color: Colors.white),
-                SizedBox(height: 24),
-                Text(
-                  'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  '\u5DF2\u542F\u7528\u9690\u79C1\u4FDD\u62A4',
-                  style: TextStyle(fontSize: 16, color: Colors.white70),
-                ),
-                SizedBox(height: 48),
-                ElevatedButton.icon(
-                  onPressed: _isAuthenticating ? null : _authenticate,
-                  icon: _isAuthenticating
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Icon(Icons.fingerprint),
-                  label: Text(_isAuthenticating ? '\u9A8C\u8BC1\u4E2D...' : '\u70B9\u51FB\u9A8C\u8BC1'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Color(0xFF4A90E2),
-                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+          child: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.lock_outline, size: 80, color: Colors.white),
+                    SizedBox(height: 24),
+                    Text(
+                      'AI人生记录器',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
+                    SizedBox(height: 8),
+                    Text(
+                      '已启用隐私保护',
+                      style: TextStyle(fontSize: 16, color: Colors.white70),
+                    ),
+                    if (_failedAttempts > 0) ...[
+                      SizedBox(height: 12),
+                      Text(
+                        '验证失败 $_failedAttempts 次',
+                        style: TextStyle(fontSize: 14, color: Colors.orangeAccent),
+                      ),
+                    ],
+                    SizedBox(height: 48),
+                    ElevatedButton.icon(
+                      onPressed: _isAuthenticating ? null : _authenticate,
+                      icon: _isAuthenticating
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Icon(Icons.fingerprint),
+                      label: Text(_isAuthenticating ? '验证中...' : '点击验证'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Color(0xFF4A90E2),
+                        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                    if (_showEmergencyUnlock) ...[
+                      SizedBox(height: 24),
+                      TextButton.icon(
+                        onPressed: _emergencyUnlock,
+                        icon: Icon(Icons.lock_open, color: Colors.orangeAccent),
+                        label: Text(
+                          '紧急解锁',
+                          style: TextStyle(color: Colors.orangeAccent, fontSize: 14),
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        '连续验证失败5次后可使用紧急解锁',
+                        style: TextStyle(fontSize: 11, color: Colors.white38),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
