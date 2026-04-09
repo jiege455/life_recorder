@@ -161,7 +161,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
       animation: widget.themeService,
       builder: (context, child) {
         return MaterialApp(
-          title: 'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
+          title: 'AI人生记录器',
           debugShowCheckedModeBanner: false,
           navigatorKey: navigatorKey,
           theme: ThemeService.lightTheme,

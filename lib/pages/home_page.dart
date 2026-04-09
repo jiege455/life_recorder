@@ -37,10 +37,10 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   List<Map<String, dynamic>> _moods = [
-    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '\u5F00\u5FC3'},
-    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '\u5E73\u9759'},
-    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '\u96BE\u8FC7'},
-    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '\u5174\u594B'},
+    {'value': 'happy', 'emoji': '☺', 'label': '开心'},
+    {'value': 'neutral', 'emoji': '☹', 'label': '平静'},
+    {'value': 'sad', 'emoji': '☹', 'label': '难过'},
+    {'value': 'excited', 'emoji': '♥', 'label': '兴奋'},
   ];
 
   @override
@@ -74,7 +74,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('\u52A0\u8F7D\u6570\u636E\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5')),
+          SnackBar(content: Text('加载数据失败，请重试')),
         );
       }
     }
@@ -120,13 +120,13 @@ class _HomePageState extends State<HomePage> {
       String groupKey;
 
       if (_isSameDay(recordDate, now)) {
-        groupKey = '\u4ECA\u5929';
+        groupKey = '今天';
       } else if (_isSameDay(recordDate, now.subtract(Duration(days: 1)))) {
-        groupKey = '\u6628\u5929';
+        groupKey = '昨天';
       } else if (recordDate.isAfter(now.subtract(Duration(days: 7)))) {
-        groupKey = '\u672C\u5468';
+        groupKey = '本周';
       } else {
-        groupKey = DateFormat('MM\u6708dd\u65E5').format(recordDate);
+        groupKey = DateFormat('MM月dd日').format(recordDate);
       }
 
       if (!grouped.containsKey(groupKey)) {
@@ -171,12 +171,12 @@ class _HomePageState extends State<HomePage> {
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('\u786E\u8BA4\u5220\u9664'),
-        content: Text('\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u6761\u8BB0\u5F55\u5417\uFF1F'),
+        title: Text('确认删除'),
+        content: Text('确定要删除这条记录吗？'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('\u53D6\u6D88')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text('\u5220\u9664', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('取消')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text('删除', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -185,7 +185,7 @@ class _HomePageState extends State<HomePage> {
       await _dbHelper.deleteRecord(id);
       _loadData();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('\u5DF2\u5220\u9664')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('已删除')));
       }
     }
   }
@@ -195,7 +195,7 @@ class _HomePageState extends State<HomePage> {
     String mood = _getMoodLabel(record['mood']);
     String moodEmoji = _getMoodEmoji(record['mood']);
     DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
-    String dateStr = DateFormat('yyyy\u5E74MM\u6708dd\u65E5 HH:mm').format(dt);
+    String dateStr = DateFormat('yyyy年MM月dd日 HH:mm').format(dt);
 
     List<String> tags = [];
     if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
@@ -226,28 +226,33 @@ class _HomePageState extends State<HomePage> {
 
   String _getMoodEmoji(String? mood) {
     switch (mood) {
-      case 'happy': return '\u{1F60A}';
-      case 'neutral': return '\u{1F610}';
-      case 'sad': return '\u{1F622}';
-      case 'excited': return '\u{1F389}';
-      default: return '\u{1F610}';
+      case 'happy': return '☺';
+      case 'neutral': return '☹';
+      case 'sad': return '☹';
+      case 'excited': return '♥';
+      default: return '☹';
     }
   }
 
   String _getMoodLabel(String? mood) {
     switch (mood) {
-      case 'happy': return '\u5F00\u5FC3';
-      case 'neutral': return '\u5E73\u9759';
-      case 'sad': return '\u96BE\u8FC7';
-      case 'excited': return '\u5174\u594B';
-      default: return '\u5E73\u9759';
+      case 'happy': return '开心';
+      case 'neutral': return '平静';
+      case 'sad': return '难过';
+      case 'excited': return '兴奋';
+      default: return '平静';
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
+    final navBarBgColor = theme.bottomNavigationBarTheme.backgroundColor ?? theme.colorScheme.surface;
+    final primaryColor = theme.colorScheme.primary;
+
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
       body: IndexedStack(
         index: _currentIndex,
         children: [
@@ -259,22 +264,23 @@ class _HomePageState extends State<HomePage> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: navBarBgColor,
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, -2))],
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: Color(0xFF4A90E2),
-          unselectedItemColor: Colors.grey[400],
+          backgroundColor: navBarBgColor,
+          selectedItemColor: primaryColor,
+          unselectedItemColor: theme.colorScheme.onSurfaceVariant,
           selectedFontSize: 12,
           unselectedFontSize: 12,
           items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: '\u9996\u9875'),
-            BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: '\u65E5\u5386'),
-            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '\u7EDF\u8BA1'),
-            BottomNavigationBarItem(icon: Icon(Icons.auto_awesome), label: 'AI\u62A5\u544A'),
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: '首页'),
+            BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: '日历'),
+            BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '统计'),
+            BottomNavigationBarItem(icon: Icon(Icons.auto_awesome), label: 'AI报告'),
           ],
         ),
       ),
@@ -287,7 +293,7 @@ class _HomePageState extends State<HomePage> {
                 );
                 if (result == true) _loadData();
               },
-              backgroundColor: Color(0xFF4A90E2),
+              backgroundColor: primaryColor,
               child: Icon(Icons.add, color: Colors.white, size: 30),
             )
           : null,
@@ -295,8 +301,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHomeTab() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.colorScheme.primary;
+
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
         title: _isSearching
             ? TextField(
@@ -304,14 +313,14 @@ class _HomePageState extends State<HomePage> {
                 autofocus: true,
                 style: TextStyle(color: Colors.white, fontSize: 16),
                 decoration: InputDecoration(
-                  hintText: '\u641C\u7D22\u8BB0\u5F55...',
+                  hintText: '搜索记录...',
                   hintStyle: TextStyle(color: Colors.white70),
                   border: InputBorder.none,
                 ),
                 onChanged: _searchRecords,
               )
-            : Text('AI\u4EBA\u751F\u8BB0\u5F55\u5668', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Color(0xFF4A90E2),
+            : Text('AI人生记录器', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: primaryColor,
         elevation: 0,
         centerTitle: true,
         actions: [
@@ -343,9 +352,9 @@ class _HomePageState extends State<HomePage> {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 'settings', child: Row(children: [Icon(Icons.settings, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('\u8BBE\u7F6E')])),
-              PopupMenuItem(value: 'annual', child: Row(children: [Icon(Icons.calendar_today, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('\u5E74\u5EA6\u56DE\u987E')])),
-              PopupMenuItem(value: 'about', child: Row(children: [Icon(Icons.info_outline, size: 20, color: Color(0xFF4A90E2)), SizedBox(width: 8), Text('\u5173\u4E8E')])),
+              PopupMenuItem(value: 'settings', child: Row(children: [Icon(Icons.settings, size: 20, color: primaryColor), SizedBox(width: 8), Text('设置')])),
+              PopupMenuItem(value: 'annual', child: Row(children: [Icon(Icons.calendar_today, size: 20, color: primaryColor), SizedBox(width: 8), Text('年度回顾')])),
+              PopupMenuItem(value: 'about', child: Row(children: [Icon(Icons.info_outline, size: 20, color: primaryColor), SizedBox(width: 8), Text('关于')])),
             ],
           ),
         ],
@@ -367,21 +376,25 @@ class _HomePageState extends State<HomePage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          _buildStatCard('\u603B\u8BB0\u5F55\u6570', _totalCount.toString(), Icons.article, Color(0xFF4A90E2)),
+          _buildStatCard('总记录数', _totalCount.toString(), Icons.article, Color(0xFF4A90E2)),
           SizedBox(width: 12),
-          _buildStatCard('\u672C\u5468\u8BB0\u5F55', _weekCount.toString(), Icons.calendar_today, Color(0xFF50C878)),
+          _buildStatCard('本周记录', _weekCount.toString(), Icons.calendar_today, Color(0xFF50C878)),
           SizedBox(width: 12),
-          _buildStatCard('\u6700\u5E38\u7528\u6807\u7B7E', _mostUsedTag ?? '\u6682\u65E0', Icons.tag, Color(0xFFFF6B6B)),
+          _buildStatCard('最常用标签', _mostUsedTag ?? '暂无', Icons.tag, Color(0xFFFF6B6B)),
         ],
       ),
     );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: 140,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: Offset(0, 4))],
       ),
@@ -390,7 +403,7 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [Icon(icon, color: color, size: 22), SizedBox(width: 6), Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600]))]),
+          Row(children: [Icon(icon, color: color, size: 22), SizedBox(width: 6), Text(title, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant))]),
           SizedBox(height: 8),
           Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
         ],
@@ -399,6 +412,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMoodFilter() {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.colorScheme.primary;
+
     return Container(
       height: 44,
       padding: EdgeInsets.symmetric(horizontal: 16),
@@ -408,13 +426,13 @@ class _HomePageState extends State<HomePage> {
           Padding(
             padding: EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              label: Text('\u5168\u90E8'),
+              label: Text('全部'),
               selected: _selectedMoodFilter == null,
               onSelected: (_) => _filterByMood(null),
-              selectedColor: Color(0xFF4A90E2).withOpacity(0.2),
-              backgroundColor: Colors.white,
-              side: BorderSide(color: _selectedMoodFilter == null ? Color(0xFF4A90E2) : Colors.grey[300]!),
-              labelStyle: TextStyle(color: _selectedMoodFilter == null ? Color(0xFF4A90E2) : Colors.grey[600], fontSize: 13),
+              selectedColor: primaryColor.withOpacity(0.2),
+              backgroundColor: cardColor,
+              side: BorderSide(color: _selectedMoodFilter == null ? primaryColor : theme.colorScheme.outline),
+              labelStyle: TextStyle(color: _selectedMoodFilter == null ? primaryColor : theme.colorScheme.onSurfaceVariant, fontSize: 13),
             ),
           ),
           ..._moods.map((mood) => Padding(
@@ -423,10 +441,10 @@ class _HomePageState extends State<HomePage> {
               label: Text('${mood['emoji']} ${mood['label']}'),
               selected: _selectedMoodFilter == mood['value'],
               onSelected: (_) => _filterByMood(mood['value']),
-              selectedColor: Color(0xFF4A90E2).withOpacity(0.2),
-              backgroundColor: Colors.white,
-              side: BorderSide(color: _selectedMoodFilter == mood['value'] ? Color(0xFF4A90E2) : Colors.grey[300]!),
-              labelStyle: TextStyle(color: _selectedMoodFilter == mood['value'] ? Color(0xFF4A90E2) : Colors.grey[600], fontSize: 13),
+              selectedColor: primaryColor.withOpacity(0.2),
+              backgroundColor: cardColor,
+              side: BorderSide(color: _selectedMoodFilter == mood['value'] ? primaryColor : theme.colorScheme.outline),
+              labelStyle: TextStyle(color: _selectedMoodFilter == mood['value'] ? primaryColor : theme.colorScheme.onSurfaceVariant, fontSize: 13),
             ),
           )),
         ],
@@ -435,17 +453,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildRecordsList() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     var grouped = _groupRecordsByDate();
     if (grouped.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.book_outlined, size: 80, color: Colors.grey[300]),
+            Icon(Icons.book_outlined, size: 80, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5)),
             SizedBox(height: 16),
-            Text(_isSearching ? '\u6CA1\u6709\u627E\u5230\u76F8\u5173\u8BB0\u5F55' : '\u8FD8\u6CA1\u6709\u8BB0\u5F55', style: TextStyle(fontSize: 18, color: Colors.grey[500])),
+            Text(_isSearching ? '没有找到相关记录' : '还没有记录', style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurfaceVariant)),
             SizedBox(height: 8),
-            Text(_isSearching ? '\u8BD5\u8BD5\u5176\u4ED6\u5173\u952E\u8BCD' : '\u70B9\u51FB\u53F3\u4E0B\u89D2 + \u6309\u94AE\u5F00\u59CB\u8BB0\u5F55\u751F\u6D3B', style: TextStyle(fontSize: 14, color: Colors.grey[400])),
+            Text(_isSearching ? '试试其他关键词' : '点击右下角 + 按钮开始记录生活', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8))),
           ],
         ),
       );
@@ -467,8 +488,8 @@ class _HomePageState extends State<HomePage> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 margin: EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(color: Color(0xFF4A90E2).withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                child: Text(dateLabel, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF4A90E2))),
+                decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                child: Text(dateLabel, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
               ),
               ...records.map((record) => _buildRecordCard(record)),
             ],
@@ -484,6 +505,10 @@ class _HomePageState extends State<HomePage> {
     String timeStr = DateFormat('HH:mm').format(dateTime);
     String content = record['content']?.toString() ?? '';
     int recordId = record['id'] ?? 0;
+
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final isDark = theme.brightness == Brightness.dark;
 
     List<String> tags = [];
     if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
@@ -505,7 +530,7 @@ class _HomePageState extends State<HomePage> {
       elevation: 0,
       margin: EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: Colors.white,
+      color: cardColor,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () async {
@@ -522,17 +547,17 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Icon(_getMoodIcon(record['mood'] as String?), color: _getMoodColor(record['mood'] as String?), size: 22),
                   SizedBox(width: 8),
-                  Text(timeStr, style: TextStyle(fontSize: 13, color: Colors.grey[500], fontWeight: FontWeight.w500)),
+                  Text(timeStr, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
                   Spacer(),
                   IconButton(
-                    icon: Icon(Icons.share, color: Colors.grey[400], size: 18),
+                    icon: Icon(Icons.share, color: theme.colorScheme.onSurfaceVariant, size: 18),
                     onPressed: () => _shareRecord(record),
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(),
                   ),
                   SizedBox(width: 8),
                   IconButton(
-                    icon: Icon(Icons.delete_outline, color: Colors.grey[400], size: 18),
+                    icon: Icon(Icons.delete_outline, color: theme.colorScheme.onSurfaceVariant, size: 18),
                     onPressed: () => _deleteRecord(recordId),
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(),
@@ -540,7 +565,7 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               SizedBox(height: 10),
-              Text(content, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, height: 1.5)),
+              Text(content, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, height: 1.5, color: theme.colorScheme.onSurface)),
               if (images.isNotEmpty) ...[
                 SizedBox(height: 10),
                 SizedBox(
@@ -555,7 +580,7 @@ class _HomePageState extends State<HomePage> {
                         margin: EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          color: Colors.grey[200],
+                          color: theme.colorScheme.surfaceContainerHighest,
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -563,7 +588,7 @@ class _HomePageState extends State<HomePage> {
                             File(images[index]),
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              return Icon(Icons.image, color: Colors.grey[400]);
+                              return Icon(Icons.image, color: theme.colorScheme.onSurfaceVariant);
                             },
                           ),
                         ),
