@@ -158,6 +158,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildThemeSetting(Color cardColor, Color primaryColor, bool isDark) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
         color: cardColor,
@@ -305,7 +306,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Icon(Icons.warning, color: Colors.orange, size: 20),
                     SizedBox(width: 8),
-                    Expanded(child: Text('\u5BFC\u5165\u5C06\u66FF\u6362\u5F53\u524D\u6240\u6709\u6570\u636E\uFF0C\u8BF7\u786E\u4FDD\u5DF2\u5907\u4EFD', style: TextStyle(fontSize: 13, color: theme.colorScheme.errorFixed))),
+                    Expanded(child: Text('\u5BFC\u5165\u5C06\u66FF\u6362\u5F53\u524D\u6240\u6709\u6570\u636E\uFF0C\u8BF7\u786E\u4FDD\u5DF2\u5907\u4EFD', style: TextStyle(fontSize: 13, color: theme.colorScheme.error))),
                   ],
                 ),
               ),

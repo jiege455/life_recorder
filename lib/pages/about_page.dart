@@ -67,44 +67,44 @@ class AboutPage extends StatelessWidget {
             _buildCard(context, cardColor, Icons.info_outline, '功能特性', [
               _buildFeatureItem(Icons.edit_note, '记录生活点滴', isDark),
               _buildFeatureItem(Icons.mood, '心情选择', isDark),
-              _buildFeatureItem(Icons.mic, '讯飞语音输入', isDark),
-              _buildFeatureItem(Icons.auto_awesome, 'AI智能标签', isDark),
-              _buildFeatureItem(Icons.search, '搜索记录', isDark),
-              _buildFeatureItem(Icons.calendar_month, '日历视图', isDark),
-              _buildFeatureItem(Icons.bar_chart, '心情统计图表', isDark),
-              _buildFeatureItem(Icons.auto_awesome, 'AI周报/月报', isDark),
-              _buildFeatureItem(Icons.brightness_6, '深色模式', isDark),
-              _buildFeatureItem(Icons.label, '自定义标签', isDark),
-              _buildFeatureItem(Icons.image, '图片记录', isDark),
-              _buildFeatureItem(Icons.backup, '数据备份与恢复', isDark),
-              _buildFeatureItem(Icons.notifications, '每日提醒', isDark),
-              _buildFeatureItem(Icons.share, '分享功能', isDark),
-              _buildFeatureItem(Icons.lock, '隐私锁', isDark),
-              _buildFeatureItem(Icons.calendar_today, '年度回顾', isDark),
-            ]),
-            SizedBox(height: 16),
-            _buildCard(context, cardColor, Icons.memory, '技术支持', [
-              _buildTechItem('Flutter', '跨平台框架', primaryColor, isDark),
-              _buildTechItem('DeepSeek', 'AI标签与报告生成', primaryColor, isDark),
-              _buildTechItem('讯飞', '语音识别', primaryColor, isDark),
-              _buildTechItem('SQLite', '本地数据存储', primaryColor, isDark),
-              _buildTechItem('fl_chart', '图表可视化', primaryColor, isDark),
-              _buildTechItem('table_calendar', '日历组件', primaryColor, isDark),
-            ]),
-            SizedBox(height: 16),
-            _buildCard(context, cardColor, Icons.gavel, '法律信息', [
-              _buildLinkItem(context, Icons.privacy_tip, '隐私政策', () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => PrivacyPolicyPage()));
-              }, primaryColor, isDark),
-              _buildLinkItem(context, Icons.description, '用户协议', () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => UserAgreementPage()));
-              }, primaryColor, isDark),
-            ]),
-            SizedBox(height: 16),
-            _buildCard(context, cardColor, Icons.contact_support, '联系我们', [
-              _buildContactItem(Icons.business, '杰哥网络科技', isDark),
-              _buildContactItem(Icons.chat, 'QQ：2711793818', isDark),
-            ]),
+              _buildFeatureItem(Icons.mic, '讯飞语音输入', context),
+            _buildFeatureItem(Icons.auto_awesome, 'AI 智能标签', context),
+            _buildFeatureItem(Icons.search, '搜索记录', context),
+            _buildFeatureItem(Icons.calendar_month, '日历视图', context),
+            _buildFeatureItem(Icons.bar_chart, '心情统计图表', context),
+            _buildFeatureItem(Icons.auto_awesome, 'AI 周报/月报', context),
+            _buildFeatureItem(Icons.brightness_6, '深色模式', context),
+            _buildFeatureItem(Icons.label, '自定义标签', context),
+            _buildFeatureItem(Icons.image, '图片记录', context),
+            _buildFeatureItem(Icons.backup, '数据备份与恢复', context),
+            _buildFeatureItem(Icons.notifications, '每日提醒', context),
+            _buildFeatureItem(Icons.share, '分享功能', context),
+            _buildFeatureItem(Icons.lock, '隐私锁', context),
+            _buildFeatureItem(Icons.calendar_today, '年度回顾', context),
+          ]),
+          SizedBox(height: 16),
+          _buildCard(context, cardColor, Icons.memory, '技术支持', [
+            _buildTechItem('Flutter', '跨平台框架', primaryColor, context),
+            _buildTechItem('DeepSeek', 'AI 标签与报告生成', primaryColor, context),
+            _buildTechItem('讯飞', '语音识别', primaryColor, context),
+            _buildTechItem('SQLite', '本地数据存储', primaryColor, context),
+            _buildTechItem('fl_chart', '图表可视化', primaryColor, context),
+            _buildTechItem('table_calendar', '日历组件', primaryColor, context),
+          ]),
+          SizedBox(height: 16),
+          _buildCard(context, cardColor, Icons.gavel, '法律信息', [
+            _buildLinkItem(context, Icons.privacy_tip, '隐私政策', () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => PrivacyPolicyPage()));
+            }, primaryColor),
+            _buildLinkItem(context, Icons.description, '用户协议', () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => UserAgreementPage()));
+            }, primaryColor),
+          ]),
+          SizedBox(height: 16),
+          _buildCard(context, cardColor, Icons.contact_support, '联系我们', [
+            _buildContactItem(Icons.business, '杰哥网络科技', context),
+            _buildContactItem(Icons.chat, 'QQ:2711793818', context),
+          ]),
             SizedBox(height: 24),
             Text('© 2026 杰哥网络科技 版权所有', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
             SizedBox(height: 16),
@@ -135,7 +135,7 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureItem(IconData icon, String text, bool isDark) {
+  Widget _buildFeatureItem(IconData icon, String text, BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
@@ -143,7 +143,7 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTechItem(String name, String desc, Color primaryColor, bool isDark) {
+  Widget _buildTechItem(String name, String desc, Color primaryColor, BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
@@ -161,7 +161,8 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildLinkItem(BuildContext context, IconData icon, String text, VoidCallback onTap, Color primaryColor, bool isDark) {
+  Widget _buildLinkItem(BuildContext context, IconData icon, String text, VoidCallback onTap, Color primaryColor) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -180,7 +181,7 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContactItem(IconData icon, String text, bool isDark) {
+  Widget _buildContactItem(IconData icon, String text, BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
