@@ -44,42 +44,64 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.colorScheme.primary;
+
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: Text('\u8BBE\u7F6E',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Color(0xFF4A90E2),
+        title: Text('设置', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: primaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: IconButton(icon: Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('\u5916\u89C2'),
-            _buildThemeSetting(),
+            _buildSectionTitle('外观'),
+            _buildThemeSetting(cardColor, primaryColor, isDark),
             SizedBox(height: 24),
-            _buildSectionTitle('\u6807\u7B7E\u7BA1\u7406'),
-            _buildTagManagerSetting(),
+            _buildSectionTitle('标签管理'),
+            _buildSettingCard(cardColor, isDark, primaryColor, Icons.label, '自定义标签', '管理常用标签',
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => TagManagerPage())),
+            ),
             SizedBox(height: 24),
-            _buildSectionTitle('\u6570\u636E\u7BA1\u7406'),
-            _buildBackupSetting(),
-            _buildRestoreSetting(),
-            _buildClearDataSetting(),
+            _buildSectionTitle('数据管理'),
+            _buildSettingCard(cardColor, isDark, primaryColor, Icons.backup, '导出数据', '将记录导出为JSON文件',
+              trailing: _isExporting ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : null,
+              onTap: _isExporting ? null : _exportData,
+            ),
+            SizedBox(height: 8),
+            _buildSettingCard(cardColor, isDark, primaryColor, Icons.restore, '导入数据', '从JSON文件恢复记录',
+              trailing: _isImporting ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : null,
+              onTap: _isImporting ? null : _importData,
+            ),
+            SizedBox(height: 8),
+            _buildSettingCard(cardColor, isDark, primaryColor, Icons.delete_forever, '清除所有数据', '删除全部记录，此操作不可恢复',
+              iconColor: Colors.red, titleColor: Colors.red, onTap: _clearAllData,
+            ),
             SizedBox(height: 24),
-            _buildSectionTitle('\u9690\u79C1\u4E0E\u5B89\u5168'),
-            _buildLockSetting(),
-            _buildPrivacyPolicySetting(),
-            _buildUserAgreementSetting(),
+            _buildSectionTitle('隐私与安全'),
+            _buildSettingCard(cardColor, isDark, primaryColor, Icons.lock, '隐私锁', _lockEnabled ? '已启用' : '未启用',
+              onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => LockSettingsPage())); _loadSettings(); },
+            ),
+            SizedBox(height: 8),
+            _buildSettingCard(cardColor, isDark, primaryColor, Icons.privacy_tip, '隐私政策', null,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => PrivacyPolicyPage())),
+            ),
+            SizedBox(height: 8),
+            _buildSettingCard(cardColor, isDark, primaryColor, Icons.description, '用户协议', null,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => UserAgreementPage())),
+            ),
             SizedBox(height: 24),
-            _buildSectionTitle('\u63D0\u9192'),
-            _buildReminderSetting(),
+            _buildSectionTitle('提醒'),
+            _buildSettingCard(cardColor, isDark, primaryColor, Icons.notifications, '每日提醒', _reminderEnabled ? '已启用' : '未启用',
+              onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => ReminderPage())); _loadSettings(); },
+            ),
             SizedBox(height: 40),
           ],
         ),
@@ -88,36 +110,50 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(left: 4, bottom: 12),
-      child: Text(
-        title,
-        style: TextStyle(
-            fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey[600]),
+      child: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant)),
+    );
+  }
+
+  Widget _buildSettingCard(Color cardColor, bool isDark, Color primaryColor,
+      IconData icon, String title, String? subtitle,
+      {Color? iconColor, Color? titleColor, Widget? trailing, VoidCallback? onTap}) {
+    final theme = Theme.of(context);
+    final textColor = theme.colorScheme.onSurface;
+    final subtitleColor = theme.colorScheme.onSurfaceVariant;
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: iconColor ?? primaryColor),
+        title: Text(title, style: TextStyle(fontSize: 15, color: titleColor ?? textColor)),
+        subtitle: subtitle != null ? Text(subtitle, style: TextStyle(fontSize: 12, color: subtitleColor)) : null,
+        trailing: trailing ?? Icon(Icons.chevron_right, color: subtitleColor),
+        onTap: onTap,
       ),
     );
   }
 
-  Widget _buildThemeSetting() {
+  Widget _buildThemeSetting(Color cardColor, Color primaryColor, bool isDark) {
+    final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4))
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
       ),
       child: Column(
         children: [
           ListTile(
-            leading: Icon(Icons.brightness_6, color: Color(0xFF4A90E2)),
-            title: Text('\u6DF1\u8272\u6A21\u5F0F', style: TextStyle(fontSize: 15)),
-            subtitle: Text(_getThemeModeText(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-            trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+            leading: Icon(Icons.brightness_6, color: primaryColor),
+            title: Text('深色模式', style: TextStyle(fontSize: 15)),
+            subtitle: Text(_getThemeModeText(), style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+            trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
             onTap: _showThemeDialog,
           ),
         ],
@@ -127,27 +163,26 @@ class _SettingsPageState extends State<SettingsPage> {
 
   String _getThemeModeText() {
     switch (_themeMode) {
-      case ThemeMode.light:
-        return '\u6D45\u8272\u6A21\u5F0F';
-      case ThemeMode.dark:
-        return '\u6DF1\u8272\u6A21\u5F0F';
-      case ThemeMode.system:
-        return '\u8DDF\u968F\u7CFB\u7EDF';
+      case ThemeMode.light: return '浅色模式';
+      case ThemeMode.dark: return '深色模式';
+      case ThemeMode.system: return '跟随系统';
     }
   }
 
   void _showThemeDialog() {
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('\u9009\u62E9\u4E3B\u9898'),
+        title: Text('选择主题'),
+        backgroundColor: theme.colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildThemeOption('\u8DDF\u968F\u7CFB\u7EDF', ThemeMode.system),
-            _buildThemeOption('\u6D45\u8272\u6A21\u5F0F', ThemeMode.light),
-            _buildThemeOption('\u6DF1\u8272\u6A21\u5F0F', ThemeMode.dark),
+            _buildThemeOption('跟随系统', ThemeMode.system),
+            _buildThemeOption('浅色模式', ThemeMode.light),
+            _buildThemeOption('深色模式', ThemeMode.dark),
           ],
         ),
       ),
@@ -168,253 +203,27 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildTagManagerSetting() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4))
-        ],
-      ),
-      child: ListTile(
-        leading: Icon(Icons.label, color: Color(0xFF4A90E2)),
-        title: Text('\u81EA\u5B9A\u4E49\u6807\u7B7E', style: TextStyle(fontSize: 15)),
-        subtitle: Text('\u7BA1\u7406\u5E38\u7528\u6807\u7B7E',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-        onTap: () {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => TagManagerPage()));
-        },
-      ),
-    );
-  }
-
-  Widget _buildBackupSetting() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4))
-        ],
-      ),
-      child: ListTile(
-        leading: Icon(Icons.backup, color: Color(0xFF4A90E2)),
-        title: Text('\u5BFC\u51FA\u6570\u636E', style: TextStyle(fontSize: 15)),
-        subtitle:
-            Text('\u5C06\u8BB0\u5F55\u5BFC\u51FA\u4E3AJSON\u6587\u4EF6',
-                style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-        trailing: _isExporting
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2))
-            : Icon(Icons.chevron_right, color: Colors.grey[400]),
-        onTap: _isExporting ? null : _exportData,
-      ),
-    );
-  }
-
-  Widget _buildRestoreSetting() {
-    return Container(
-      margin: EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4))
-        ],
-      ),
-      child: ListTile(
-        leading: Icon(Icons.restore, color: Color(0xFF4A90E2)),
-        title: Text('\u5BFC\u5165\u6570\u636E', style: TextStyle(fontSize: 15)),
-        subtitle:
-            Text('\u4ECEJSON\u6587\u4EF6\u6062\u590D\u8BB0\u5F55',
-                style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-        trailing: _isImporting
-            ? SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2))
-            : Icon(Icons.chevron_right, color: Colors.grey[400]),
-        onTap: _isImporting ? null : _importData,
-      ),
-    );
-  }
-
-  Widget _buildLockSetting() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4))
-        ],
-      ),
-      child: ListTile(
-        leading: Icon(Icons.lock, color: Color(0xFF4A90E2)),
-        title: Text('\u9690\u79C1\u9501', style: TextStyle(fontSize: 15)),
-        subtitle: Text(_lockEnabled ? '\u5DF2\u542F\u7528' : '\u672A\u542F\u7528',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-        onTap: () async {
-          await Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => LockSettingsPage()));
-          _loadSettings();
-        },
-      ),
-    );
-  }
-
-  Widget _buildReminderSetting() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4))
-        ],
-      ),
-      child: ListTile(
-        leading: Icon(Icons.notifications, color: Color(0xFF4A90E2)),
-        title: Text('\u6BCF\u65E5\u63D0\u9192', style: TextStyle(fontSize: 15)),
-        subtitle: Text(_reminderEnabled ? '\u5DF2\u542F\u7528' : '\u672A\u542F\u7528',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-        onTap: () async {
-          await Navigator.push(context,
-              MaterialPageRoute(builder: (context) => ReminderPage()));
-          _loadSettings();
-        },
-      ),
-    );
-  }
-
-  Widget _buildClearDataSetting() {
-    return Container(
-      margin: EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4))
-        ],
-      ),
-      child: ListTile(
-        leading: Icon(Icons.delete_forever, color: Colors.red),
-        title: Text('\u6E05\u9664\u6240\u6709\u6570\u636E', style: TextStyle(fontSize: 15, color: Colors.red)),
-        subtitle: Text('\u5220\u9664\u5168\u90E8\u8BB0\u5F55\uFF0C\u6B64\u64CD\u4F5C\u4E0D\u53EF\u6062\u590D',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-        onTap: _clearAllData,
-      ),
-    );
-  }
-
-  Widget _buildPrivacyPolicySetting() {
-    return Container(
-      margin: EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4))
-        ],
-      ),
-      child: ListTile(
-        leading: Icon(Icons.privacy_tip, color: Color(0xFF4A90E2)),
-        title: Text('\u9690\u79C1\u653F\u7B56', style: TextStyle(fontSize: 15)),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-        onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => PrivacyPolicyPage()));
-        },
-      ),
-    );
-  }
-
-  Widget _buildUserAgreementSetting() {
-    return Container(
-      margin: EdgeInsets.only(top: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4))
-        ],
-      ),
-      child: ListTile(
-        leading: Icon(Icons.description, color: Color(0xFF4A90E2)),
-        title: Text('\u7528\u6237\u534F\u8BAE', style: TextStyle(fontSize: 15)),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-        onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => UserAgreementPage()));
-        },
-      ),
-    );
-  }
-
   Future<void> _clearAllData() async {
+    final theme = Theme.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('\u786E\u8BA4\u6E05\u9664\u6240\u6709\u6570\u636E'),
-        content: Text('\u6B64\u64CD\u4F5C\u5C06\u6C38\u4E45\u5220\u9664\u6240\u6709\u8BB0\u5F55\u6570\u636E\uFF0C\u4E14\u4E0D\u53EF\u6062\u590D\u3002\u5EFA\u8BAE\u60A8\u5148\u5BFC\u51FA\u6570\u636E\u5907\u4EFD\u3002\u786E\u5B9A\u8981\u7EE7\u7EED\u5417\uFF1F'),
+        title: Text('确认清除所有数据'),
+        backgroundColor: theme.colorScheme.surface,
+        content: Text('此操作将永久删除所有记录数据，且不可恢复。建议您先导出数据备份。确定要继续吗？'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('\u53D6\u6D88'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('\u786E\u8BA4\u6E05\u9664', style: TextStyle(color: Colors.red)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('取消')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text('确认清除', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
-
     if (confirm == true) {
       try {
         await DatabaseHelper.instance.deleteAllRecords();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('\u6240\u6709\u6570\u636E\u5DF2\u6E05\u9664'), backgroundColor: Colors.green),
-          );
-        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('所有数据已清除'), backgroundColor: Colors.green));
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('\u6E05\u9664\u6570\u636E\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5'), backgroundColor: Colors.red),
-          );
-        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('清除数据失败，请重试'), backgroundColor: Colors.red));
       }
     }
   }
@@ -424,22 +233,12 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final path = await BackupService.instance.exportData();
       if (path == null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('\u5BFC\u51FA\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5'),
-              backgroundColor: Colors.red),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('导出失败，请重试'), backgroundColor: Colors.red));
       } else if (path != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('\u6570\u636E\u5BFC\u51FA\u6210\u529F\uFF01'),
-              backgroundColor: Colors.green),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('数据导出成功！'), backgroundColor: Colors.green));
       }
     } finally {
-      if (mounted) {
-        setState(() => _isExporting = false);
-      }
+      if (mounted) setState(() => _isExporting = false);
     }
   }
 
@@ -448,141 +247,62 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final backupInfo = await BackupService.instance.readBackupFile();
       if (backupInfo == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('\u672A\u9009\u62E9\u6587\u4EF6\u6216\u6587\u4EF6\u683C\u5F0F\u9519\u8BEF'),
-                backgroundColor: Colors.orange),
-          );
-        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('未选择文件或文件格式错误'), backgroundColor: Colors.orange));
         return;
       }
-
       if (!mounted) return;
-
+      final theme = Theme.of(context);
       final confirm = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('\u786E\u8BA4\u5BFC\u5165'),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('确认导入'),
+          backgroundColor: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('\u5373\u5C06\u5BFC\u5165\u4EE5\u4E0B\u5907\u4EFD\u6570\u636E\uFF1A',
-                  style: TextStyle(fontWeight: FontWeight.w500)),
+              Text('即将导入以下备份数据：', style: TextStyle(fontWeight: FontWeight.w500)),
               SizedBox(height: 12),
-              _buildInfoRow(
-                  '\u8BB0\u5F55\u6570\u91CF', '${backupInfo['recordCount']}\u6761'),
-              _buildInfoRow(
-                  '\u5907\u4EFD\u65F6\u95F4', backupInfo['exportTime'].toString()),
-              _buildInfoRow('\u7248\u672C', backupInfo['version'].toString()),
+              _buildInfoRow('记录数量', '${backupInfo['recordCount']}条'),
+              _buildInfoRow('备份时间', backupInfo['exportTime'].toString()),
+              _buildInfoRow('版本', backupInfo['version'].toString()),
               SizedBox(height: 12),
               Container(
                 padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning, color: Colors.orange, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '\u5BFC\u5165\u5C06\u66FF\u6362\u5F53\u524D\u6240\u6709\u6570\u636E\uFF0C\u8BF7\u786E\u4FDD\u5DF2\u5907\u4EFD',
-                        style:
-                            TextStyle(fontSize: 13, color: Colors.orange[800]),
-                      ),
-                    ),
-                  ],
-                ),
+                decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Row(children: [Icon(Icons.warning, color: Colors.orange, size: 20), SizedBox(width: 8), Expanded(child: Text('导入将替换当前所有数据，请确保已备份', style: TextStyle(fontSize: 13, color: theme.colorScheme.error)))]),
               ),
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('\u53D6\u6D88'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF4A90E2),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text('\u786E\u8BA4\u5BFC\u5165'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text('取消')),
+            ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF4A90E2), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: Text('确认导入')),
           ],
         ),
       );
-
       if (confirm != true) return;
-
       if (!mounted) return;
-
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Center(
-          child: Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(color: Color(0xFF4A90E2)),
-                  SizedBox(height: 16),
-                  Text('\u6B63\u5728\u5BFC\u5165\u6570\u636E...',
-                      style: TextStyle(fontSize: 14)),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-
-      final success =
-          await BackupService.instance.importData(backupInfo['records']);
-
+      showDialog(context: context, barrierDismissible: false, builder: (context) => Center(child: Card(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), child: Padding(padding: EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(color: Color(0xFF4A90E2)), SizedBox(height: 16), Text('正在导入数据...', style: TextStyle(fontSize: 14))])))));
+      final success = await BackupService.instance.importData(backupInfo['records']);
       if (mounted) {
         Navigator.pop(context);
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    '\u6570\u636E\u5BFC\u5165\u6210\u529F\uFF01\u5171\u5BFC\u5165${backupInfo['recordCount']}\u6761\u8BB0\u5F55'),
-                backgroundColor: Colors.green),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('数据导入成功！共导入${backupInfo['recordCount']}条记录'), backgroundColor: Colors.green));
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('\u5BFC\u5165\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u5907\u4EFD\u6587\u4EF6\u683C\u5F0F'),
-                backgroundColor: Colors.red),
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('导入失败，请检查备份文件格式'), backgroundColor: Colors.red));
         }
       }
     } finally {
-      if (mounted) {
-        setState(() => _isImporting = false);
-      }
+      if (mounted) setState(() => _isImporting = false);
     }
   }
 
   Widget _buildInfoRow(String label, String value) {
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-          SizedBox(width: 12),
-          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-        ],
-      ),
+      child: Row(children: [Text(label, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)), SizedBox(width: 12), Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface))]),
     );
   }
 }
