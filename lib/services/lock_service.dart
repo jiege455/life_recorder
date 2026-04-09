@@ -65,6 +65,8 @@ class LockService {
       return;
     }
 
+    String? enteredPin;
+    
     ScreenLock(
       correctString: '',
       title: '输入 PIN 码',
@@ -75,18 +77,26 @@ class LockService {
           Navigator.of(context).pop(true);
         }
       },
-      didConfirmed: (context, pin) async {
+      onConfirmed: (pin) async {
+        enteredPin = pin;
         final prefs = await SharedPreferences.getInstance();
         final savedPin = prefs.getString(_pinKey);
 
         if (savedPin == null || savedPin.isEmpty) {
+          // 首次设置 PIN
           await prefs.setString(_pinKey, pin);
-          Navigator.of(context).pop(true);
+          if (context.mounted) {
+            Navigator.of(context).pop(true);
+          }
           return true;
         } else if (pin == savedPin) {
-          Navigator.of(context).pop(true);
+          // 验证成功
+          if (context.mounted) {
+            Navigator.of(context).pop(true);
+          }
           return true;
         } else {
+          // PIN 错误
           return false;
         }
       },
