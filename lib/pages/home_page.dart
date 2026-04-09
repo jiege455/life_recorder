@@ -249,7 +249,7 @@ class _HomePageState extends State<HomePage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = theme.cardColor;
-    final navBarBgColor = theme.bottomNavigationBarTheme.backgroundColor ?? (isDark ? Color(0xFF1E1E2E) : Colors.white);
+    final navBarBgColor = theme.bottomNavigationBarTheme.backgroundColor ?? theme.colorScheme.surface;
     final primaryColor = theme.colorScheme.primary;
 
     return Scaffold(
@@ -273,7 +273,7 @@ class _HomePageState extends State<HomePage> {
           type: BottomNavigationBarType.fixed,
           backgroundColor: navBarBgColor,
           selectedItemColor: primaryColor,
-          unselectedItemColor: isDark ? Colors.grey[500] : Colors.grey[400],
+          unselectedItemColor: theme.colorScheme.onSurfaceVariant,
           selectedFontSize: 12,
           unselectedFontSize: 12,
           items: [
@@ -403,7 +403,7 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [Icon(icon, color: color, size: 22), SizedBox(width: 6), Text(title, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600]))]),
+          Row(children: [Icon(icon, color: color, size: 22), SizedBox(width: 6), Text(title, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant))]),
           SizedBox(height: 8),
           Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
         ],
@@ -431,8 +431,8 @@ class _HomePageState extends State<HomePage> {
               onSelected: (_) => _filterByMood(null),
               selectedColor: primaryColor.withOpacity(0.2),
               backgroundColor: cardColor,
-              side: BorderSide(color: _selectedMoodFilter == null ? primaryColor : (isDark ? Colors.grey[600]! : Colors.grey[300]!)),
-              labelStyle: TextStyle(color: _selectedMoodFilter == null ? primaryColor : (isDark ? Colors.grey[400] : Colors.grey[600]), fontSize: 13),
+              side: BorderSide(color: _selectedMoodFilter == null ? primaryColor : theme.colorScheme.outline),
+              labelStyle: TextStyle(color: _selectedMoodFilter == null ? primaryColor : theme.colorScheme.onSurfaceVariant, fontSize: 13),
             ),
           ),
           ..._moods.map((mood) => Padding(
@@ -443,8 +443,8 @@ class _HomePageState extends State<HomePage> {
               onSelected: (_) => _filterByMood(mood['value']),
               selectedColor: primaryColor.withOpacity(0.2),
               backgroundColor: cardColor,
-              side: BorderSide(color: _selectedMoodFilter == mood['value'] ? primaryColor : (isDark ? Colors.grey[600]! : Colors.grey[300]!)),
-              labelStyle: TextStyle(color: _selectedMoodFilter == mood['value'] ? primaryColor : (isDark ? Colors.grey[400] : Colors.grey[600]), fontSize: 13),
+              side: BorderSide(color: _selectedMoodFilter == mood['value'] ? primaryColor : theme.colorScheme.outline),
+              labelStyle: TextStyle(color: _selectedMoodFilter == mood['value'] ? primaryColor : theme.colorScheme.onSurfaceVariant, fontSize: 13),
             ),
           )),
         ],
@@ -462,11 +462,11 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.book_outlined, size: 80, color: isDark ? Colors.grey[600] : Colors.grey[300]),
+            Icon(Icons.book_outlined, size: 80, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5)),
             SizedBox(height: 16),
-            Text(_isSearching ? '没有找到相关记录' : '还没有记录', style: TextStyle(fontSize: 18, color: isDark ? Colors.grey[400] : Colors.grey[500])),
+            Text(_isSearching ? '没有找到相关记录' : '还没有记录', style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurfaceVariant)),
             SizedBox(height: 8),
-            Text(_isSearching ? '试试其他关键词' : '点击右下角 + 按钮开始记录生活', style: TextStyle(fontSize: 14, color: isDark ? Colors.grey[500] : Colors.grey[400])),
+            Text(_isSearching ? '试试其他关键词' : '点击右下角 + 按钮开始记录生活', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8))),
           ],
         ),
       );
@@ -547,17 +547,17 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Icon(_getMoodIcon(record['mood'] as String?), color: _getMoodColor(record['mood'] as String?), size: 22),
                   SizedBox(width: 8),
-                  Text(timeStr, style: TextStyle(fontSize: 13, color: isDark ? Colors.grey[400] : Colors.grey[500], fontWeight: FontWeight.w500)),
+                  Text(timeStr, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
                   Spacer(),
                   IconButton(
-                    icon: Icon(Icons.share, color: isDark ? Colors.grey[500] : Colors.grey[400], size: 18),
+                    icon: Icon(Icons.share, color: theme.colorScheme.onSurfaceVariant, size: 18),
                     onPressed: () => _shareRecord(record),
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(),
                   ),
                   SizedBox(width: 8),
                   IconButton(
-                    icon: Icon(Icons.delete_outline, color: isDark ? Colors.grey[500] : Colors.grey[400], size: 18),
+                    icon: Icon(Icons.delete_outline, color: theme.colorScheme.onSurfaceVariant, size: 18),
                     onPressed: () => _deleteRecord(recordId),
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(),
@@ -580,7 +580,7 @@ class _HomePageState extends State<HomePage> {
                         margin: EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
-                          color: isDark ? Colors.grey[700] : Colors.grey[200],
+                          color: theme.colorScheme.surfaceContainerHighest,
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -588,7 +588,7 @@ class _HomePageState extends State<HomePage> {
                             File(images[index]),
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              return Icon(Icons.image, color: isDark ? Colors.grey[500] : Colors.grey[400]);
+                              return Icon(Icons.image, color: theme.colorScheme.onSurfaceVariant);
                             },
                           ),
                         ),

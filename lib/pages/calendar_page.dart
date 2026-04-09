@@ -153,8 +153,8 @@ class _CalendarPageState extends State<CalendarPage> {
           rightChevronIcon: Icon(Icons.chevron_right, color: primaryColor),
         ),
         daysOfWeekStyle: DaysOfWeekStyle(
-          weekdayStyle: TextStyle(fontSize: 13, color: isDark ? Colors.grey[400] : Colors.grey[600]),
-          weekendStyle: TextStyle(fontSize: 13, color: isDark ? Colors.grey[500] : Colors.grey[400]),
+          weekdayStyle: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
+          weekendStyle: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7)),
         ),
       ),
     );
@@ -168,9 +168,9 @@ class _CalendarPageState extends State<CalendarPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.event_busy, size: 60, color: isDark ? Colors.grey[600] : Colors.grey[300]),
+            Icon(Icons.event_busy, size: 60, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5)),
             SizedBox(height: 12),
-            Text('这天没有记录', style: TextStyle(fontSize: 16, color: isDark ? Colors.grey[500] : Colors.grey[400])),
+            Text('这天没有记录', style: TextStyle(fontSize: 16, color: theme.colorScheme.onSurfaceVariant)),
           ],
         ),
       );
@@ -219,7 +219,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     children: [
                       Icon(_getMoodIcon(record['mood']), color: _getMoodColor(record['mood']), size: 20),
                       SizedBox(width: 6),
-                      Text(timeStr, style: TextStyle(fontSize: 13, color: isDark ? Colors.grey[400] : Colors.grey[500])),
+                      Text(timeStr, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
                     ],
                   ),
                   SizedBox(height: 8),

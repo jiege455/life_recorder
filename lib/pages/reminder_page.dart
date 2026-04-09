@@ -97,33 +97,38 @@ class _ReminderPageState extends State<ReminderPage> {
   }
 
   Widget _buildTimeSelector(bool isDark, Color primaryColor) {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final textColor = theme.colorScheme.onSurface;
+    final subtitleColor = theme.colorScheme.onSurfaceVariant;
+    
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
       ),
       child: Column(
         children: [
           SwitchListTile(
-            title: Text('启用每日提醒', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+            title: Text('启用每日提醒', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: textColor)),
             subtitle: Text(
               _reminderEnabled ? '每天 ${_formatTime(_hour, _minute)} 提醒' : '未启用',
-              style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[500]),
+              style: TextStyle(fontSize: 12, color: subtitleColor),
             ),
             value: _reminderEnabled,
             activeColor: primaryColor,
             onChanged: _onToggleReminder,
           ),
           if (_reminderEnabled) ...[
-            Divider(height: 1, color: isDark ? Colors.grey[700] : Colors.grey[200]),
+            Divider(height: 1, color: theme.dividerColor),
             ListTile(
-              title: Text('提醒时间', style: TextStyle(fontSize: 16)),
+              title: Text('提醒时间', style: TextStyle(fontSize: 16, color: textColor)),
               subtitle: Text(
                 _formatTime(_hour, _minute),
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primaryColor),
               ),
-              trailing: Icon(Icons.access_time, color: isDark ? Colors.grey[500] : Colors.grey[400]),
+              trailing: Icon(Icons.access_time, color: subtitleColor),
               onTap: _selectTime,
             ),
           ],

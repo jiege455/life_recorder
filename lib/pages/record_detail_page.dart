@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿import 'package:flutter/material.dart';
+﻿﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -133,9 +133,9 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
               ),
             ),
             SizedBox(height: 20),
-            Text('添加图片', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('添加图片', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             SizedBox(height: 8),
-            Text('应用需要访问相机或相册权限来添加图片', style: TextStyle(fontSize: 13, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[500])),
+            Text('应用需要访问相机或相册权限来添加图片', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -157,7 +157,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                         child: Icon(Icons.camera_alt, color: Color(0xFF4A90E2), size: 28),
                       ),
                       SizedBox(height: 8),
-                      Text('拍照', style: TextStyle(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[600] : Colors.grey[700])),
+                      Text('拍照', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -178,7 +178,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                         child: Icon(Icons.photo_library, color: Color(0xFF4A90E2), size: 28),
                       ),
                       SizedBox(height: 8),
-                      Text('相册', style: TextStyle(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[600] : Colors.grey[700])),
+                      Text('相册', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -718,10 +718,10 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                 duration: Duration(milliseconds: 200),
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isSelected ? Color(0xFF4A90E2) : (isDark ? Color(0xFF2A2A3E) : Colors.white),
+                  color: isSelected ? theme.colorScheme.primary : theme.cardColor,
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(
-                    color: isSelected ? Color(0xFF4A90E2) : (isDark ? Colors.grey[600]! : Colors.grey[300]!),
+                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
                     width: 2,
                   ),
                 ),
@@ -733,7 +733,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
                     Text(mood['label'],
                         style: TextStyle(
                             fontSize: 12,
-                            color: isSelected ? Colors.white : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                            color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
                   ],
                 ),

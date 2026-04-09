@@ -85,7 +85,6 @@ class ThemeService extends ChangeNotifier {
     dividerTheme: DividerThemeData(color: Colors.grey[200]),
     listTileTheme: ListTileThemeData(
       textColor: Colors.black87,
-      subtitleTextColor: Colors.grey[500],
     ),
   );
 
@@ -136,7 +135,6 @@ class ThemeService extends ChangeNotifier {
     dividerTheme: DividerThemeData(color: Colors.grey[700]),
     listTileTheme: ListTileThemeData(
       textColor: Colors.white,
-      subtitleTextColor: Colors.grey[400],
     ),
     dialogBackgroundColor: Color(0xFF1E1E2E),
     popupMenuTheme: PopupMenuThemeData(color: Color(0xFF1E1E2E)),

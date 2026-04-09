@@ -168,9 +168,9 @@ class _AddRecordPageState extends State<AddRecordPage> {
               ),
             ),
             SizedBox(height: 20),
-            Text('添加图片', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('添加图片', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
             SizedBox(height: 8),
-            Text('应用需要访问相机或相册权限来添加图片', style: TextStyle(fontSize: 13, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[500])),
+            Text('应用需要访问相机或相册权限来添加图片', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -204,7 +204,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             child: Icon(icon, color: Color(0xFF4A90E2), size: 28),
           ),
           SizedBox(height: 8),
-          Text(label, style: TextStyle(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[600] : Colors.grey[700])),
+          Text(label, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -511,16 +511,16 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 duration: Duration(milliseconds: 200),
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? Color(0xFF4A90E2) : (isDark ? Color(0xFF2A2A3E) : Colors.white),
+                  color: isSelected ? theme.colorScheme.primary : theme.cardColor,
                   borderRadius: BorderRadius.circular(25),
                   border: Border.all(
-                    color: isSelected ? Color(0xFF4A90E2) : (isDark ? Colors.grey[600]! : Colors.grey[300]!),
+                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline,
                     width: 2,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: Color(0xFF4A90E2).withOpacity(0.3),
+                            color: theme.colorScheme.primary.withOpacity(0.3),
                             blurRadius: 8,
                             offset: Offset(0, 4),
                           )
@@ -535,7 +535,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                     Text(mood['label'],
                         style: TextStyle(
                             fontSize: 13,
-                            color: isSelected ? Colors.white : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                            color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
                             fontWeight:
                                 isSelected ? FontWeight.bold : FontWeight.normal)),
                   ],
@@ -656,7 +656,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
           ),
           if (_customTags.isNotEmpty) ...[
             SizedBox(height: 8),
-            Text('常用标签：', style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+            Text('常用标签：', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
             SizedBox(height: 4),
             Wrap(
               spacing: 6,
@@ -666,8 +666,8 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 return GestureDetector(
                   onTap: isSelected ? null : () => _addCustomTag(tag),
                   child: Chip(
-                    label: Text(tag, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : (isDark ? Colors.grey[300] : Colors.grey[700]))),
-                    backgroundColor: isSelected ? (isDark ? Colors.grey[600] : Colors.grey[400]) : (isDark ? Colors.grey[800] : Colors.grey[100]),
+                    label: Text(tag, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : theme.colorScheme.onSurface)),
+                    backgroundColor: isSelected ? theme.colorScheme.primary.withOpacity(0.2) : theme.colorScheme.surfaceContainerHighest,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.symmetric(horizontal: 4),

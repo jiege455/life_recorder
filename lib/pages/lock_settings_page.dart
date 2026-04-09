@@ -1,4 +1,4 @@
-﻿﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../services/lock_service.dart';
 
 class LockSettingsPage extends StatefulWidget {
@@ -100,7 +100,11 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
   }
 
   Widget _buildLockToggle(bool isDark, Color primaryColor) {
-    final cardColor = isDark ? Color(0xFF2A2A3E) : Colors.white;
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final textColor = theme.colorScheme.onSurface;
+    final subtitleColor = theme.colorScheme.onSurfaceVariant;
+    
     return Container(
       decoration: BoxDecoration(
         color: cardColor,
@@ -108,10 +112,10 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
       ),
       child: SwitchListTile(
-        title: Text('启用隐私锁', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87)),
+        title: Text('启用隐私锁', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: textColor)),
         subtitle: Text(
           _canUseBiometrics ? '支持指纹/面容和密码验证' : '支持设备密码验证',
-          style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          style: TextStyle(fontSize: 12, color: subtitleColor),
         ),
         value: _lockEnabled,
         activeColor: primaryColor,

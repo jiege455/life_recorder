@@ -1,0 +1,52 @@
+# Flutter/Dart
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.dart_tool/
+.flutter-plugins
+build/
+.pub/
+
+# Android
+android/.gradle/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/.idea/
+android/app/.gradle/
+android/app/build/
+android/app/release.jks
+
+# iOS
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Flutter/app.flx
+ios/Runner/GeneratedPluginRegistrant.*
+
+# macOS
+.DS_Store
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Windows
+.vscode/
+.vs/
+
+# Logs
+*.log
+
+# Environment
+.env
+
+# Temporary files
+*.tmp
+*.temp

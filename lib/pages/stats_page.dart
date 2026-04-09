@@ -127,13 +127,14 @@ class _StatsPageState extends State<StatsPage> {
   }
 
   Widget _buildSummaryItem(IconData icon, String value, String label, Color color) {
+    final theme = Theme.of(context);
     return Column(
       children: [
         Icon(icon, color: color, size: 28),
         SizedBox(height: 6),
         Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
         SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[500])),
+        Text(label, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
       ],
     );
   }
@@ -171,7 +172,7 @@ class _StatsPageState extends State<StatsPage> {
           SizedBox(
             height: 180,
             child: _spots.isEmpty
-                ? Center(child: Text('本月暂无数据', style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[400])))
+                ? Center(child: Text('本月暂无数据', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)))
                 : LineChart(
                     LineChartData(
                       gridData: FlGridData(
@@ -179,7 +180,7 @@ class _StatsPageState extends State<StatsPage> {
                         drawVerticalLine: false,
                         horizontalInterval: 1,
                         getDrawingHorizontalLine: (value) => FlLine(
-                          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+                          color: theme.colorScheme.outline.withOpacity(0.2),
                           strokeWidth: 1,
                         ),
                       ),
@@ -195,7 +196,7 @@ class _StatsPageState extends State<StatsPage> {
                               if (value == 2) label = '平静';
                               if (value == 3) label = '兴奋';
                               if (value == 4) label = '开心';
-                              return Text(label, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey[400] : Colors.grey[500]));
+                              return Text(label, style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurfaceVariant));
                             },
                           ),
                         ),
@@ -205,7 +206,7 @@ class _StatsPageState extends State<StatsPage> {
                             reservedSize: 30,
                             interval: 5,
                             getTitlesWidget: (value, meta) {
-                              return Text('${value.toInt()}日', style: TextStyle(fontSize: 10, color: isDark ? Colors.grey[400] : Colors.grey[500]));
+                              return Text('${value.toInt()}日', style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurfaceVariant));
                             },
                           ),
                         ),
@@ -247,11 +248,12 @@ class _StatsPageState extends State<StatsPage> {
   }
 
   Widget _buildMonthSelector() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final subtitleColor = theme.colorScheme.onSurfaceVariant;
     return Row(
       children: [
         IconButton(
-          icon: Icon(Icons.chevron_left, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          icon: Icon(Icons.chevron_left, color: subtitleColor),
           onPressed: () {
             setState(() {
               if (_selectedMonth == 1) {
@@ -265,11 +267,11 @@ class _StatsPageState extends State<StatsPage> {
           },
         ),
         Text(
-          '$_selectedYear年$_selectedMonth月',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: isDark ? Colors.grey[300] : Colors.grey[700]),
+          '$_selectedYear 年$_selectedMonth 月',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface),
         ),
         IconButton(
-          icon: Icon(Icons.chevron_right, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          icon: Icon(Icons.chevron_right, color: subtitleColor),
           onPressed: () {
             final now = DateTime.now();
             if (_selectedYear < now.year || (_selectedYear == now.year && _selectedMonth < now.month)) {
@@ -300,7 +302,7 @@ class _StatsPageState extends State<StatsPage> {
           color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Center(child: Text('暂无数据', style: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[400]))),
+        child: Center(child: Text('暂无数据', style: TextStyle(color: theme.colorScheme.onSurfaceVariant))),
       );
     }
 
@@ -383,10 +385,10 @@ class _StatsPageState extends State<StatsPage> {
                           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                       Spacer(),
                       Text('${entry.value}条',
-                          style: TextStyle(fontSize: 14, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                          style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
                       SizedBox(width: 8),
                       Text('${percent.toStringAsFixed(1)}%',
-                          style: TextStyle(fontSize: 13, color: isDark ? Colors.grey[500] : Colors.grey[400])),
+                          style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8))),
                     ],
                   ),
                   SizedBox(height: 6),
@@ -394,7 +396,7 @@ class _StatsPageState extends State<StatsPage> {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: percent / 100,
-                      backgroundColor: isDark ? Colors.grey[700] : Colors.grey[200],
+                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
                       color: _moodColors[entry.key] ?? Colors.green,
                       minHeight: 8,
                     ),

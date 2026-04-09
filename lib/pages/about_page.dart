@@ -55,11 +55,11 @@ class AboutPage extends StatelessWidget {
                   FutureBuilder<String>(
                     future: _getVersion(),
                     builder: (context, snapshot) {
-                      return Text('v${snapshot.data ?? '2.0.0'}', style: TextStyle(fontSize: 14, color: isDark ? Colors.grey[400] : Colors.grey[500]));
+                      return Text('v${snapshot.data ?? '2.0.0'}', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant));
                     },
                   ),
                   SizedBox(height: 4),
-                  Text('开发者：杰哥网络科技', style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[500] : Colors.grey[400])),
+                  Text('开发者：杰哥网络科技', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -106,7 +106,7 @@ class AboutPage extends StatelessWidget {
               _buildContactItem(Icons.chat, 'QQ：2711793818', isDark),
             ]),
             SizedBox(height: 24),
-            Text('© 2026 杰哥网络科技 版权所有', style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[500] : Colors.grey[400])),
+            Text('© 2026 杰哥网络科技 版权所有', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
             SizedBox(height: 16),
           ],
         ),
@@ -136,13 +136,15 @@ class AboutPage extends StatelessWidget {
   }
 
   Widget _buildFeatureItem(IconData icon, String text, bool isDark) {
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
-      child: Row(children: [Icon(icon, size: 18, color: Color(0xFF4A90E2)), SizedBox(width: 10), Text(text, style: TextStyle(fontSize: 14, color: isDark ? Colors.grey[300] : Colors.grey[700]))]),
+      child: Row(children: [Icon(icon, size: 18, color: theme.colorScheme.primary), SizedBox(width: 10), Text(text, style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface))]),
     );
   }
 
   Widget _buildTechItem(String name, String desc, Color primaryColor, bool isDark) {
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
       child: Row(
@@ -153,7 +155,7 @@ class AboutPage extends StatelessWidget {
             child: Text(name, style: TextStyle(fontSize: 12, color: primaryColor, fontWeight: FontWeight.w500)),
           ),
           SizedBox(width: 10),
-          Text(desc, style: TextStyle(fontSize: 14, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+          Text(desc, style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -171,7 +173,7 @@ class AboutPage extends StatelessWidget {
             SizedBox(width: 10),
             Text(text, style: TextStyle(fontSize: 14, color: primaryColor)),
             Spacer(),
-            Icon(Icons.chevron_right, size: 18, color: isDark ? Colors.grey[500] : Colors.grey[400]),
+            Icon(Icons.chevron_right, size: 18, color: theme.colorScheme.onSurfaceVariant),
           ],
         ),
       ),
@@ -179,9 +181,10 @@ class AboutPage extends StatelessWidget {
   }
 
   Widget _buildContactItem(IconData icon, String text, bool isDark) {
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
-      child: Row(children: [Icon(icon, size: 18, color: Color(0xFF4A90E2)), SizedBox(width: 10), Text(text, style: TextStyle(fontSize: 14, color: isDark ? Colors.grey[300] : Colors.grey[700]))]),
+      child: Row(children: [Icon(icon, size: 18, color: theme.colorScheme.primary), SizedBox(width: 10), Text(text, style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface))]),
     );
   }
 }

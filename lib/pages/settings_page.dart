@@ -123,13 +123,13 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildSectionTitle(String title) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(left: 4, bottom: 12),
       child: Text(
         title,
         style: TextStyle(
-            fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+            fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant),
       ),
     );
   }
@@ -137,6 +137,10 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSettingCard(Color cardColor, bool isDark, Color primaryColor,
       IconData icon, String title, String? subtitle,
       {Color? iconColor, Color? titleColor, Widget? trailing, VoidCallback? onTap}) {
+    final theme = Theme.of(context);
+    final textColor = theme.colorScheme.onSurface;
+    final subtitleColor = theme.colorScheme.onSurfaceVariant;
+    
     return Container(
       decoration: BoxDecoration(
         color: cardColor,
@@ -145,9 +149,9 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: ListTile(
         leading: Icon(icon, color: iconColor ?? primaryColor),
-        title: Text(title, style: TextStyle(fontSize: 15, color: titleColor)),
-        subtitle: subtitle != null ? Text(subtitle, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[500])) : null,
-        trailing: trailing ?? Icon(Icons.chevron_right, color: isDark ? Colors.grey[500] : Colors.grey[400]),
+        title: Text(title, style: TextStyle(fontSize: 15, color: titleColor ?? textColor)),
+        subtitle: subtitle != null ? Text(subtitle, style: TextStyle(fontSize: 12, color: subtitleColor)) : null,
+        trailing: trailing ?? Icon(Icons.chevron_right, color: subtitleColor),
         onTap: onTap,
       ),
     );
@@ -166,8 +170,8 @@ class _SettingsPageState extends State<SettingsPage> {
             leading: Icon(Icons.brightness_6, color: primaryColor),
             title: Text('\u6DF1\u8272\u6A21\u5F0F', style: TextStyle(fontSize: 15)),
             subtitle: Text(_getThemeModeText(),
-                style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[500])),
-            trailing: Icon(Icons.chevron_right, color: isDark ? Colors.grey[500] : Colors.grey[400]),
+                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+            trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
             onTap: _showThemeDialog,
           ),
         ],
@@ -187,12 +191,12 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showThemeDialog() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('\u9009\u62E9\u4E3B\u9898'),
-        backgroundColor: isDark ? Color(0xFF1E1E2E) : Colors.white,
+        title: Text('选择主题'),
+        backgroundColor: theme.colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -221,12 +225,12 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _clearAllData() async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('确认清除所有数据'),
-        backgroundColor: isDark ? Color(0xFF1E1E2E) : Colors.white,
+        backgroundColor: theme.colorScheme.surface,
         content: Text('此操作将永久删除所有记录数据，且不可恢复。建议您先导出数据备份。确定要继续吗？'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
@@ -277,12 +281,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
       if (!mounted) return;
 
-      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final theme = Theme.of(context);
       final confirm = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('\u786E\u8BA4\u5BFC\u5165'),
-          backgroundColor: isDark ? Color(0xFF1E1E2E) : Colors.white,
+          title: Text('确认导入'),
+          backgroundColor: theme.colorScheme.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -301,7 +305,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Icon(Icons.warning, color: Colors.orange, size: 20),
                     SizedBox(width: 8),
-                    Expanded(child: Text('\u5BFC\u5165\u5C06\u66FF\u6362\u5F53\u524D\u6240\u6709\u6570\u636E\uFF0C\u8BF7\u786E\u4FDD\u5DF2\u5907\u4EFD', style: TextStyle(fontSize: 13, color: isDark ? Colors.orange[300] : Colors.orange[800]))),
+                    Expanded(child: Text('\u5BFC\u5165\u5C06\u66FF\u6362\u5F53\u524D\u6240\u6709\u6570\u636E\uFF0C\u8BF7\u786E\u4FDD\u5DF2\u5907\u4EFD', style: TextStyle(fontSize: 13, color: theme.colorScheme.errorFixed))),
                   ],
                 ),
               ),
@@ -358,14 +362,14 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildInfoRow(String label, String value) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text(label, style: TextStyle(fontSize: 13, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+          Text(label, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
           SizedBox(width: 12),
-          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface)),
         ],
       ),
     );

@@ -48,28 +48,34 @@ class _TagManagerPageState extends State<TagManagerPage> {
   }
 
   Widget _buildAddTagSection() {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final subtitleColor = theme.colorScheme.onSurfaceVariant;
+    final primaryColor = theme.colorScheme.primary;
+    
     return Container(
       padding: EdgeInsets.all(16),
-      color: Theme.of(context).cardColor,
+      color: cardColor,
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: _controller,
+              style: TextStyle(color: theme.colorScheme.onSurface),
               decoration: InputDecoration(
                 hintText: '输入新标签',
-                hintStyle: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[400]),
+                hintStyle: TextStyle(color: subtitleColor),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[600] : Colors.grey[300]!),
+                  borderSide: BorderSide(color: subtitleColor.withOpacity(0.3)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[600] : Colors.grey[300]!),
+                  borderSide: BorderSide(color: subtitleColor.withOpacity(0.3)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Color(0xFF4A90E2)),
+                  borderSide: BorderSide(color: primaryColor, width: 2),
                 ),
                 contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
@@ -79,7 +85,7 @@ class _TagManagerPageState extends State<TagManagerPage> {
           ElevatedButton(
             onPressed: _addTag,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: primaryColor,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             ),
@@ -113,16 +119,21 @@ class _TagManagerPageState extends State<TagManagerPage> {
   }
 
   Widget _buildTagsList() {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final subtitleColor = theme.colorScheme.onSurfaceVariant;
+    final primaryColor = theme.colorScheme.primary;
+    
     if (_tags.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.label_off, size: 64, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[600] : Colors.grey[300]),
+            Icon(Icons.label_off, size: 64, color: subtitleColor.withOpacity(0.5)),
             SizedBox(height: 16),
-            Text('暂无自定义标签', style: TextStyle(fontSize: 16, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[500])),
+            Text('暂无自定义标签', style: TextStyle(fontSize: 16, color: subtitleColor)),
             SizedBox(height: 8),
-            Text('添加常用标签方便快速选择', style: TextStyle(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[400])),
+            Text('添加常用标签方便快速选择', style: TextStyle(fontSize: 14, color: subtitleColor.withOpacity(0.8))),
           ],
         ),
       );
@@ -136,18 +147,18 @@ class _TagManagerPageState extends State<TagManagerPage> {
         return Container(
           margin: EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: cardColor,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: Offset(0, 2))],
           ),
           child: ListTile(
-            leading: Icon(Icons.label, color: Color(0xFF4A90E2)),
-            title: Text(tag, style: TextStyle(fontSize: 15)),
+            leading: Icon(Icons.label, color: primaryColor),
+            title: Text(tag, style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface)),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: Icon(Icons.edit, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[500], size: 20),
+                  icon: Icon(Icons.edit, color: subtitleColor, size: 20),
                   onPressed: () => _showEditDialog(tag),
                 ),
                 IconButton(
@@ -164,19 +175,19 @@ class _TagManagerPageState extends State<TagManagerPage> {
 
   void _showEditDialog(String oldTag) {
     final editController = TextEditingController(text: oldTag);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('编辑标签'),
-        backgroundColor: isDark ? Color(0xFF1E1E2E) : Colors.white,
+        backgroundColor: theme.colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: TextField(
           controller: editController,
           autofocus: true,
           decoration: InputDecoration(
             hintText: '输入新标签名',
-            hintStyle: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[400]),
+            hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
@@ -203,12 +214,12 @@ class _TagManagerPageState extends State<TagManagerPage> {
   }
 
   void _showDeleteDialog(String tag) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('删除标签'),
-        backgroundColor: isDark ? Color(0xFF1E1E2E) : Colors.white,
+        backgroundColor: theme.colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Text('确定要删除标签 "$tag" 吗？'),
         actions: [
