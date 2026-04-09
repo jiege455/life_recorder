@@ -1,4 +1,4 @@
-package com.example.life_recorder
+package com.jienetwork.life_recorder
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -7,7 +7,7 @@ import android.content.SharedPreferences
 import android.widget.RemoteViews
 import android.app.PendingIntent
 import android.content.Intent
-import android.content.Context
+import io.flutter.embedding.android.FlutterFragmentActivity
 
 class LifeRecorderWidget : AppWidgetProvider() {
 
@@ -38,7 +38,7 @@ class LifeRecorderWidget : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_mood, "今日心情：$mood")
             views.setTextViewText(R.id.widget_count, "本周记录：${count}条")
 
-            val intent = Intent(context, MainActivity::class.java)
+            val intent = Intent(context, FlutterFragmentActivity::class.java)
             val pendingIntent = PendingIntent.getActivity(
                 context,
                 0,
