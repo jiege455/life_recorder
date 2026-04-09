@@ -249,9 +249,8 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
     );
 
     if (confirm == true) {
-      final prefs = await LockService.instance;
-      await prefs.disableLock();
-      await prefs.setLockEnabled(true);
+      await LockService.instance.disableLock();
+      await LockService.instance.setLockEnabled(true);
       
       setState(() {
         _hasPinSet = false;

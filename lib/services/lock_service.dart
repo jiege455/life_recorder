@@ -78,16 +78,17 @@ class LockService {
       didConfirmed: (context, pin) async {
         final prefs = await SharedPreferences.getInstance();
         final savedPin = prefs.getString(_pinKey);
-        
+
         if (savedPin == null || savedPin.isEmpty) {
           await prefs.setString(_pinKey, pin);
           Navigator.of(context).pop(true);
+          return true;
         } else if (pin == savedPin) {
           Navigator.of(context).pop(true);
+          return true;
         } else {
           return false;
         }
-        return null;
       },
       footer: TextButton(
         onPressed: () => _showResetDialog(context),
