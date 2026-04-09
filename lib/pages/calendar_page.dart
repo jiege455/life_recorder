@@ -31,19 +31,33 @@ class _CalendarPageState extends State<CalendarPage> {
     Map<DateTime, List<Map<String, dynamic>>> events = {};
 
     for (var record in records) {
-      DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
-      DateTime day = DateTime(dt.year, dt.month, dt.day);
-      if (!events.containsKey(day)) {
-        events[day] = [];
+      try {
+        final createdAt = record['created_at'];
+        DateTime dt;
+        if (createdAt is int) {
+          dt = DateTime.fromMillisecondsSinceEpoch(createdAt);
+        } else if (createdAt is String) {
+          dt = DateTime.parse(createdAt);
+        } else {
+          continue;
+        }
+        DateTime day = DateTime(dt.year, dt.month, dt.day);
+        if (!events.containsKey(day)) {
+          events[day] = [];
+        }
+        events[day]!.add(record);
+      } catch (e) {
+        continue;
       }
-      events[day]!.add(record);
     }
 
     if (mounted) {
       setState(() {
         _events = events;
       });
-      _loadDayRecords(_selectedDay!);
+      if (_selectedDay != null) {
+        _loadDayRecords(_selectedDay!);
+      }
     }
   }
 
@@ -185,9 +199,22 @@ class _CalendarPageState extends State<CalendarPage> {
       itemBuilder: (context, index) {
         final record = _selectedDayRecords[index];
         int recordId = record['id'] ?? 0;
-        DateTime dt = DateTime.fromMillisecondsSinceEpoch(record['created_at'] ?? 0);
+        DateTime dt;
+        try {
+          final createdAt = record['created_at'];
+          if (createdAt is int) {
+            dt = DateTime.fromMillisecondsSinceEpoch(createdAt);
+          } else if (createdAt is String) {
+            dt = DateTime.parse(createdAt);
+          } else {
+            dt = DateTime.now();
+          }
+        } catch (e) {
+          dt = DateTime.now();
+        }
         String timeStr = DateFormat('HH:mm').format(dt);
         String content = record['content']?.toString() ?? '';
+        String? mood = record['mood']?.toString();
 
         List<String> tags = [];
         if (record['tags'] != null && record['tags'].toString().isNotEmpty) {
@@ -220,7 +247,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 children: [
                   Row(
                     children: [
-                      Icon(_getMoodIcon(record['mood']), color: _getMoodColor(record['mood']), size: 20),
+                      Icon(_getMoodIcon(mood), color: _getMoodColor(mood), size: 20),
                       SizedBox(width: 6),
                       Text(timeStr, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
                     ],

@@ -1,5 +1,4 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/lock_service.dart';
 
 class LockSettingsPage extends StatefulWidget {
@@ -11,10 +10,7 @@ class LockSettingsPage extends StatefulWidget {
 
 class _LockSettingsPageState extends State<LockSettingsPage> {
   bool _lockEnabled = false;
-  String? _currentPassword;
-  String? _newPassword;
-  String? _confirmPassword;
-  bool _isChangingPassword = false;
+  bool _hasPinSet = false;
 
   @override
   void initState() {
@@ -24,11 +20,17 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
 
   Future<void> _loadSettings() async {
     final lockService = LockService.instance;
-    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _lockEnabled = prefs.getBool('lock_enabled') ?? false;
-      _currentPassword = prefs.getString('lock_password');
+      _lockEnabled = lockService.lockEnabled;
+      _hasPinSet = false;
     });
+    
+    final hasPin = await lockService.hasPinSet();
+    if (mounted) {
+      setState(() {
+        _hasPinSet = hasPin;
+      });
+    }
   }
 
   @override
@@ -53,7 +55,7 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
             _buildLockToggleCard(context, cardColor, primaryColor),
             SizedBox(height: 16),
             if (_lockEnabled) ...[
-              _buildPasswordCard(context, cardColor, primaryColor),
+              _buildPinCard(context, cardColor, primaryColor),
               SizedBox(height: 16),
               _buildInfoCard(context, cardColor, primaryColor),
             ],
@@ -86,7 +88,7 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
             ],
           ),
           SizedBox(height: 12),
-          Text('开启后，每次启动应用都需要输入密码才能访问', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
+          Text('开启后，每次启动应用都需要输入 PIN 码或使用生物识别验证', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
           SizedBox(height: 12),
           SwitchListTile(
             title: Text(_lockEnabled ? '已开启' : '已关闭', style: TextStyle(fontSize: 15)),
@@ -101,7 +103,7 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
     );
   }
 
-  Widget _buildPasswordCard(BuildContext context, Color cardColor, Color primaryColor) {
+  Widget _buildPinCard(BuildContext context, Color cardColor, Color primaryColor) {
     final theme = Theme.of(context);
 
     return Container(
@@ -117,74 +119,28 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
         children: [
           Row(
             children: [
-              Icon(Icons.password, size: 20, color: primaryColor),
+              Icon(Icons.pin, size: 20, color: primaryColor),
               SizedBox(width: 8),
-              Text('密码管理', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+              Text('PIN 码管理', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
             ],
           ),
           SizedBox(height: 16),
-          if (_isChangingPassword) ...[
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: '新密码',
-                hintText: '请输入 4-8 位数字密码',
-                prefixIcon: Icon(Icons.lock_outline),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              keyboardType: TextInputType.number,
-              maxLength: 8,
-              onChanged: (value) => _newPassword = value,
-            ),
-            SizedBox(height: 12),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: '确认密码',
-                hintText: '请再次输入密码',
-                prefixIcon: Icon(Icons.lock_outline),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              keyboardType: TextInputType.number,
-              maxLength: 8,
-              onChanged: (value) => _confirmPassword = value,
-            ),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _isChangingPassword = false;
-                      _newPassword = null;
-                      _confirmPassword = null;
-                    });
-                  },
-                  child: Text('取消'),
-                ),
-                SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _changePassword,
-                  style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
-                  child: Text(_currentPassword == null ? '设置密码' : '修改密码'),
-                ),
-              ],
-            ),
-          ] else ...[
-            Text(_currentPassword != null ? '已设置密码' : '未设置密码', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurface)),
-            SizedBox(height: 12),
+          Text(_hasPinSet ? '已设置 PIN 码' : '未设置 PIN 码（首次解锁时自动设置）', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
+          SizedBox(height: 12),
+          if (_hasPinSet)
             ElevatedButton.icon(
-              onPressed: () {
-                setState(() {
-                  _isChangingPassword = true;
-                });
-              },
-              icon: Icon(Icons.edit, size: 18),
-              label: Text(_currentPassword != null ? '修改密码' : '设置密码'),
+              onPressed: () => _resetPin(),
+              icon: Icon(Icons.refresh, size: 18),
+              label: Text('重置 PIN 码'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            )
+          else
+            ElevatedButton.icon(
+              onPressed: () => _setupPin(),
+              icon: Icon(Icons.add, size: 18),
+              label: Text('设置 PIN 码'),
               style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
             ),
-          ],
         ],
       ),
     );
@@ -208,14 +164,14 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
             children: [
               Icon(Icons.info_outline, size: 20, color: primaryColor),
               SizedBox(width: 8),
-              Text('使用说明', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+              Text('功能说明', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
             ],
           ),
           SizedBox(height: 12),
-          _buildInfoItem('密码长度', '4-8 位数字'),
-          _buildInfoItem('密码保护', '密码加密存储，请放心使用'),
-          _buildInfoItem('忘记密码', '如忘记密码，需清除应用数据'),
-          _buildInfoItem('安全建议', '建议设置不易被猜到的密码'),
+          _buildInfoItem('PIN 码验证', '4-6 位数字密码'),
+          _buildInfoItem('生物识别', '支持指纹、面部识别'),
+          _buildInfoItem('忘记密码', '点击"忘记密码"可重置'),
+          _buildInfoItem('安全性', 'PIN 码加密存储在本地'),
         ],
       ),
     );
@@ -246,60 +202,66 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
   }
 
   Future<void> _toggleLock(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('lock_enabled', value);
-    
-    if (value && _currentPassword == null) {
-      setState(() {
-        _isChangingPassword = true;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('请先设置密码')),
-      );
-    } else {
-      setState(() {
-        _lockEnabled = value;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(value ? '隐私锁已开启' : '隐私锁已关闭')),
-      );
-    }
-  }
-
-  Future<void> _changePassword() async {
-    if (_newPassword == null || _newPassword!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('请输入密码')),
-      );
-      return;
-    }
-
-    if (_newPassword!.length < 4 || _newPassword!.length > 8) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('密码长度必须在 4-8 位之间')),
-      );
-      return;
-    }
-
-    if (_newPassword != _confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('两次输入的密码不一致')),
-      );
-      return;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('lock_password', _newPassword!);
-    
+    await LockService.instance.setLockEnabled(value);
     setState(() {
-      _currentPassword = _newPassword;
-      _isChangingPassword = false;
-      _newPassword = null;
-      _confirmPassword = null;
+      _lockEnabled = value;
+      if (!value) _hasPinSet = false;
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_currentPassword != null && _currentPassword!.isNotEmpty ? '密码修改成功' : '密码设置成功')),
+      SnackBar(content: Text(value ? '隐私锁已开启' : '隐私锁已关闭')),
     );
+
+    if (value && !_hasPinSet) {
+      Future.delayed(Duration(seconds: 1), () => _setupPin());
+    }
+  }
+
+  void _setupPin() {
+    LockService.instance.showLockScreen(
+      context,
+      onUnlocked: () {
+        _loadSettings();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('PIN 码设置成功')),
+        );
+      },
+    );
+  }
+
+  void _resetPin() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('重置 PIN 码'),
+        content: Text('确定要重置 PIN 码吗？下次解锁时需要重新设置。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('确定', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final prefs = await LockService.instance;
+      await prefs.disableLock();
+      await prefs.setLockEnabled(true);
+      
+      setState(() {
+        _hasPinSet = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('PIN 码已重置，请重新设置')),
+      );
+
+      Future.delayed(Duration(seconds: 1), () => _setupPin());
+    }
   }
 }
