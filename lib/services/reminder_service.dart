@@ -17,6 +17,7 @@ class ReminderService {
   bool _enabled = false;
   int _hour = 20;
   int _minute = 0;
+  bool _isInitialized = false;
 
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
 
@@ -25,7 +26,25 @@ class ReminderService {
   int get minute => _minute;
 
   Future<void> initialize() async {
+    if (_isInitialized) return;
+
     tz_data.initializeTimeZones();
+    try {
+      final local = tz.local;
+      debugPrint('时区初始化成功: ${local.name}');
+    } catch (e) {
+      debugPrint('时区初始化异常，尝试设置默认时区: $e');
+      try {
+        tz.setLocalLocation(tz.getLocation('Asia/Shanghai'));
+      } catch (e2) {
+        debugPrint('设置亚洲/上海时区失败，尝试UTC: $e2');
+        try {
+          tz.setLocalLocation(tz.getLocation('UTC'));
+        } catch (e3) {
+          debugPrint('时区设置全部失败: $e3');
+        }
+      }
+    }
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
@@ -45,6 +64,7 @@ class ReminderService {
 
     await loadSettings();
     await checkAndFixReminderState();
+    _isInitialized = true;
   }
 
   Future<void> loadSettings() async {
@@ -93,7 +113,6 @@ class ReminderService {
       if (Platform.isAndroid) {
         final androidPlugin = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
         if (androidPlugin != null) {
-          // Android 13+ 需要请求通知权限
           final granted = await androidPlugin.requestNotificationsPermission() ?? false;
           debugPrint('Android 通知权限请求结果：$granted');
           return granted;
@@ -110,7 +129,6 @@ class ReminderService {
           return granted;
         }
       }
-      // 如果无法获取插件，返回 true（可能是旧版本 Android）
       debugPrint('无法获取平台特定实现，假设权限已授予');
       return true;
     } catch (e) {
@@ -154,6 +172,7 @@ class ReminderService {
       try {
         await _scheduleNotification();
       } catch (e) {
+        debugPrint('调度通知失败: $e');
         _enabled = false;
         await prefs.setBool(_reminderKey, false);
         return false;
@@ -176,7 +195,9 @@ class ReminderService {
     if (_enabled) {
       try {
         await _scheduleNotification();
-      } catch (e) {}
+      } catch (e) {
+        debugPrint('重新调度通知失败: $e');
+      }
     }
   }
 
@@ -187,11 +208,12 @@ class ReminderService {
       'daily_reminder',
       '每日提醒',
       channelDescription: '每日记录提醒',
-      importance: Importance.high,
-      priority: Priority.high,
+      importance: Importance.max,
+      priority: Priority.max,
       showWhen: true,
       enableVibration: true,
       category: AndroidNotificationCategory.reminder,
+      fullScreenIntent: true,
     );
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
@@ -217,23 +239,43 @@ class ReminderService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    debugPrint('计划通知时间：$scheduledDate');
-    
-    await _plugin.zonedSchedule(
-      1,
-      'AI 人生记录器',
-      '今天发生了什么新鲜事？来记录一下吧~',
-      scheduledDate,
-      notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-    );
-    
-    debugPrint('每日提醒已设置，时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
+    debugPrint('当前时间: $now');
+    debugPrint('计划通知时间: $scheduledDate');
+    debugPrint('时区: ${tz.local.name}');
+
+    try {
+      await _plugin.zonedSchedule(
+        1,
+        'AI 人生记录器',
+        '今天发生了什么新鲜事？来记录一下吧~',
+        scheduledDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      debugPrint('每日提醒已设置，时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
+    } catch (e) {
+      debugPrint('精确调度失败，尝试不精确模式: $e');
+      try {
+        await _plugin.zonedSchedule(
+          1,
+          'AI 人生记录器',
+          '今天发生了什么新鲜事？来记录一下吧~',
+          scheduledDate,
+          notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
+          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        );
+        debugPrint('每日提醒已设置（不精确模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
+      } catch (e2) {
+        debugPrint('通知调度完全失败: $e2');
+        rethrow;
+      }
+    }
   }
 
-  /// 测试通知（立即发送）
   Future<bool> sendTestNotification() async {
     try {
       final hasPermission = await isNotificationPermissionGranted();
@@ -246,8 +288,8 @@ class ReminderService {
         'daily_reminder',
         '每日提醒',
         channelDescription: '每日记录提醒',
-        importance: Importance.high,
-        priority: Priority.high,
+        importance: Importance.max,
+        priority: Priority.max,
         showWhen: true,
         enableVibration: true,
       );
@@ -262,12 +304,12 @@ class ReminderService {
       );
 
       await _plugin.show(
-        999, // 测试通知使用不同的 ID
+        999,
         'AI 人生记录器 - 测试通知',
         '如果您收到这条通知，说明每日提醒功能正常工作！✅',
         notificationDetails,
       );
-      
+
       debugPrint('测试通知已发送');
       return true;
     } catch (e) {

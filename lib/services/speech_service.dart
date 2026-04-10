@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:ifly_speech_recognition/ifly_speech_recognition.dart';
+import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:ifly_speech_recognition/ifly_speech_recognition.dart';
 import '../config/api_config.dart';
 
 class SpeechService {
@@ -12,10 +13,12 @@ class SpeechService {
   bool _isInitialized = false;
   bool _isListening = false;
   bool _isRecognizing = false;
+
   StreamSubscription? _resultSubscription;
   StreamSubscription? _stopSubscription;
-  Function(String)? _onResult;
-  Function(String)? _onError;
+
+  Function(String result)? _onResult;
+  Function(String error)? _onError;
 
   bool get isListening => _isListening;
   bool get isRecognizing => _isRecognizing;
@@ -24,6 +27,7 @@ class SpeechService {
     if (_isInitialized) return true;
 
     if (!ApiConfig.isIflyConfigured) {
+      debugPrint('讯飞语音密钥未配置');
       return false;
     }
 
@@ -63,6 +67,7 @@ class SpeechService {
       _isInitialized = true;
       return true;
     } catch (e) {
+      debugPrint('语音服务初始化失败: $e');
       return false;
     }
   }
@@ -84,14 +89,14 @@ class SpeechService {
   }) async {
     var hasPermission = await requestPermission();
     if (!hasPermission) {
-      onError('\u9EA6\u514B\u98CE\u6743\u9650\u672A\u6388\u4E88');
+      onError('麦克风权限未授予');
       return;
     }
 
     if (!_isInitialized) {
       bool success = await init();
       if (!success) {
-        onError('\u8BED\u97F3\u670D\u52A1\u521D\u59CB\u5316\u5931\u8D25');
+        onError('语音服务初始化失败，请检查讯飞语音密钥是否正确配置。前往设置 → API密钥配置，填写您的讯飞开放平台密钥。');
         return;
       }
     }
@@ -105,7 +110,7 @@ class SpeechService {
       await _speechService!.startRecord();
     } catch (e) {
       _isListening = false;
-      onError('\u542F\u52A8\u8BED\u97F3\u8BC6\u522B\u5931\u8D25: $e');
+      onError('启动语音识别失败: $e');
     }
   }
 
@@ -126,5 +131,14 @@ class SpeechService {
   void dispose() {
     _resultSubscription?.cancel();
     _stopSubscription?.cancel();
+  }
+
+  void reset() {
+    _resultSubscription?.cancel();
+    _stopSubscription?.cancel();
+    _speechService = null;
+    _isInitialized = false;
+    _isListening = false;
+    _isRecognizing = false;
   }
 }
