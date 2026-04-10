@@ -157,6 +157,8 @@ class _ReminderPageState extends State<ReminderPage> {
 
     _reminderService.setEnabled(value).then((success) {
       if (!mounted) return;
+      final theme = Theme.of(context);
+      final primaryColor = theme.colorScheme.primary;
       if (success) {
         setState(() {
           _hour = _reminderService.hour;
@@ -190,6 +192,7 @@ class _ReminderPageState extends State<ReminderPage> {
     if (!mounted) return;
 
     final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -282,6 +285,8 @@ class _ReminderPageState extends State<ReminderPage> {
   Future<void> _sendTestNotification() async {
     final result = await _reminderService.sendTestNotification();
     if (mounted) {
+      final theme = Theme.of(context);
+      final primaryColor = theme.colorScheme.primary;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result ? '测试通知已发送，请查看通知栏 ✅' : '发送失败，请检查权限设置'),
