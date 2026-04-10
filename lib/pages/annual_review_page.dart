@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
+import 'api_config_page.dart';
 import 'package:intl/intl.dart';
 
 class AnnualReviewPage extends StatefulWidget {
@@ -69,8 +70,22 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isGenerating = false);
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('生成失败：$e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('生成失败：$errorMsg'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+            action: errorMsg.contains('密钥')
+                ? SnackBarAction(
+                    label: '去配置',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage()));
+                    },
+                  )
+                : null,
+          ),
         );
       }
     }

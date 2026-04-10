@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
+import 'api_config_page.dart';
 
 class AiReportPage extends StatefulWidget {
   const AiReportPage({super.key});
@@ -40,10 +41,10 @@ class _AiReportPageState extends State<AiReportPage> {
 
       if (_reportType == 'week') {
         start = now.subtract(Duration(days: 7));
-        period = '\u672C\u5468';
+        period = '本周';
       } else {
         start = DateTime(now.year, now.month, 1);
-        period = '\u672C\u6708';
+        period = '本月';
       }
 
       final records = await _dbHelper.getRecordsForPeriod(start, now);
@@ -52,7 +53,7 @@ class _AiReportPageState extends State<AiReportPage> {
         if (mounted) {
           setState(() {
             _isGenerating = false;
-            _reportContent = '$period\u8FD8\u6CA1\u6709\u8BB0\u5F55\uFF0C\u5148\u8BB0\u5F55\u4E00\u4E9B\u751F\u6D3B\u518D\u6765\u751F\u6210\u62A5\u544A\u5427~';
+            _reportContent = '$period还没有记录，先记录一些生活再来生成报告吧~';
           });
         }
         return;
@@ -70,8 +71,22 @@ class _AiReportPageState extends State<AiReportPage> {
         setState(() {
           _isGenerating = false;
         });
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('\u62A5\u544A\u751F\u6210\u5931\u8D25\uFF1A$e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('报告生成失败：$errorMsg'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+            action: errorMsg.contains('密钥')
+                ? SnackBarAction(
+                    label: '去配置',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage()));
+                    },
+                  )
+                : null,
+          ),
         );
       }
     }
@@ -81,7 +96,7 @@ class _AiReportPageState extends State<AiReportPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('AI\u751F\u6D3B\u62A5\u544A', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('AI生活报告', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         centerTitle: true,
@@ -119,7 +134,7 @@ class _AiReportPageState extends State<AiReportPage> {
             children: [
               Icon(Icons.auto_awesome, color: Color(0xFF4A90E2), size: 20),
               SizedBox(width: 8),
-              Text('\u9009\u62E9\u62A5\u544A\u7C7B\u578B', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              Text('选择报告类型', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
             ],
           ),
           SizedBox(height: 12),
@@ -135,7 +150,7 @@ class _AiReportPageState extends State<AiReportPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
-                      child: Text('\u5468\u62A5',
+                      child: Text('周报',
                           style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -155,7 +170,7 @@ class _AiReportPageState extends State<AiReportPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
-                      child: Text('\u6708\u62A5',
+                      child: Text('月报',
                           style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -178,7 +193,7 @@ class _AiReportPageState extends State<AiReportPage> {
       child: ElevatedButton.icon(
         onPressed: _isGenerating ? null : _generateReport,
         icon: Icon(Icons.auto_awesome, size: 20),
-        label: Text(_isGenerating ? '\u6B63\u5728\u751F\u6210...' : '\u751F\u6210AI\u62A5\u544A',
+        label: Text(_isGenerating ? '正在生成...' : '生成AI报告',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
@@ -200,7 +215,7 @@ class _AiReportPageState extends State<AiReportPage> {
         children: [
           CircularProgressIndicator(color: Color(0xFF4A90E2)),
           SizedBox(height: 16),
-          Text('AI\u6B63\u5728\u5206\u6790\u4F60\u7684\u751F\u6D3B\u8BB0\u5F55...', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          Text('AI正在分析你的生活记录...', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -222,7 +237,7 @@ class _AiReportPageState extends State<AiReportPage> {
             children: [
               Icon(Icons.description, color: Color(0xFF4A90E2), size: 20),
               SizedBox(width: 8),
-              Text('${_reportType == 'week' ? '\u5468' : '\u6708'}\u62A5\u5185\u5BB9',
+              Text('${_reportType == 'week' ? '周' : '月'}报内容',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
             ],
           ),

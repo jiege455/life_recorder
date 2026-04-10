@@ -5,10 +5,12 @@ import '../services/lock_service.dart';
 import '../services/reminder_service.dart';
 import '../services/tag_service.dart';
 import '../services/backup_service.dart';
+import '../config/api_config.dart';
 import '../database/database_helper.dart';
 import 'tag_manager_page.dart';
 import 'lock_settings_page.dart';
 import 'reminder_page.dart';
+import 'api_config_page.dart';
 import 'privacy_policy_page.dart';
 import 'user_agreement_page.dart';
 
@@ -101,6 +103,11 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildSectionTitle('提醒'),
             _buildSettingCard(cardColor, isDark, primaryColor, Icons.notifications, '每日提醒', _reminderEnabled ? '已启用' : '未启用',
               onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => ReminderPage())); _loadSettings(); },
+            ),
+            SizedBox(height: 24),
+            _buildSectionTitle('API密钥配置'),
+            _buildSettingCard(cardColor, isDark, primaryColor, Icons.vpn_key, 'API密钥配置', '配置语音识别和AI标签的API密钥',
+              onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage())); _loadSettings(); },
             ),
             SizedBox(height: 40),
           ],
