@@ -174,7 +174,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
           localizationsDelegates: [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
-            DefaultCupertinoLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: [
             const Locale('zh', 'CN'),
@@ -523,7 +523,7 @@ class _PolicyConsentScreen extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Color(0xFF4A90E2), Color(0xFF16213E)],
-          ),
+            ),
         ),
         child: SafeArea(
           child: Padding(
@@ -604,13 +604,17 @@ class _PolicyConsentScreen extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Color(0xFF4A90E2),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 4,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                     ),
-                    child: Text('同意并继续', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    child: Text('同意并继续', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
-                SizedBox(height: 24),
+                SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => SystemNavigator.pop(),
+                  child: Text('不同意并退出', style: TextStyle(fontSize: 13, color: Colors.white54)),
+                ),
+                Spacer(flex: 1),
               ],
             ),
           ),
