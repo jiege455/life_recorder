@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,19 +31,15 @@ class ReminderService {
 
     tz_data.initializeTimeZones();
     try {
-      final local = tz.local;
-      debugPrint('时区初始化成功: ${local.name}');
+      tz.setLocalLocation(tz.getLocation('Asia/Shanghai'));
+      debugPrint('时区初始化成功：Asia/Shanghai');
     } catch (e) {
-      debugPrint('时区初始化异常，尝试设置默认时区: $e');
+      debugPrint('设置亚洲/上海时区失败，尝试 UTC: $e');
       try {
-        tz.setLocalLocation(tz.getLocation('Asia/Shanghai'));
+        tz.setLocalLocation(tz.getLocation('UTC'));
+        debugPrint('时区设置为 UTC');
       } catch (e2) {
-        debugPrint('设置亚洲/上海时区失败，尝试UTC: $e2');
-        try {
-          tz.setLocalLocation(tz.getLocation('UTC'));
-        } catch (e3) {
-          debugPrint('时区设置全部失败: $e3');
-        }
+        debugPrint('时区设置全部失败：$e2');
       }
     }
 
@@ -172,7 +169,7 @@ class ReminderService {
       try {
         await _scheduleNotification();
       } catch (e) {
-        debugPrint('调度通知失败: $e');
+        debugPrint('调度通知失败：$e');
         _enabled = false;
         await prefs.setBool(_reminderKey, false);
         return false;
@@ -196,7 +193,7 @@ class ReminderService {
       try {
         await _scheduleNotification();
       } catch (e) {
-        debugPrint('重新调度通知失败: $e');
+        debugPrint('重新调度通知失败：$e');
       }
     }
   }
@@ -207,18 +204,23 @@ class ReminderService {
     const androidDetails = AndroidNotificationDetails(
       'daily_reminder',
       '每日提醒',
-      channelDescription: '每日记录提醒',
+      channelDescription: '每日记录提醒 - 强势推送',
       importance: Importance.max,
       priority: Priority.max,
       showWhen: true,
       enableVibration: true,
+      vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]),
       category: AndroidNotificationCategory.reminder,
       fullScreenIntent: true,
+      autoCancel: false,
+      ongoing: true,
+      visibility: NotificationVisibility.public,
     );
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      interruptionLevel: NotificationInterruptionLevel.timeSensitive,
     );
     const notificationDetails = NotificationDetails(
       android: androidDetails,
@@ -239,29 +241,29 @@ class ReminderService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    debugPrint('当前时间: $now');
-    debugPrint('计划通知时间: $scheduledDate');
-    debugPrint('时区: ${tz.local.name}');
+    debugPrint('当前时间：$now');
+    debugPrint('计划通知时间：$scheduledDate');
+    debugPrint('时区：${tz.local.name}');
 
     try {
       await _plugin.zonedSchedule(
         1,
-        'AI 人生记录器',
-        '今天发生了什么新鲜事？来记录一下吧~',
+        '🔔 AI 人生记录器 - 每日提醒',
+        '今天发生了什么新鲜事？来记录一下吧~ 📝',
         scheduledDate,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
-      debugPrint('每日提醒已设置，时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
+      debugPrint('每日提醒已设置（强势推送模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
     } catch (e) {
-      debugPrint('精确调度失败，尝试不精确模式: $e');
+      debugPrint('精确调度失败，尝试不精确模式：$e');
       try {
         await _plugin.zonedSchedule(
           1,
-          'AI 人生记录器',
-          '今天发生了什么新鲜事？来记录一下吧~',
+          '🔔 AI 人生记录器 - 每日提醒',
+          '今天发生了什么新鲜事？来记录一下吧~ 📝',
           scheduledDate,
           notificationDetails,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -270,7 +272,7 @@ class ReminderService {
         );
         debugPrint('每日提醒已设置（不精确模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
       } catch (e2) {
-        debugPrint('通知调度完全失败: $e2');
+        debugPrint('通知调度完全失败：$e2');
         rethrow;
       }
     }
@@ -287,16 +289,21 @@ class ReminderService {
       const androidDetails = AndroidNotificationDetails(
         'daily_reminder',
         '每日提醒',
-        channelDescription: '每日记录提醒',
+        channelDescription: '每日记录提醒 - 强势推送',
         importance: Importance.max,
         priority: Priority.max,
         showWhen: true,
         enableVibration: true,
+        vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]),
+        autoCancel: false,
+        ongoing: true,
+        visibility: NotificationVisibility.public,
       );
       const iosDetails = DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
+        interruptionLevel: NotificationInterruptionLevel.timeSensitive,
       );
       const notificationDetails = NotificationDetails(
         android: androidDetails,
@@ -305,8 +312,8 @@ class ReminderService {
 
       await _plugin.show(
         999,
-        'AI 人生记录器 - 测试通知',
-        '如果您收到这条通知，说明每日提醒功能正常工作！✅',
+        '🔔 AI 人生记录器 - 测试通知',
+        '如果您收到这条通知，说明每日提醒功能正常工作！✅ 现在就开始记录今天的心情吧~ 📝',
         notificationDetails,
       );
 
