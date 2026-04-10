@@ -5,10 +5,12 @@ import '../services/lock_service.dart';
 import '../services/reminder_service.dart';
 import '../services/tag_service.dart';
 import '../services/backup_service.dart';
+import '../config/api_config.dart';
 import '../database/database_helper.dart';
 import 'tag_manager_page.dart';
 import 'lock_settings_page.dart';
 import 'reminder_page.dart';
+import 'api_config_page.dart';
 import 'privacy_policy_page.dart';
 import 'user_agreement_page.dart';
 
@@ -114,6 +116,12 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildSettingCard(cardColor, isDark, primaryColor,
               Icons.notifications, '\u6BCF\u65E5\u63D0\u9192', _reminderEnabled ? '\u5DF2\u542F\u7528' : '\u672A\u542F\u7528',
               onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => ReminderPage())); _loadSettings(); },
+            ),
+            SizedBox(height: 24),
+            _buildSectionTitle('API\u5BC6\u94A5\u914D\u7F6E'),
+            _buildSettingCard(cardColor, isDark, primaryColor,
+              Icons.vpn_key, 'API\u5BC6\u94A5\u914D\u7F6E', '\u914D\u7F6E\u8BED\u97F3\u8BC6\u522B\u548CAI\u6807\u7B7E\u7684API\u5BC6\u94A5',
+              onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage())); _loadSettings(); },
             ),
             SizedBox(height: 40),
           ],

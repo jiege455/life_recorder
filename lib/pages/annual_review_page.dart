@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
+import 'api_config_page.dart';
 import 'package:intl/intl.dart';
 
 class AnnualReviewPage extends StatefulWidget {
@@ -69,8 +70,22 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isGenerating = false);
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('生成失败：$e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('生成失败：$errorMsg'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+            action: errorMsg.contains('密钥')
+                ? SnackBarAction(
+                    label: '去配置',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage()));
+                    },
+                  )
+                : null,
+          ),
         );
       }
     }
@@ -113,6 +128,7 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
   }
 
   Widget _buildYearSelector() {
+    final theme = Theme.of(context);
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -124,11 +140,11 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           IconButton(
-            icon: Icon(Icons.chevron_left, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[600]),
-            onPressed: () {
+            icon: Icon(Icons.chevron_left, color: theme.colorScheme.onSurfaceVariant),
+            onPressed: _selectedYear > 2024 ? () {
               setState(() => _selectedYear--);
               _loadData();
-            },
+            } : null,
           ),
           Text(
             '$_selectedYear',
@@ -136,11 +152,11 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
           ),
           Text(
             ' 年',
-            style: TextStyle(fontSize: 18, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[600]),
+            style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurfaceVariant),
           ),
           if (_selectedYear < DateTime.now().year)
             IconButton(
-              icon: Icon(Icons.chevron_right, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[600]),
+              icon: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
               onPressed: () {
                 setState(() => _selectedYear++);
                 _loadData();
@@ -225,6 +241,7 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
   }
 
   Widget _buildMoodOverview() {
+    final theme = Theme.of(context);
     if (_moodStats.isEmpty) {
       return Container(
         padding: EdgeInsets.all(20),
@@ -233,7 +250,7 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
-          child: Text('暂无心情数据', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[400])),
+          child: Text('暂无心情数据', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
         ),
       );
     }
@@ -267,9 +284,9 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
                     children: [
                       Text(_getMoodLabel(entry.key), style: TextStyle(fontSize: 14)),
                       Spacer(),
-                      Text('${entry.value}次', style: TextStyle(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[600])),
+                      Text('${entry.value}次', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
                       SizedBox(width: 8),
-                      Text('${percent.toStringAsFixed(1)}%', style: TextStyle(fontSize: 13, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[400])),
+                      Text('${percent.toStringAsFixed(1)}%', style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8))),
                     ],
                   ),
                   SizedBox(height: 4),
@@ -277,7 +294,7 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: percent / 100,
-                      backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.grey[700] : Colors.grey[200],
+                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
                       color: _getMoodColor(entry.key),
                       minHeight: 6,
                     ),
@@ -352,7 +369,7 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
           SizedBox(height: 16),
           SelectableText(
             _reviewContent!,
-            style: TextStyle(fontSize: 15, height: 1.8, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[600] : Colors.grey[800]),
+            style: TextStyle(fontSize: 15, height: 1.8, color: Theme.of(context).colorScheme.onSurface),
           ),
         ],
       ),

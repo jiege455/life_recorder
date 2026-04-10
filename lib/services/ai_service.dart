@@ -3,8 +3,8 @@ import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 
 class AiService {
-  static const String _apiKey = ApiConfig.deepseekApiKey;
-  static const String _baseUrl = ApiConfig.deepseekBaseUrl;
+  String get _apiKey => ApiConfig.deepseekApiKey;
+  String get _baseUrl => ApiConfig.deepseekBaseUrl;
 
   final Dio _dio = Dio(BaseOptions(
     connectTimeout: Duration(seconds: 15),
@@ -15,6 +15,9 @@ class AiService {
   AiService();
 
   Future<List<String>> generateTags(String content) async {
+    if (!ApiConfig.isDeepseekConfigured) {
+      throw Exception('DeepSeek API密钥未配置。请前往设置 → API密钥配置，填写您的DeepSeek API密钥。');
+    }
     try {
       final response = await _dio.post(
         _baseUrl,
@@ -61,8 +64,10 @@ class AiService {
 
         List<dynamic> decoded = jsonDecode(contentText);
         return decoded.map((e) => e.toString()).toList();
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        throw Exception('API密钥无效或已过期，请前往设置 → API密钥配置，更新您的DeepSeek API密钥。');
       } else {
-        throw Exception('AI服务请求失败');
+        throw Exception('AI服务请求失败(${response.statusCode})');
       }
     } on DioException catch (e) {
       String errorMsg = '网络错误';
@@ -72,14 +77,24 @@ class AiService {
         errorMsg = '网络连接超时，请检查网络';
       } else if (e.type == DioExceptionType.connectionError) {
         errorMsg = '网络连接失败，请检查网络';
+      } else if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+        errorMsg = 'API密钥无效或已过期，请前往设置更新密钥';
+      } else if (e.response?.statusCode == 429) {
+        errorMsg = 'API调用频率超限，请稍后再试';
+      } else if (e.response?.statusCode == 402) {
+        errorMsg = 'API余额不足，请前往DeepSeek官网充值';
       }
       throw Exception(errorMsg);
     } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('标签解析失败');
     }
   }
 
   Future<String> generateReport(List<Map<String, dynamic>> records, String period) async {
+    if (!ApiConfig.isDeepseekConfigured) {
+      throw Exception('DeepSeek API密钥未配置。请前往设置 → API密钥配置，填写您的DeepSeek API密钥。');
+    }
     try {
       StringBuffer sb = StringBuffer();
       sb.writeln('$period生活记录：');
@@ -119,6 +134,8 @@ class AiService {
       if (response.statusCode == 200) {
         final responseData = response.data;
         return responseData['choices'][0]['message']['content'];
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        throw Exception('API密钥无效或已过期，请前往设置更新密钥');
       } else {
         throw Exception('AI服务请求失败');
       }
@@ -130,14 +147,24 @@ class AiService {
         errorMsg = '网络连接超时';
       } else if (e.type == DioExceptionType.connectionError) {
         errorMsg = '网络连接失败';
+      } else if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+        errorMsg = 'API密钥无效或已过期，请前往设置更新密钥';
+      } else if (e.response?.statusCode == 429) {
+        errorMsg = 'API调用频率超限，请稍后再试';
+      } else if (e.response?.statusCode == 402) {
+        errorMsg = 'API余额不足，请前往DeepSeek官网充值';
       }
       throw Exception(errorMsg);
     } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('报告生成失败');
     }
   }
 
   Future<String> generateAnnualReview(List<Map<String, dynamic>> records, String year, Map<String, int> moodStats) async {
+    if (!ApiConfig.isDeepseekConfigured) {
+      throw Exception('DeepSeek API密钥未配置。请前往设置 → API密钥配置，填写您的DeepSeek API密钥。');
+    }
     try {
       StringBuffer sb = StringBuffer();
       sb.writeln('$year年年度记录：');
@@ -178,6 +205,8 @@ class AiService {
       if (response.statusCode == 200) {
         final responseData = response.data;
         return responseData['choices'][0]['message']['content'];
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        throw Exception('API密钥无效或已过期，请前往设置更新密钥');
       } else {
         throw Exception('AI服务请求失败');
       }
@@ -189,9 +218,16 @@ class AiService {
         errorMsg = '网络连接超时';
       } else if (e.type == DioExceptionType.connectionError) {
         errorMsg = '网络连接失败';
+      } else if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+        errorMsg = 'API密钥无效或已过期，请前往设置更新密钥';
+      } else if (e.response?.statusCode == 429) {
+        errorMsg = 'API调用频率超限，请稍后再试';
+      } else if (e.response?.statusCode == 402) {
+        errorMsg = 'API余额不足，请前往DeepSeek官网充值';
       }
       throw Exception(errorMsg);
     } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('年度报告生成失败');
     }
   }

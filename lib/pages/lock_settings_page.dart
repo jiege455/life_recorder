@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+﻿﻿import 'package:flutter/material.dart';
 import '../services/lock_service.dart';
 
 class LockSettingsPage extends StatefulWidget {
@@ -24,7 +24,7 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
       _lockEnabled = lockService.lockEnabled;
       _hasPinSet = false;
     });
-    
+
     final hasPin = await lockService.hasPinSet();
     if (mounted) {
       setState(() {
@@ -125,7 +125,7 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
             ],
           ),
           SizedBox(height: 16),
-          Text(_hasPinSet ? '已设置 PIN 码' : '未设置 PIN 码（首次解锁时自动设置）', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
+          Text(_hasPinSet ? '已设置 PIN 码' : '未设置 PIN 码', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
           SizedBox(height: 12),
           if (_hasPinSet)
             ElevatedButton.icon(
@@ -168,10 +168,10 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
             ],
           ),
           SizedBox(height: 12),
-          _buildInfoItem('PIN 码验证', '4-6 位数字密码'),
+          _buildInfoItem('PIN 码验证', '4位数字密码，安全键盘输入'),
           _buildInfoItem('生物识别', '支持指纹、面部识别'),
-          _buildInfoItem('忘记密码', '点击"忘记密码"可重置'),
-          _buildInfoItem('安全性', 'PIN 码加密存储在本地'),
+          _buildInfoItem('忘记密码', '连续失败5次可紧急解锁'),
+          _buildInfoItem('安全性', 'PIN 码 SHA-256 加密存储'),
         ],
       ),
     );
@@ -218,9 +218,9 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
   }
 
   void _setupPin() {
-    LockService.instance.showLockScreen(
+    LockService.instance.showCreatePinScreen(
       context,
-      onUnlocked: () {
+      onConfirmed: () {
         _loadSettings();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('PIN 码设置成功')),
@@ -234,7 +234,7 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('重置 PIN 码'),
-        content: Text('确定要重置 PIN 码吗？下次解锁时需要重新设置。'),
+        content: Text('确定要重置 PIN 码吗？需要重新设置新的 PIN 码。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -251,14 +251,10 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
     if (confirm == true) {
       await LockService.instance.disableLock();
       await LockService.instance.setLockEnabled(true);
-      
+
       setState(() {
         _hasPinSet = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PIN 码已重置，请重新设置')),
-      );
 
       Future.delayed(Duration(seconds: 1), () => _setupPin());
     }

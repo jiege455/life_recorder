@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import 'dart:io';
 import 'dart:convert';
+import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -21,7 +22,6 @@ class ShareCardHelper {
 
     final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
-    Completer<ui.Image>? completer;
 
     overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -277,34 +277,5 @@ class _ShareCardWidget extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class Completer<T> {
-  bool _isCompleted = false;
-  late T _value;
-  late Object _error;
-  final List<void Function(T value)> _thenCallbacks = [];
-
-  void complete(T value) {
-    _isCompleted = true;
-    _value = value;
-    for (var callback in _thenCallbacks) {
-      callback(value);
-    }
-  }
-
-  void completeError(Object error) {
-    _isCompleted = true;
-    _error = error;
-  }
-
-  Future<T> get future async {
-    if (_isCompleted) {
-      return _value;
-    }
-    final completer = Completer<T>();
-    _thenCallbacks.add((value) => completer.complete(value));
-    return completer.future;
   }
 }

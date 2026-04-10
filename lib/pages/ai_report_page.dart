@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
+import 'api_config_page.dart';
 
 class AiReportPage extends StatefulWidget {
   const AiReportPage({super.key});
@@ -70,8 +71,22 @@ class _AiReportPageState extends State<AiReportPage> {
         setState(() {
           _isGenerating = false;
         });
+        final errorMsg = e.toString().replaceAll('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('报告生成失败：$e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('报告生成失败：$errorMsg'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+            action: errorMsg.contains('密钥')
+                ? SnackBarAction(
+                    label: '去配置',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage()));
+                    },
+                  )
+                : null,
+          ),
         );
       }
     }
@@ -85,10 +100,7 @@ class _AiReportPageState extends State<AiReportPage> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -107,6 +119,7 @@ class _AiReportPageState extends State<AiReportPage> {
   }
 
   Widget _buildTypeSelector() {
+    final theme = Theme.of(context);
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -133,7 +146,7 @@ class _AiReportPageState extends State<AiReportPage> {
                   child: Container(
                     padding: EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: _reportType == 'week' ? Color(0xFF4A90E2) : Theme.of(context).brightness == Brightness.dark ? Colors.grey[700] : Colors.grey[100],
+                      color: _reportType == 'week' ? Color(0xFF4A90E2) : theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
@@ -141,7 +154,7 @@ class _AiReportPageState extends State<AiReportPage> {
                           style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: _reportType == 'week' ? Colors.white : Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[600])),
+                              color: _reportType == 'week' ? Colors.white : theme.colorScheme.onSurfaceVariant)),
                     ),
                   ),
                 ),
@@ -153,7 +166,7 @@ class _AiReportPageState extends State<AiReportPage> {
                   child: Container(
                     padding: EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: _reportType == 'month' ? Color(0xFF4A90E2) : Theme.of(context).brightness == Brightness.dark ? Colors.grey[700] : Colors.grey[100],
+                      color: _reportType == 'month' ? Color(0xFF4A90E2) : theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
@@ -161,7 +174,7 @@ class _AiReportPageState extends State<AiReportPage> {
                           style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: _reportType == 'month' ? Colors.white : Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[600])),
+                              color: _reportType == 'month' ? Colors.white : theme.colorScheme.onSurfaceVariant)),
                     ),
                   ),
                 ),
@@ -202,7 +215,7 @@ class _AiReportPageState extends State<AiReportPage> {
         children: [
           CircularProgressIndicator(color: Color(0xFF4A90E2)),
           SizedBox(height: 16),
-          Text('AI正在分析你的生活记录...', style: TextStyle(fontSize: 14, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[500] : Colors.grey[500])),
+          Text('AI正在分析你的生活记录...', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -231,7 +244,7 @@ class _AiReportPageState extends State<AiReportPage> {
           SizedBox(height: 16),
           SelectableText(
             _reportContent!,
-            style: TextStyle(fontSize: 15, height: 1.8, color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[600] : Colors.grey[800]),
+            style: TextStyle(fontSize: 15, height: 1.8, color: Theme.of(context).colorScheme.onSurface),
           ),
         ],
       ),

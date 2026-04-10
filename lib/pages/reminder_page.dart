@@ -131,6 +131,16 @@ class _ReminderPageState extends State<ReminderPage> {
               trailing: Icon(Icons.access_time, color: subtitleColor),
               onTap: _selectTime,
             ),
+            Divider(height: 1, color: theme.dividerColor),
+            ListTile(
+              title: Text('测试通知', style: TextStyle(fontSize: 16, color: textColor)),
+              subtitle: Text(
+                '立即发送一条测试通知，确认功能正常',
+                style: TextStyle(fontSize: 12, color: subtitleColor),
+              ),
+              trailing: Icon(Icons.notifications_active, color: primaryColor),
+              onTap: _sendTestNotification,
+            ),
           ],
         ],
       ),
@@ -262,6 +272,18 @@ class _ReminderPageState extends State<ReminderPage> {
           SnackBar(content: Text('提醒时间已设置为 ${_formatTime(picked.hour, picked.minute)}'), backgroundColor: Colors.green),
         );
       }
+    }
+  }
+
+  Future<void> _sendTestNotification() async {
+    final result = await _reminderService.sendTestNotification();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result ? '测试通知已发送，请查看通知栏 ✅' : '发送失败，请检查权限设置'),
+          backgroundColor: result ? Colors.green : Colors.orange,
+        ),
+      );
     }
   }
 }

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_screen_lock/flutter_screen_lock.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:flutter_screen_lock/flutter_screen_lock.dart';
 
 class LockService {
   static final LockService instance = LockService._();
   static const String _lockKey = 'lock_enabled';
   static const String _pinKey = 'lock_pin';
-  
+
   final LocalAuthentication _localAuth = LocalAuthentication();
   bool _isLocked = false;
   bool _lockEnabled = false;
@@ -41,93 +42,107 @@ class LockService {
 
   Future<bool> authenticateWithBiometrics() async {
     try {
+      // 检查设备是否支持
       final isSupported = await isDeviceSupported();
-      if (!isSupported) return false;
-      return await _localAuth.authenticate(
+      if (!isSupported) {
+        debugPrint('设备不支持生物识别');
+        return false;
+      }
+
+      // 检查是否可以使用生物识别
+      final canCheckBiometrics = await canCheckBiometrics();
+      if (!canCheckBiometrics) {
+        debugPrint('无法使用生物识别');
+        return false;
+      }
+
+      // 执行生物识别验证
+      final authenticated = await _localAuth.authenticate(
         localizedReason: '请验证身份以进入应用',
         options: const AuthenticationOptions(
-          stickyAuth: false,
+          stickyAuth: true, // 使用 stickyAuth 确保验证完成
           biometricOnly: true,
         ),
-      ).timeout(const Duration(seconds: 30), onTimeout: () => false);
-    } on PlatformException catch (e) {
-      if (e.code == 'auth_in_progress' || e.code == 'locked_out') {
-        await Future.delayed(const Duration(seconds: 2));
+      ).timeout(
+        const Duration(seconds: 60), // 增加超时时间到 60 秒
+        onTimeout: () => false,
+      );
+
+      if (authenticated) {
+        debugPrint('生物识别验证成功');
+      } else {
+        debugPrint('生物识别验证失败');
       }
+
+      return authenticated;
+    } on PlatformException catch (e) {
+      debugPrint('生物识别异常：${e.code} - ${e.message}');
+      
+      // 处理特定的错误码
+      if (e.code == 'NotEnrolledException') {
+        debugPrint('用户未录入生物特征');
+      } else if (e.code == 'LockoutException') {
+        debugPrint('生物识别被锁定，请稍后重试');
+        await Future.delayed(const Duration(seconds: 5));
+      } else if (e.code == 'AuthenticationFailed') {
+        debugPrint('生物识别验证失败');
+      }
+      
+      return false;
+    } catch (e) {
+      debugPrint('生物识别未知错误：$e');
       return false;
     }
   }
 
-  void showLockScreen(BuildContext context, {required VoidCallback onUnlocked}) {
-    if (!_lockEnabled) {
-      onUnlocked();
-      return;
-    }
-
-    ScreenLock(
-      correctString: '',
-      title: '输入 PIN 码',
-      confirmTitle: '再次输入',
-      customizedButtonChild: const Icon(Icons.fingerprint),
-      customizedButtonTap: () async {
-        final success = await authenticateWithBiometrics();
-        if (success && context.mounted) {
-          Navigator.of(context).pop(true);
-        }
-      },
-      didConfirmed: (context, pin) async {
-        final prefs = await SharedPreferences.getInstance();
-        final savedPin = prefs.getString(_pinKey);
-
-        if (savedPin == null || savedPin.isEmpty) {
-          await prefs.setString(_pinKey, pin);
-          Navigator.of(context).pop(true);
-          return true;
-        } else if (pin == savedPin) {
-          Navigator.of(context).pop(true);
-          return true;
-        } else {
-          return false;
-        }
-      },
-      footer: TextButton(
-        onPressed: () => _showResetDialog(context),
-        child: const Text('忘记密码？'),
-      ),
-    ).show(context).then((value) {
-      if (value == true) {
-        unlock();
-        onUnlocked();
-      }
-    });
+  Future<String?> getSavedPin() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_pinKey);
   }
 
-  Future<void> _showResetDialog(BuildContext context) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('重置密码'),
-        content: const Text('确定要重置 PIN 码吗？需要重新设置。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('确定', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
+  Future<void> setPin(String pin) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_pinKey, pin);
+  }
 
-    if (confirm == true) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_pinKey);
-      if (context.mounted) {
-        Navigator.pop(context);
-      }
-    }
+  Future<bool> verifyPin(String pin) async {
+    final savedPin = await getSavedPin();
+    if (savedPin == null || savedPin.isEmpty) return false;
+    return pin == savedPin;
+  }
+
+  void showCreatePinScreen(BuildContext context, {required VoidCallback onConfirmed}) {
+    screenLockCreate(
+      context: context,
+      digits: 4,
+      canCancel: true,
+      useBlur: false,
+      title: const Text('设置 PIN 码'),
+      confirmTitle: const Text('确认 PIN 码'),
+      config: ScreenLockConfig(
+        backgroundColor: const Color(0xFF16213E),
+      ),
+      secretsConfig: SecretsConfig(
+        spacing: 16,
+        padding: const EdgeInsets.all(16),
+      ),
+      keyPadConfig: KeyPadConfig(
+        buttonConfig: KeyPadButtonConfig(
+          buttonStyle: OutlinedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            foregroundColor: Colors.white,
+            side: const BorderSide(color: Colors.white24),
+          ),
+        ),
+      ),
+      onConfirmed: (pin) async {
+        await setPin(pin);
+        if (context.mounted) {
+          Navigator.of(context).pop();
+          onConfirmed();
+        }
+      },
+    );
   }
 
   Future<void> setLockEnabled(bool enabled) async {
@@ -135,7 +150,7 @@ class LockService {
     _isLocked = enabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_lockKey, enabled);
-    
+
     if (!enabled) {
       await prefs.remove(_pinKey);
     }

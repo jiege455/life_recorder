@@ -2,8 +2,8 @@ void main() {
   // API配置检查
   print('=== API配置测试 ===');
   
-  // 检查API密钥
-  String apiKey = 'sk-12dcf244168e445891d34b594b2fe799';
+  // 检查 API 密钥
+  String apiKey = 'sk-4c521537a01a44aebc4a2bd9f057dde9';
   print('API Key: $apiKey');
   
   // 检查API密钥格式

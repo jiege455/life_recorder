@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:ifly_speech_recognition/ifly_speech_recognition.dart';
+import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:ifly_speech_recognition/ifly_speech_recognition.dart';
 import '../config/api_config.dart';
 
 class SpeechService {
@@ -12,16 +13,23 @@ class SpeechService {
   bool _isInitialized = false;
   bool _isListening = false;
   bool _isRecognizing = false;
+
   StreamSubscription? _resultSubscription;
   StreamSubscription? _stopSubscription;
-  Function(String)? _onResult;
-  Function(String)? _onError;
+
+  Function(String result)? _onResult;
+  Function(String error)? _onError;
 
   bool get isListening => _isListening;
   bool get isRecognizing => _isRecognizing;
 
   Future<bool> init() async {
     if (_isInitialized) return true;
+
+    if (!ApiConfig.isIflyConfigured) {
+      debugPrint('讯飞语音密钥未配置');
+      return false;
+    }
 
     try {
       _speechService = SpeechRecognitionService(
@@ -59,6 +67,7 @@ class SpeechService {
       _isInitialized = true;
       return true;
     } catch (e) {
+      debugPrint('语音服务初始化失败: $e');
       return false;
     }
   }
@@ -87,7 +96,7 @@ class SpeechService {
     if (!_isInitialized) {
       bool success = await init();
       if (!success) {
-        onError('语音服务初始化失败');
+        onError('语音服务初始化失败，请检查讯飞语音密钥是否正确配置。前往设置 → API密钥配置，填写您的讯飞开放平台密钥。');
         return;
       }
     }
@@ -122,5 +131,14 @@ class SpeechService {
   void dispose() {
     _resultSubscription?.cancel();
     _stopSubscription?.cancel();
+  }
+
+  void reset() {
+    _resultSubscription?.cancel();
+    _stopSubscription?.cancel();
+    _speechService = null;
+    _isInitialized = false;
+    _isListening = false;
+    _isRecognizing = false;
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import '../database/database_helper.dart';
 import 'add_record_page.dart';
 
@@ -62,8 +63,13 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
       );
     }
 
-    final createTime = DateTime.parse(_record!['created_at'].toString());
-    final updateTime = DateTime.parse(_record!['updated_at'].toString());
+    final createdAt = _record!['created_at'];
+    DateTime createTime;
+    if (createdAt is int) {
+      createTime = DateTime.fromMillisecondsSinceEpoch(createdAt);
+    } else {
+      createTime = DateTime.now();
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -88,7 +94,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildInfoCard(context, createTime, updateTime),
+            _buildInfoCard(context, createTime),
             SizedBox(height: 16),
             _buildMoodCard(context),
             SizedBox(height: 16),
@@ -108,7 +114,7 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, DateTime createTime, DateTime updateTime) {
+  Widget _buildInfoCard(BuildContext context, DateTime createTime) {
     final theme = Theme.of(context);
     final cardColor = theme.cardColor;
 
@@ -127,21 +133,11 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             children: [
               Icon(Icons.access_time, size: 18, color: theme.colorScheme.primary),
               SizedBox(width: 8),
-              Text('创建时间', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+              Text('记录时间', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
             ],
           ),
           SizedBox(height: 8),
-          Text(_formatDateTime(createTime), style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.update, size: 18, color: theme.colorScheme.primary),
-              SizedBox(width: 8),
-              Text('更新时间', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
-            ],
-          ),
-          SizedBox(height: 8),
-          Text(_formatDateTime(updateTime), style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
+          Text(DateFormat('yyyy年MM月dd日 HH:mm:ss').format(createTime), style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -305,58 +301,48 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     );
   }
 
-  String _formatDateTime(DateTime dt) {
-    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
-  }
-
   IconData _getMoodIcon(String? mood) {
     switch (mood) {
       case 'happy':
         return Icons.sentiment_very_satisfied;
-      case 'good':
-        return Icons.sentiment_satisfied;
       case 'neutral':
         return Icons.sentiment_neutral;
-      case 'bad':
+      case 'sad':
         return Icons.sentiment_dissatisfied;
-      case 'terrible':
-        return Icons.sentiment_very_dissatisfied;
+      case 'excited':
+        return Icons.celebration;
       default:
-        return Icons.sentiment_neutral;
+        return Icons.sentiment_satisfied_alt;
     }
   }
 
   Color _getMoodColor(String? mood) {
     switch (mood) {
       case 'happy':
-        return Color(0xFFFFD700);
-      case 'good':
-        return Color(0xFF90EE90);
+        return Colors.amber;
       case 'neutral':
-        return Color(0xFF87CEEB);
-      case 'bad':
-        return Color(0xFFFFB6C1);
-      case 'terrible':
-        return Color(0xFFDC143C);
+        return Colors.grey;
+      case 'sad':
+        return Colors.blue;
+      case 'excited':
+        return Colors.pink;
       default:
-        return Color(0xFF808080);
+        return Colors.green;
     }
   }
 
   String _getMoodText(String? mood) {
     switch (mood) {
       case 'happy':
-        return '非常开心';
-      case 'good':
         return '开心';
       case 'neutral':
         return '平静';
-      case 'bad':
-        return '不好';
-      case 'terrible':
-        return '非常糟糕';
+      case 'sad':
+        return '难过';
+      case 'excited':
+        return '兴奋';
       default:
-        return '未知';
+        return '平静';
     }
   }
 
@@ -379,7 +365,13 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const AddRecordPage(),
+        builder: (context) => AddRecordPage(
+          editRecordId: widget.recordId,
+          editContent: _record?['content']?.toString() ?? '',
+          editMood: _record?['mood']?.toString() ?? 'neutral',
+          editTags: _tags,
+          editImages: _images,
+        ),
       ),
     );
     if (result == true) {

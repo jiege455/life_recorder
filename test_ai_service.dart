@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 class AiService {
-  static const String _apiKey = 'sk-12dcf244168e445891d34b594b2fe799';
+  static const String _apiKey = 'sk-4c521537a01a44aebc4a2bd9f057dde9';
   static const String _baseUrl = 'https://api.deepseek.com/v1/chat/completions';
 
   final Dio _dio = Dio();
