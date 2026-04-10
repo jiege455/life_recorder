@@ -57,10 +57,6 @@ class LockService {
         debugPrint('无法使用生物识别');
         return false;
       }
-
-      // 检查是否有可用的生物识别方式
-      final availableBiometrics = await _localAuth.availableBiometrics;
-      debugPrint('可用的生物识别方式：$availableBiometrics');
       
       // 执行生物识别验证
       final authenticated = await _localAuth.authenticate(
