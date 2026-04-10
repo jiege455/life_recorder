@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:convert';
 import '../database/database_helper.dart';
 import '../widgets/share_card.dart';
+import '../services/reminder_service.dart';
 import 'add_record_page.dart';
 import 'record_detail_page.dart';
 import 'calendar_page.dart';
@@ -26,6 +27,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  final ReminderService _reminderService = ReminderService.instance;
   List<Map<String, dynamic>> _records = [];
   List<Map<String, dynamic>> _filteredRecords = [];
   int _totalCount = 0;
@@ -35,18 +37,29 @@ class _HomePageState extends State<HomePage> {
   String? _selectedMoodFilter;
   final TextEditingController _searchController = TextEditingController();
   int _currentIndex = 0;
+  bool _reminderEnabled = false;
 
   List<Map<String, dynamic>> _moods = [
-    {'value': 'happy', 'emoji': '☺', 'label': '开心'},
-    {'value': 'neutral', 'emoji': '☹', 'label': '平静'},
-    {'value': 'sad', 'emoji': '☹', 'label': '难过'},
-    {'value': 'excited', 'emoji': '♥', 'label': '兴奋'},
+    {'value': 'happy', 'emoji': '\u{1F60A}', 'label': '开心'},
+    {'value': 'neutral', 'emoji': '\u{1F610}', 'label': '平静'},
+    {'value': 'sad', 'emoji': '\u{1F622}', 'label': '难过'},
+    {'value': 'excited', 'emoji': '\u{1F389}', 'label': '兴奋'},
   ];
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _loadReminderStatus();
+  }
+
+  Future<void> _loadReminderStatus() async {
+    await _reminderService.loadSettings();
+    if (mounted) {
+      setState(() {
+        _reminderEnabled = _reminderService.enabled;
+      });
+    }
   }
 
   @override
@@ -226,11 +239,11 @@ class _HomePageState extends State<HomePage> {
 
   String _getMoodEmoji(String? mood) {
     switch (mood) {
-      case 'happy': return '☺';
-      case 'neutral': return '☹';
-      case 'sad': return '☹';
-      case 'excited': return '♥';
-      default: return '☹';
+      case 'happy': return '\u{1F60A}';
+      case 'neutral': return '\u{1F610}';
+      case 'sad': return '\u{1F622}';
+      case 'excited': return '\u{1F389}';
+      default: return '\u{1F610}';
     }
   }
 
@@ -324,6 +337,23 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
         centerTitle: true,
         actions: [
+          if (_reminderEnabled)
+            Container(
+              margin: EdgeInsets.only(right: 8),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.green.withOpacity(0.5)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.notifications_active, color: Colors.greenAccent, size: 16),
+                  SizedBox(width: 4),
+                  Text('推送已开启', style: TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.white),
             onPressed: () {

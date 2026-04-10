@@ -5,12 +5,10 @@ import '../services/lock_service.dart';
 import '../services/reminder_service.dart';
 import '../services/tag_service.dart';
 import '../services/backup_service.dart';
-import '../config/api_config.dart';
 import '../database/database_helper.dart';
 import 'tag_manager_page.dart';
 import 'lock_settings_page.dart';
 import 'reminder_page.dart';
-import 'api_config_page.dart';
 import 'privacy_policy_page.dart';
 import 'user_agreement_page.dart';
 
@@ -104,11 +102,13 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildSettingCard(cardColor, isDark, primaryColor, Icons.notifications, '每日提醒', _reminderEnabled ? '已启用' : '未启用',
               onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => ReminderPage())); _loadSettings(); },
             ),
-            SizedBox(height: 24),
-            _buildSectionTitle('API密钥配置'),
-            _buildSettingCard(cardColor, isDark, primaryColor, Icons.vpn_key, 'API密钥配置', '配置语音识别和AI标签的API密钥',
-              onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage())); _loadSettings(); },
-            ),
+            if (_reminderEnabled) ...[
+              SizedBox(height: 8),
+              _buildSettingCard(cardColor, isDark, primaryColor,
+                Icons.notifications_active, '测试推送', '立即发送测试通知，确认推送功能正常',
+                onTap: _testPushNotification,
+              ),
+            ],
             SizedBox(height: 40),
           ],
         ),
@@ -225,13 +225,33 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
+
     if (confirm == true) {
       try {
         await DatabaseHelper.instance.deleteAllRecords();
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('所有数据已清除'), backgroundColor: Colors.green));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('所有数据已清除'), backgroundColor: Colors.green));
+        }
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('清除数据失败，请重试'), backgroundColor: Colors.red));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('清除数据失败，请重试'), backgroundColor: Colors.red));
+        }
       }
+    }
+  }
+
+  Future<void> _testPushNotification() async {
+    final result = await ReminderService.instance.sendTestNotification();
+    if (mounted) {
+      final theme = Theme.of(context);
+      final primaryColor = theme.colorScheme.primary;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result ? '测试推送已发送，请查看通知栏 ✅' : '发送失败，请检查权限设置'),
+          backgroundColor: result ? Colors.green : primaryColor,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 
@@ -245,7 +265,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('数据导出成功！'), backgroundColor: Colors.green));
       }
     } finally {
-      if (mounted) setState(() => _isExporting = false);
+      if (mounted) { setState(() => _isExporting = false); }
     }
   }
 
@@ -254,10 +274,14 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final backupInfo = await BackupService.instance.readBackupFile();
       if (backupInfo == null) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('未选择文件或文件格式错误'), backgroundColor: Colors.orange));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('未选择文件或文件格式错误'), backgroundColor: Colors.orange));
+        }
         return;
       }
+
       if (!mounted) return;
+
       final theme = Theme.of(context);
       final confirm = await showDialog<bool>(
         context: context,
@@ -278,20 +302,53 @@ class _SettingsPageState extends State<SettingsPage> {
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                child: Row(children: [Icon(Icons.warning, color: Colors.orange, size: 20), SizedBox(width: 8), Expanded(child: Text('导入将替换当前所有数据，请确保已备份', style: TextStyle(fontSize: 13, color: theme.colorScheme.error)))]),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.orange, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('导入将替换当前所有数据，请确保已备份', style: TextStyle(fontSize: 13, color: theme.colorScheme.error))),
+                  ],
+                ),
               ),
             ],
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, false), child: Text('取消')),
-            ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF4A90E2), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))), child: Text('确认导入')),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF4A90E2), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              child: Text('确认导入'),
+            ),
           ],
         ),
       );
+
       if (confirm != true) return;
       if (!mounted) return;
-      showDialog(context: context, barrierDismissible: false, builder: (context) => Center(child: Card(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), child: Padding(padding: EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(color: Color(0xFF4A90E2)), SizedBox(height: 16), Text('正在导入数据...', style: TextStyle(fontSize: 14))])))));
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFF4A90E2)),
+                  SizedBox(height: 16),
+                  Text('正在导入数据...', style: TextStyle(fontSize: 14)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
       final success = await BackupService.instance.importData(backupInfo['records']);
+
       if (mounted) {
         Navigator.pop(context);
         if (success) {
@@ -301,7 +358,7 @@ class _SettingsPageState extends State<SettingsPage> {
         }
       }
     } finally {
-      if (mounted) setState(() => _isImporting = false);
+      if (mounted) { setState(() => _isImporting = false); }
     }
   }
 
@@ -309,7 +366,13 @@ class _SettingsPageState extends State<SettingsPage> {
     final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4),
-      child: Row(children: [Text(label, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)), SizedBox(width: 12), Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface))]),
+      child: Row(
+        children: [
+          Text(label, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
+          SizedBox(width: 12),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface)),
+        ],
+      ),
     );
   }
 }
