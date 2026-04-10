@@ -9,7 +9,7 @@ import '../database/database_helper.dart';
 import '../services/ai_service.dart';
 import '../services/speech_service.dart';
 import '../services/tag_service.dart';
-import 'api_config_page.dart';
+import '../pages/tag_manager_page.dart';
 
 class AddRecordPage extends StatefulWidget {
   final int? editRecordId;
@@ -45,7 +45,6 @@ class _AddRecordPageState extends State<AddRecordPage> {
   bool _isGeneratingTags = false;
   List<String> _generatedTags = [];
   List<String> _selectedImages = [];
-  List<String> _customTags = [];
   bool get _isEditMode => widget.editRecordId != null;
 
   List<Map<String, dynamic>> _moods = [
@@ -105,15 +104,6 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 content: Text('语音识别错误: $error'),
                 backgroundColor: Colors.orange,
                 duration: Duration(seconds: 4),
-                action: error.toString().contains('密钥')
-                    ? SnackBarAction(
-                        label: '去配置',
-                        textColor: Colors.white,
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage()));
-                        },
-                      )
-                    : null,
               ),
             );
           }
@@ -279,15 +269,6 @@ class _AddRecordPageState extends State<AddRecordPage> {
             content: Text('标签生成失败：$errorMsg'),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
-            action: errorMsg.contains('密钥')
-                ? SnackBarAction(
-                    label: '去配置',
-                    textColor: Colors.white,
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage()));
-                    },
-                  )
-                : null,
           ),
         );
       }
@@ -306,6 +287,71 @@ class _AddRecordPageState extends State<AddRecordPage> {
         _generatedTags.add(tag.trim());
       });
     }
+  }
+
+  void _addNewTag(String tag) {
+    if (tag.trim().isNotEmpty && !_customTags.contains(tag.trim())) {
+      TagService.instance.addTag(tag.trim());
+      _loadCustomTags();
+      _addCustomTag(tag.trim());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('标签 "$tag" 添加成功'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } else if (_customTags.contains(tag.trim())) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('标签 "$tag" 已存在'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showAddTagDialog(TextEditingController controller) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('添加新标签'),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: '输入标签名称',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+          onSubmitted: (value) {
+            if (value.trim().isNotEmpty) {
+              Navigator.pop(context);
+              _addNewTag(value.trim());
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                Navigator.pop(context);
+                _addNewTag(controller.text.trim());
+              }
+            },
+            child: Text('添加'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _saveRecord() async {
@@ -596,8 +642,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                         style: TextStyle(
                             fontSize: 13,
                             color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
-                            fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.normal)),
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
                   ],
                 ),
               ),
@@ -691,7 +736,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             children: [
               Icon(Icons.auto_awesome, color: Color(0xFF4A90E2), size: 20),
               SizedBox(width: 8),
-              Text('AI智能标签',
+              Text('AI 智能标签',
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -716,9 +761,15 @@ class _AddRecordPageState extends State<AddRecordPage> {
                     ),
             ],
           ),
-          if (_customTags.isNotEmpty) ...[
-            SizedBox(height: 12),
-            Container(
+          SizedBox(height: 12),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TagManagerPage()),
+              );
+            },
+            child: Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withOpacity(0.05),
@@ -728,70 +779,59 @@ class _AddRecordPageState extends State<AddRecordPage> {
                   width: 1,
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.star, size: 16, color: theme.colorScheme.primary),
-                      SizedBox(width: 6),
-                      Text('常用标签', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
-                      Spacer(),
-                      Text('点击快速添加', style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6))),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _customTags.map((tag) {
-                      final isSelected = _generatedTags.contains(tag);
-                      return GestureDetector(
-                        onTap: () {
-                          if (isSelected) {
-                            setState(() {
-                              _generatedTags.remove(tag);
-                            });
-                          } else {
-                            _addCustomTag(tag);
-                          }
-                        },
-                        child: AnimatedContainer(
-                          duration: Duration(milliseconds: 200),
-                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline.withOpacity(0.3),
-                              width: 1.5,
-                            ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: theme.colorScheme.primary.withOpacity(0.3),
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
-                                    )
-                                  ]
-                                : null,
-                          ),
-                          child: Text(
-                            tag,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                              color: isSelected ? Colors.white : theme.colorScheme.onSurface,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+                  Icon(Icons.star, size: 16, color: theme.colorScheme.primary),
+                  SizedBox(width: 6),
+                  Text('常用标签', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
+                  Spacer(),
+                  Text('点击去管理', style: TextStyle(fontSize: 11, color: theme.colorScheme.primary)),
+                  Icon(Icons.arrow_forward_ios, size: 12, color: theme.colorScheme.primary),
                 ],
               ),
             ),
-          ],
+          ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: '添加自定义标签，按回车确认',
+                    prefixIcon: Icon(Icons.add_circle_outline, color: theme.colorScheme.primary, size: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    isDense: true,
+                  ),
+                  style: TextStyle(fontSize: 13),
+                  onSubmitted: (value) {
+                    if (value.trim().isNotEmpty) {
+                      _addNewTag(value.trim());
+                    }
+                  },
+                ),
+              ),
+              SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => TagManagerPage()),
+                  );
+                },
+                icon: Icon(Icons.manage_search, size: 18),
+                label: Text('管理'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
           if (_generatedTags.isNotEmpty) ...[
             SizedBox(height: 12),
             Wrap(
