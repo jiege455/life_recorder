@@ -1,14 +1,14 @@
 # AI 人生记录器 📝
 
-> **记录生活的美好瞬间，用 AI 留住每一份感动**  
+> **记录生活的美好瞬间，用 AI 留住每一份感动**\
 > **开发者：杰哥网络科技** | QQ: 2711793818
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.x-00B4AB?logo=dart)](https://dart.dev)
-[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/jiege455/life_recorder/build-android.yml)](https://github.com/jiege455/life_recorder/actions)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[!\[Flutter\](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter null)](https://flutter.dev)
+[!\[Dart\](https://img.shields.io/badge/Dart-3.x-00B4AB?logo=dart null)](https://dart.dev)
+[!\[GitHub Actions\](https://img.shields.io/github/actions/workflow/status/jiege455/life\_recorder/build-android.yml null)](https://github.com/jiege455/life_recorder/actions)
+[!\[License\](https://img.shields.io/badge/license-MIT-blue.svg null)](LICENSE)
 
----
+***
 
 ## 🌟 项目简介
 
@@ -23,37 +23,42 @@
 - 📊 **数据统计** - 多维度分析，了解你的生活轨迹
 - 🎨 **精美 UI** - 现代化设计，支持深色模式
 
----
+***
 
 ## 📱 功能特性
 
 ### 🎯 核心功能
 
 #### 🏷️ AI 智能标签
+
 - 基于 DeepSeek AI 大模型
 - 根据记录内容自动生成合适的标签
 - 支持自定义常用标签
 - 快速分类和检索
 
 #### 🎤 语音输入
+
 - 科大讯飞高精度语音识别
 - 支持实时识别，边说边显示
 - 识别准确率高达 95%+
 - 解放双手，记录更便捷
 
 #### ⏰ 每日提醒
+
 - 每天固定时间发送通知
 - 可自定义提醒时间
 - 支持测试通知功能
 - 帮助养成记录习惯
 
 #### 🔒 隐私保护
+
 - 4 位 PIN 码锁
 - 指纹/面部识别
 - 紧急解锁功能
 - 加密存储，安全可靠
 
 #### 📊 统计分析
+
 - 记录总数统计
 - 本周/月记录趋势
 - 最常用标签
@@ -61,6 +66,7 @@
 - 年度回顾报告
 
 #### 📅 日历视图
+
 - 按日期查看记录
 - 每天记录数量显示
 - 快速跳转
@@ -74,7 +80,7 @@
 - ✅ 响应式布局
 - ✅ 适配不同屏幕尺寸
 
----
+***
 
 ## 🔧 技术架构
 
@@ -117,15 +123,15 @@ lib/
 
 ### 核心服务
 
-| 服务 | 说明 | 状态 |
-|------|------|------|
-| `ReminderService` | 每日提醒服务 | ✅ 正常 |
-| `LockService` | 隐私锁服务 | ✅ 正常 |
-| `AiService` | AI 标签生成 | ✅ 正常 |
-| `SpeechService` | 语音识别 | ✅ 正常 |
-| `TagService` | 标签管理 | ✅ 正常 |
+| 服务                | 说明      | 状态   |
+| ----------------- | ------- | ---- |
+| `ReminderService` | 每日提醒服务  | ✅ 正常 |
+| `LockService`     | 隐私锁服务   | ✅ 正常 |
+| `AiService`       | AI 标签生成 | ✅ 正常 |
+| `SpeechService`   | 语音识别    | ✅ 正常 |
+| `TagService`      | 标签管理    | ✅ 正常 |
 
----
+***
 
 ## 🚀 快速开始
 
@@ -170,7 +176,7 @@ flutter run
 flutter build apk --release
 ```
 
----
+***
 
 ## 📦 构建与发布
 
@@ -189,17 +195,19 @@ on:
 ### 手动构建
 
 #### Android
+
 ```bash
 flutter build apk --release
 flutter build appbundle --release  # 发布到 Google Play
 ```
 
 #### iOS
+
 ```bash
 flutter build ios --release
 ```
 
----
+***
 
 ## 🎯 使用指南
 
@@ -232,17 +240,19 @@ flutter build ios --release
 3. 设置 4 位 PIN 码
 4. 可选：启用生物识别
 
----
+***
 
 ## 📊 功能演示
 
 ### 首页
+
 - 记录列表
 - 心情筛选
 - 搜索功能
 - 下拉刷新
 
 ### 添加记录
+
 - 文本输入
 - 语音输入
 - AI 标签生成
@@ -251,6 +261,7 @@ flutter build ios --release
 - 心情选择
 
 ### 统计页面
+
 - 记录总数
 - 本周统计
 - 标签云
@@ -258,88 +269,99 @@ flutter build ios --release
 - 趋势图表
 
 ### 日历视图
+
 - 月视图
 - 日记录
 - 快速跳转
 
----
+***
 
 ## 🔐 隐私与安全
 
 ### 数据加密
+
 - PIN 码加密存储
 - 本地数据库加密
 - 不上传任何用户数据到云端
 
 ### 权限说明
 
-| 权限 | 用途 | 必需 |
-|------|------|------|
-| 麦克风 | 语音输入 | 否 |
-| 相机 | 拍照记录 | 否 |
-| 存储 | 保存图片 | 否 |
-| 通知 | 每日提醒 | 否 |
-| 生物识别 | 隐私解锁 | 否 |
+| 权限   | 用途   | 必需 |
+| ---- | ---- | -- |
+| 麦克风  | 语音输入 | 否  |
+| 相机   | 拍照记录 | 否  |
+| 存储   | 保存图片 | 否  |
+| 通知   | 每日提醒 | 否  |
+| 生物识别 | 隐私解锁 | 否  |
 
 ### 隐私保护
+
 - ✅ 所有数据本地存储
 - ✅ 不收集用户信息
 - ✅ 不追踪用户行为
 - ✅ 开源代码，透明可审计
 
----
+***
 
 ## 🧪 测试
 
 ### 运行测试
+
 ```bash
 flutter test
 ```
 
 ### 测试覆盖
+
 - 服务层测试
 - 工具类测试
 - 组件测试
 
----
+***
 
 ## 🤝 贡献指南
 
 欢迎提交 Issue 和 Pull Request！
 
 ### 提交 Bug
+
 请在 Issue 中提供：
+
 1. 设备型号和系统版本
 2. 复现步骤
 3. 预期行为和实际行为
 4. 截图或录屏（如有）
 
 ### 功能建议
+
 请在 Issue 中说明：
+
 1. 功能描述
 2. 使用场景
 3. 预期效果
 
----
+***
 
 ## 📄 开源协议
 
 MIT License
 
----
+***
 
 ## 📞 联系方式
 
 ### 开发者信息
+
 - **开发者**: 杰哥网络科技
 - **QQ**: 2711793818
 - **邮箱**: (待添加)
 
 ### 问题反馈
-- GitHub Issues: https://github.com/jiege455/life_recorder/issues
+
+- GitHub Issues: <https://github.com/jiege455/life_recorder/issues>
 - QQ 群：(待添加)
 
----
+***
 
 ## 🙏 致谢
 
@@ -348,15 +370,16 @@ MIT License
 - [Flutter](https://flutter.dev) - 跨平台框架
 - [DeepSeek](https://deepseek.com) - AI 标签生成
 - [科大讯飞](https://www.xfyun.cn) - 语音识别
-- [flutter_local_notifications](https://pub.dev/packages/flutter_local_notifications) - 通知插件
-- [local_auth](https://pub.dev/packages/local_auth) - 生物识别插件
+- [flutter\_local\_notifications](https://pub.dev/packages/flutter_local_notifications) - 通知插件
+- [local\_auth](https://pub.dev/packages/local_auth) - 生物识别插件
 - [provider](https://pub.dev/packages/provider) - 状态管理
 
----
+***
 
 ## 📅 更新日志
 
 ### v1.0.0 (2025-04-10)
+
 - ✅ 修复每日提醒通知权限问题
 - ✅ 优化隐私锁 PIN 码验证逻辑
 - ✅ 优化生物识别功能
@@ -364,19 +387,20 @@ MIT License
 - ✅ 添加详细的使用说明文档
 
 ### v0.9.0 (2025-04-06)
+
 - ✅ 初始版本发布
 - ✅ AI 标签生成功能
 - ✅ 语音输入功能
 - ✅ 每日提醒功能
 - ✅ 隐私锁功能
 
----
+***
 
 ## 📸 应用截图
 
 （待添加应用截图）
 
----
+***
 
 ## 🎯 未来计划
 
@@ -389,18 +413,18 @@ MIT License
 - [ ] 语音日记朗读
 - [ ] 情感分析
 
----
+***
 
 ## ⭐ 给项目点赞
 
 如果你觉得这个项目对你有帮助，请给个 ⭐ Star 支持一下！
 
----
+***
 
 **Made with ❤️ by 杰哥网络科技**
 
----
+***
 
-**最后更新**: 2025-04-10  
-**当前版本**: v1.0.0  
+**最后更新**: 2025-04-10\
+**当前版本**: v1.0.0\
 **仓库状态**: 私有仓库
