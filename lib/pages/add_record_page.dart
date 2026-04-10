@@ -984,6 +984,47 @@ class _AddRecordPageState extends State<AddRecordPage> {
               ),
             ),
           ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: '添加自定义标签，按回车确认',
+                    prefixIcon: Icon(Icons.add_circle_outline, color: theme.colorScheme.primary, size: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    isDense: true,
+                  ),
+                  style: TextStyle(fontSize: 13),
+                  onSubmitted: (value) {
+                    if (value.trim().isNotEmpty) {
+                      _addNewTag(value.trim());
+                    }
+                  },
+                ),
+              ),
+              SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => TagManagerPage()),
+                  );
+                },
+                icon: Icon(Icons.manage_search, size: 18),
+                label: Text('管理'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
           if (_generatedTags.isNotEmpty) ...[
             SizedBox(height: 12),
             Wrap(
