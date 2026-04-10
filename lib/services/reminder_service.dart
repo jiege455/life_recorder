@@ -201,7 +201,7 @@ class ReminderService {
   Future<void> _scheduleNotification() async {
     await _plugin.cancelAll();
 
-    const androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'daily_reminder',
       '每日提醒',
       channelDescription: '每日记录提醒 - 强势推送',
@@ -216,13 +216,13 @@ class ReminderService {
       ongoing: true,
       visibility: NotificationVisibility.public,
     );
-    const iosDetails = DarwinNotificationDetails(
+    final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
       interruptionLevel: NotificationInterruptionLevel.timeSensitive,
     );
-    const notificationDetails = NotificationDetails(
+    final notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -286,7 +286,7 @@ class ReminderService {
         return false;
       }
 
-      const androidDetails = AndroidNotificationDetails(
+      final androidDetails = AndroidNotificationDetails(
         'daily_reminder',
         '每日提醒',
         channelDescription: '每日记录提醒 - 强势推送',
@@ -299,13 +299,13 @@ class ReminderService {
         ongoing: true,
         visibility: NotificationVisibility.public,
       );
-      const iosDetails = DarwinNotificationDetails(
+      final iosDetails = DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
         interruptionLevel: NotificationInterruptionLevel.timeSensitive,
       );
-      const notificationDetails = NotificationDetails(
+      final notificationDetails = NotificationDetails(
         android: androidDetails,
         iOS: iosDetails,
       );
