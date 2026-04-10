@@ -3,6 +3,7 @@ import '../services/reminder_service.dart';
 
 class ReminderPage extends StatefulWidget {
   const ReminderPage({super.key});
+
   @override
   State<ReminderPage> createState() => _ReminderPageState();
 }
@@ -14,52 +15,373 @@ class _ReminderPageState extends State<ReminderPage> {
   int _minute = 0;
   bool _isLoading = true;
 
+  static const Color _bluePrimary = Color(0xFF4A90E2);
+
   @override
-  void initState() { super.initState(); _initState(); }
-  Future<void> _initState() async { await _reminderService.loadSettings(); if (mounted) { setState(() { _reminderEnabled = _reminderService.enabled; _hour = _reminderService.hour; _minute = _reminderService.minute; _isLoading = false; }); } }
+  void initState() {
+    super.initState();
+    _initState();
+  }
+
+  Future<void> _initState() async {
+    await _reminderService.loadSettings();
+    if (mounted) {
+      setState(() {
+        _reminderEnabled = _reminderService.enabled;
+        _hour = _reminderService.hour;
+        _minute = _reminderService.minute;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(title: Text('每日提醒', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), backgroundColor: primaryColor, elevation: 0, centerTitle: true, leading: IconButton(icon: Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context))),
-      body: _isLoading ? Center(child: CircularProgressIndicator()) : SingleChildScrollView(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildReminderCard(), SizedBox(height: 24), _buildTimeSelector(primaryColor)])),
+      appBar: AppBar(
+        title: Text('每日提醒', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: _bluePrimary,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildReminderCard(),
+                  SizedBox(height: 24),
+                  _buildTimeSelector(isDark),
+                  if (_reminderEnabled) ...[
+                    SizedBox(height: 16),
+                    _buildDebugInfo(),
+                  ],
+                ],
+              ),
+            ),
     );
   }
 
   Widget _buildReminderCard() {
-    return Container(padding: EdgeInsets.all(20), decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)]), borderRadius: BorderRadius.circular(16)), child: Row(children: [Icon(Icons.notifications_active, size: 48, color: Colors.white), SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('记录生活点滴', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)), SizedBox(height: 4), Text('每天固定时间提醒你记录今天的心情', style: TextStyle(fontSize: 13, color: Colors.white70))]))]));
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_bluePrimary, _bluePrimary.withOpacity(0.8)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.notifications_active, size: 48, color: Colors.white),
+          SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('记录生活点滴', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                SizedBox(height: 4),
+                Text('每天固定时间提醒你记录今天的心情', style: TextStyle(fontSize: 13, color: Colors.white70)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildTimeSelector(Color primaryColor) {
+  Widget _buildTimeSelector(bool isDark) {
     final theme = Theme.of(context);
     final cardColor = theme.cardColor;
     final textColor = theme.colorScheme.onSurface;
     final subtitleColor = theme.colorScheme.onSurfaceVariant;
-    return Container(decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))]), child: Column(children: [SwitchListTile(title: Text('启用每日提醒', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: textColor)), subtitle: Text(_reminderEnabled ? '每天 ${_formatTime(_hour, _minute)} 提醒' : '未启用', style: TextStyle(fontSize: 12, color: subtitleColor)), value: _reminderEnabled, activeColor: primaryColor, onChanged: _onToggleReminder), if (_reminderEnabled) ...[Divider(height: 1, color: theme.dividerColor), ListTile(title: Text('提醒时间', style: TextStyle(fontSize: 16, color: textColor)), subtitle: Text(_formatTime(_hour, _minute), style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primaryColor)), trailing: Icon(Icons.access_time, color: subtitleColor), onTap: _selectTime)]]));
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
+      ),
+      child: Column(
+        children: [
+          SwitchListTile(
+            title: Text('启用每日提醒', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: textColor)),
+            subtitle: Text(
+              _reminderEnabled ? '每天 ${_formatTime(_hour, _minute)} 提醒' : '未启用',
+              style: TextStyle(fontSize: 12, color: subtitleColor),
+            ),
+            value: _reminderEnabled,
+            activeColor: _bluePrimary,
+            onChanged: _onToggleReminder,
+          ),
+          if (_reminderEnabled) ...[
+            Divider(height: 1, color: theme.dividerColor),
+            ListTile(
+              title: Text('提醒时间', style: TextStyle(fontSize: 16, color: textColor)),
+              subtitle: Text(
+                _formatTime(_hour, _minute),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _bluePrimary),
+              ),
+              trailing: Icon(Icons.access_time, color: subtitleColor),
+              onTap: _selectTime,
+            ),
+            Divider(height: 1, color: theme.dividerColor),
+            ListTile(
+              title: Text('测试通知', style: TextStyle(fontSize: 16, color: textColor)),
+              subtitle: Text(
+                '立即发送一条测试通知，确认功能正常',
+                style: TextStyle(fontSize: 12, color: subtitleColor),
+              ),
+              trailing: Icon(Icons.notifications_active, color: _bluePrimary),
+              onTap: _sendTestNotification,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebugInfo() {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _reminderService.getDebugInfo(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return SizedBox.shrink();
+        final info = snapshot.data!;
+        return Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.info_outline, size: 18, color: _bluePrimary),
+                  SizedBox(width: 8),
+                  Text('调度状态', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _bluePrimary)),
+                ],
+              ),
+              SizedBox(height: 8),
+              _buildInfoRow('时区', info['timezone'] ?? '未知'),
+              _buildInfoRow('当前时间', info['currentTime'] ?? '未知'),
+              _buildInfoRow('精确闹钟', info['canScheduleExactAlarms'] == true ? '✅ 已授权' : '❌ 未授权'),
+              _buildInfoRow('通知权限', info['hasNotificationPermission'] == true ? '✅ 已授权' : '❌ 未授权'),
+              if (info['canScheduleExactAlarms'] != true) ...[
+                SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning, color: Colors.orange, size: 16),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '精确闹钟未授权，定时推送可能不精确。请在系统设置中开启「闹钟和提醒」权限。',
+                          style: TextStyle(fontSize: 12, color: Colors.orange),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await _reminderService.requestExactAlarmPermission();
+                      setState(() {});
+                    },
+                    icon: Icon(Icons.settings, size: 16),
+                    label: Text('开启精确闹钟权限'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _bluePrimary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          SizedBox(width: 8),
+          Expanded(child: Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
+        ],
+      ),
+    );
   }
 
   void _onToggleReminder(bool value) {
-    setState(() { _reminderEnabled = value; });
+    setState(() {
+      _reminderEnabled = value;
+    });
+
     _reminderService.setEnabled(value).then((success) {
       if (!mounted) return;
-      if (success) { setState(() { _hour = _reminderService.hour; _minute = _reminderService.minute; }); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value ? '提醒已启用' : '提醒已关闭'), backgroundColor: value ? Colors.green : Colors.orange)); }
-      else { setState(() { _reminderEnabled = false; }); _showPermissionDeniedDialog(); }
-    }).catchError((e) { if (!mounted) return; setState(() { _reminderEnabled = !value; }); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('操作失败，请重试'), backgroundColor: Colors.red)); });
+      if (success) {
+        setState(() {
+          _hour = _reminderService.hour;
+          _minute = _reminderService.minute;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(value ? '提醒已启用' : '提醒已关闭'),
+            backgroundColor: value ? Colors.green : _bluePrimary,
+          ),
+        );
+      } else {
+        setState(() {
+          _reminderEnabled = false;
+        });
+        _showPermissionDeniedDialog();
+      }
+    }).catchError((e) {
+      if (!mounted) return;
+      setState(() {
+        _reminderEnabled = !value;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('操作失败，请重试'), backgroundColor: Colors.red),
+      );
+    });
   }
 
   Future<void> _showPermissionDeniedDialog() async {
     final isPermanentlyDenied = await _reminderService.isNotificationPermissionPermanentlyDenied();
     if (!mounted) return;
+
     final theme = Theme.of(context);
-    showDialog(context: context, builder: (context) => AlertDialog(title: Row(children: [Icon(Icons.notifications_off, color: Colors.orange, size: 24), SizedBox(width: 8), Text('通知权限未开启')]), backgroundColor: theme.colorScheme.surface, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), content: Text(isPermanentlyDenied ? '通知权限已被禁止，需要前往系统设置中手动开启通知权限，才能使用每日提醒功能。' : '需要通知权限才能启用每日提醒，请允许通知权限。', style: TextStyle(fontSize: 14, height: 1.6)), actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text('取消')), ElevatedButton.icon(onPressed: () async { Navigator.pop(context); if (isPermanentlyDenied) { await _reminderService.openNotificationSettings(); } else { final granted = await _reminderService.requestNotificationPermission(); if (granted && mounted) { final success = await _reminderService.setEnabled(true); if (success && mounted) { setState(() { _reminderEnabled = true; _hour = _reminderService.hour; _minute = _reminderService.minute; }); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('提醒已启用'), backgroundColor: Colors.green)); } } } }, icon: Icon(isPermanentlyDenied ? Icons.settings : Icons.notifications_active, size: 18), label: Text(isPermanentlyDenied ? '去设置' : '允许'), style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF4A90E2), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))))]));
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.notifications_off, color: _bluePrimary, size: 24),
+            SizedBox(width: 8),
+            Text('通知权限未开启'),
+          ],
+        ),
+        backgroundColor: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Text(
+          isPermanentlyDenied
+              ? '通知权限已被禁止，需要前往系统设置中手动开启通知权限，才能使用每日提醒功能。'
+              : '需要通知权限才能启用每日提醒，请允许通知权限。',
+          style: TextStyle(fontSize: 14, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('取消'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              if (isPermanentlyDenied) {
+                await _reminderService.openNotificationSettings();
+              } else {
+                final granted = await _reminderService.requestNotificationPermission();
+                if (granted && mounted) {
+                  final success = await _reminderService.setEnabled(true);
+                  if (success && mounted) {
+                    setState(() {
+                      _reminderEnabled = true;
+                      _hour = _reminderService.hour;
+                      _minute = _reminderService.minute;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('提醒已启用'), backgroundColor: Colors.green),
+                    );
+                  }
+                }
+              }
+            },
+            icon: Icon(isPermanentlyDenied ? Icons.settings : Icons.notifications_active, size: 18),
+            label: Text(isPermanentlyDenied ? '去设置' : '允许'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _bluePrimary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  String _formatTime(int hour, int minute) => '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+  String _formatTime(int hour, int minute) {
+    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+  }
 
   Future<void> _selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(context: context, initialTime: TimeOfDay(hour: _hour, minute: _minute), builder: (context, child) => Theme(data: Theme.of(context).copyWith(colorScheme: ColorScheme.light(primary: Color(0xFF4A90E2))), child: child!));
-    if (picked != null) { await _reminderService.setTime(picked.hour, picked.minute); if (mounted) { setState(() { _hour = picked.hour; _minute = picked.minute; }); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('提醒时间已设置为 ${_formatTime(picked.hour, picked.minute)}'), backgroundColor: Colors.green)); } }
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: _hour, minute: _minute),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(primary: _bluePrimary),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      await _reminderService.setTime(picked.hour, picked.minute);
+      if (mounted) {
+        setState(() {
+          _hour = picked.hour;
+          _minute = picked.minute;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('提醒时间已设置为 ${_formatTime(picked.hour, picked.minute)}'), backgroundColor: Colors.green),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendTestNotification() async {
+    final result = await _reminderService.sendTestNotification();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result ? '测试通知已发送，请查看通知栏 ✅' : '发送失败，请检查权限设置'),
+          backgroundColor: result ? Colors.green : _bluePrimary,
+        ),
+      );
+    }
   }
 }
