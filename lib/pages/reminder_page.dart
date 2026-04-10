@@ -257,8 +257,9 @@ class _ReminderPageState extends State<ReminderPage> {
       context: context,
       initialTime: TimeOfDay(hour: _hour, minute: _minute),
       builder: (context, child) {
+        final theme = Theme.of(context);
         return Theme(
-          data: Theme.of(context).copyWith(colorScheme: ColorScheme.light(primary: Color(0xFF4A90E2))),
+          data: theme.copyWith(colorScheme: theme.colorScheme.copyWith(primary: theme.colorScheme.primary)),
           child: child!,
         );
       },

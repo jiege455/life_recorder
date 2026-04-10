@@ -30,19 +30,15 @@ class ReminderService {
 
     tz_data.initializeTimeZones();
     try {
-      final local = tz.local;
-      debugPrint('时区初始化成功: ${local.name}');
+      tz.setLocalLocation(tz.getLocation('Asia/Shanghai'));
+      debugPrint('时区初始化成功：Asia/Shanghai');
     } catch (e) {
-      debugPrint('时区初始化异常，尝试设置默认时区: $e');
+      debugPrint('设置亚洲/上海时区失败，尝试 UTC: $e');
       try {
-        tz.setLocalLocation(tz.getLocation('Asia/Shanghai'));
+        tz.setLocalLocation(tz.getLocation('UTC'));
+        debugPrint('时区设置为 UTC');
       } catch (e2) {
-        debugPrint('设置亚洲/上海时区失败，尝试UTC: $e2');
-        try {
-          tz.setLocalLocation(tz.getLocation('UTC'));
-        } catch (e3) {
-          debugPrint('时区设置全部失败: $e3');
-        }
+        debugPrint('时区设置全部失败：$e2');
       }
     }
 
