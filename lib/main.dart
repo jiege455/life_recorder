@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -90,12 +91,13 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
 
   void _showPermissionRevokedDialog(BuildContext context) {
     final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.notifications_off, color: Colors.orange, size: 24),
+            Icon(Icons.notifications_off, color: primaryColor, size: 24),
             SizedBox(width: 8),
             Text('通知权限已关闭'),
           ],
@@ -119,7 +121,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
             icon: Icon(Icons.settings, size: 18),
             label: Text('去设置'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF4A90E2),
+              backgroundColor: primaryColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -172,7 +174,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
           localizationsDelegates: [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizationsDelegate,
+            GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: [
             const Locale('zh', 'CN'),
@@ -303,7 +305,7 @@ class _LockScreenState extends State<LockScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red[700]),
             child: Text('确认关闭隐私锁', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -318,7 +320,7 @@ class _LockScreenState extends State<LockScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('隐私锁已关闭，请在设置中重新开启'),
-            backgroundColor: Colors.orange,
+            backgroundColor: Colors.red[700],
             duration: Duration(seconds: 3),
           ),
         );
@@ -376,7 +378,7 @@ class _LockScreenState extends State<LockScreen> {
                     duration: Duration(milliseconds: 300),
                     child: Text(
                       'PIN 码错误，已失败 $_failedAttempts 次',
-                      style: TextStyle(fontSize: 13, color: Colors.orangeAccent),
+                      style: TextStyle(fontSize: 13, color: Colors.redAccent),
                     ),
                   ),
                 ],
@@ -390,11 +392,11 @@ class _LockScreenState extends State<LockScreen> {
                   SizedBox(height: 16),
                   TextButton.icon(
                     onPressed: _emergencyUnlock,
-                    icon: Icon(Icons.lock_open, color: Colors.orangeAccent, size: 20),
-                    label: Text('紧急解锁', style: TextStyle(color: Colors.orangeAccent, fontSize: 14)),
+                    icon: Icon(Icons.lock_open, color: Colors.redAccent, size: 20),
+                    label: Text('紧急解锁', style: TextStyle(color: Colors.redAccent, fontSize: 14)),
                   ),
                   Text(
-                    '连续验证失败5次后可使用紧急解锁',
+                    '连续验证失败 5 次后可使用紧急解锁',
                     style: TextStyle(fontSize: 11, color: Colors.white38),
                   ),
                 ],
@@ -503,19 +505,7 @@ class _LockScreenState extends State<LockScreen> {
   }
 
   Widget _buildBiometricButton() {
-    return FutureBuilder<bool>(
-      future: LockService.instance.isDeviceSupported(),
-      builder: (context, snapshot) {
-        if (snapshot.data == true) {
-          return TextButton.icon(
-            onPressed: _onBiometricPressed,
-            icon: Icon(Icons.fingerprint, color: Colors.white70, size: 28),
-            label: Text('使用生物识别', style: TextStyle(color: Colors.white70, fontSize: 14)),
-          );
-        }
-        return SizedBox.shrink();
-      },
-    );
+    return SizedBox.shrink();
   }
 }
 
