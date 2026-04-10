@@ -9,8 +9,7 @@ import '../database/database_helper.dart';
 import '../services/ai_service.dart';
 import '../services/speech_service.dart';
 import '../services/tag_service.dart';
-import '../pages/tag_manager_page.dart';
-
+import '../pages/tag_manager_page.dart';n
 class AddRecordPage extends StatefulWidget {
   final int? editRecordId;
   final String editContent;
@@ -45,6 +44,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   bool _isGeneratingTags = false;
   List<String> _generatedTags = [];
   List<String> _selectedImages = [];
+  List<String> _customTags = [];
   bool get _isEditMode => widget.editRecordId != null;
 
   List<Map<String, dynamic>> _moods = [
