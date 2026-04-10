@@ -9,6 +9,7 @@ import 'services/theme_service.dart';
 import 'services/lock_service.dart';
 import 'services/reminder_service.dart';
 import 'services/tag_service.dart';
+import 'config/api_config.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -22,6 +23,7 @@ void main() async {
 
   final themeService = await ThemeService.getInstance();
   await themeService.loadThemeMode();
+  await ApiConfig.loadConfig();
   await LockService.instance.loadLockStatus();
   await ReminderService.instance.initialize();
   await TagService.instance.loadTags();
@@ -170,7 +172,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
           localizationsDelegates: [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
+            GlobalCupertinoLocalizationsDelegate,
           ],
           supportedLocales: [
             const Locale('zh', 'CN'),
@@ -266,6 +268,7 @@ class _LockScreenState extends State<LockScreen> {
           _showEmergencyUnlock = true;
         }
       });
+      HapticFeedback.vibrate();
     }
   }
 
@@ -283,7 +286,16 @@ class _LockScreenState extends State<LockScreen> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text('紧急解锁'),
-        content: Text('这将关闭隐私锁功能并进入应用。您可以在设置中重新启用隐私锁。'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('连续验证失败，需要关闭隐私锁才能进入应用。', style: TextStyle(fontSize: 14)),
+            SizedBox(height: 12),
+            Text('⚠️ 注意：', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text('这将永久关闭隐私锁功能，您需要重新在设置中开启并设置新的 PIN 码。', style: TextStyle(fontSize: 13)),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -292,7 +304,7 @@ class _LockScreenState extends State<LockScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-            child: Text('确认解锁', style: TextStyle(color: Colors.white)),
+            child: Text('确认关闭隐私锁', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -300,7 +312,17 @@ class _LockScreenState extends State<LockScreen> {
 
     if (confirmed == true) {
       await LockService.instance.disableLock();
+      LockService.instance.unlock();
       widget.onUnlock();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('隐私锁已关闭，请在设置中重新开启'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
