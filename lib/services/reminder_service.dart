@@ -234,7 +234,7 @@ class ReminderService {
   }
 
   /// 测试通知（立即发送）
-  Future<void> sendTestNotification() async {
+  Future<bool> sendTestNotification() async {
     try {
       final hasPermission = await isNotificationPermissionGranted();
       if (!hasPermission) {
