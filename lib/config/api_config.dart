@@ -6,12 +6,16 @@ class ApiConfig {
   static const String _iflyAppKeyPref = 'ifly_app_key';
   static const String _iflyAppSecretPref = 'ifly_app_secret';
 
+  static const String _defaultDeepseekApiKey = 'sk-4c521537a01a44aebc4a2bd9f057dde9';
   static const String deepseekBaseUrl = 'https://api.deepseek.com/v1/chat/completions';
+  static const String _defaultIflyAppId = '000dc3e2';
+  static const String _defaultIflyAppKey = 'eeb3a079d047433a30fc7d39a2988f50';
+  static const String _defaultIflyAppSecret = 'N2IxNzU5YzNhMDI3YjQ2N2Q2MzMxNDAx';
 
-  static String _deepseekApiKey = '';
-  static String _iflyAppId = '';
-  static String _iflyAppKey = '';
-  static String _iflyAppSecret = '';
+  static String _deepseekApiKey = _defaultDeepseekApiKey;
+  static String _iflyAppId = _defaultIflyAppId;
+  static String _iflyAppKey = _defaultIflyAppKey;
+  static String _iflyAppSecret = _defaultIflyAppSecret;
 
   static String get deepseekApiKey => _deepseekApiKey;
   static String get iflyAppId => _iflyAppId;
@@ -24,10 +28,10 @@ class ApiConfig {
 
   static Future<void> loadConfig() async {
     final prefs = await SharedPreferences.getInstance();
-    _deepseekApiKey = prefs.getString(_deepseekKeyPref) ?? '';
-    _iflyAppId = prefs.getString(_iflyAppIdPref) ?? '';
-    _iflyAppKey = prefs.getString(_iflyAppKeyPref) ?? '';
-    _iflyAppSecret = prefs.getString(_iflyAppSecretPref) ?? '';
+    _deepseekApiKey = prefs.getString(_deepseekKeyPref) ?? _defaultDeepseekApiKey;
+    _iflyAppId = prefs.getString(_iflyAppIdPref) ?? _defaultIflyAppId;
+    _iflyAppKey = prefs.getString(_iflyAppKeyPref) ?? _defaultIflyAppKey;
+    _iflyAppSecret = prefs.getString(_iflyAppSecretPref) ?? _defaultIflyAppSecret;
   }
 
   static Future<void> setDeepseekApiKey(String key) async {
@@ -51,10 +55,10 @@ class ApiConfig {
   }
 
   static Future<void> resetToDefaults() async {
-    _deepseekApiKey = '';
-    _iflyAppId = '';
-    _iflyAppKey = '';
-    _iflyAppSecret = '';
+    _deepseekApiKey = _defaultDeepseekApiKey;
+    _iflyAppId = _defaultIflyAppId;
+    _iflyAppKey = _defaultIflyAppKey;
+    _iflyAppSecret = _defaultIflyAppSecret;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_deepseekKeyPref);
     await prefs.remove(_iflyAppIdPref);
