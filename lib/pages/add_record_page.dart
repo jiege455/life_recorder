@@ -9,6 +9,7 @@ import '../database/database_helper.dart';
 import '../services/ai_service.dart';
 import '../services/speech_service.dart';
 import '../services/tag_service.dart';
+import '../pages/tag_manager_page.dart';
 
 class AddRecordPage extends StatefulWidget {
   final int? editRecordId;
@@ -956,7 +957,10 @@ class _AddRecordPageState extends State<AddRecordPage> {
           SizedBox(height: 12),
           GestureDetector(
             onTap: () {
-              Navigator.pushNamed(context, '/tag-manager');
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TagManagerPage()),
+              );
             },
             child: Container(
               padding: EdgeInsets.all(12),
