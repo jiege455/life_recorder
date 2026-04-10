@@ -169,7 +169,7 @@ class ReminderService {
       try {
         await _scheduleNotification();
       } catch (e) {
-        debugPrint('调度通知失败：$e');
+        debugPrint('调度通知失败: $e');
         _enabled = false;
         await prefs.setBool(_reminderKey, false);
         return false;
@@ -193,7 +193,7 @@ class ReminderService {
       try {
         await _scheduleNotification();
       } catch (e) {
-        debugPrint('重新调度通知失败：$e');
+        debugPrint('重新调度通知失败: $e');
       }
     }
   }
@@ -220,7 +220,6 @@ class ReminderService {
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
-      interruptionLevel: NotificationInterruptionLevel.timeSensitive,
     );
     final notificationDetails = NotificationDetails(
       android: androidDetails,
@@ -241,9 +240,9 @@ class ReminderService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    debugPrint('当前时间：$now');
-    debugPrint('计划通知时间：$scheduledDate');
-    debugPrint('时区：${tz.local.name}');
+    debugPrint('当前时间: $now');
+    debugPrint('计划通知时间: $scheduledDate');
+    debugPrint('时区: ${tz.local.name}');
 
     try {
       await _plugin.zonedSchedule(
@@ -258,7 +257,7 @@ class ReminderService {
       );
       debugPrint('每日提醒已设置（强势推送模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
     } catch (e) {
-      debugPrint('精确调度失败，尝试不精确模式：$e');
+      debugPrint('精确调度失败，尝试不精确模式: $e');
       try {
         await _plugin.zonedSchedule(
           1,
@@ -272,7 +271,7 @@ class ReminderService {
         );
         debugPrint('每日提醒已设置（不精确模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
       } catch (e2) {
-        debugPrint('通知调度完全失败：$e2');
+        debugPrint('通知调度完全失败: $e2');
         rethrow;
       }
     }
@@ -303,7 +302,6 @@ class ReminderService {
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
-        interruptionLevel: NotificationInterruptionLevel.timeSensitive,
       );
       final notificationDetails = NotificationDetails(
         android: androidDetails,
