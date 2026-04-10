@@ -44,7 +44,6 @@ class _AddRecordPageState extends State<AddRecordPage> {
   bool _isGeneratingTags = false;
   List<String> _generatedTags = [];
   List<String> _selectedImages = [];
-  List<String> _customTags = [];
   bool get _isEditMode => widget.editRecordId != null;
 
   List<Map<String, dynamic>> _moods = [
@@ -929,7 +928,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             children: [
               Icon(Icons.auto_awesome, color: Color(0xFF4A90E2), size: 20),
               SizedBox(width: 8),
-              Text('AI智能标签',
+              Text('AI 智能标签',
                   style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -954,13 +953,33 @@ class _AddRecordPageState extends State<AddRecordPage> {
                     ),
             ],
           ),
-          if (_customTags.isNotEmpty) ...[
-            SizedBox(height: 12),
-            _buildMyTagsSection(theme),
-          ] else ...[
-            SizedBox(height: 12),
-            _buildMyTagsSection(theme, isEmpty: true),
-          ],
+          SizedBox(height: 12),
+          GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/tag-manager');
+            },
+            child: Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.star, size: 16, color: theme.colorScheme.primary),
+                  SizedBox(width: 6),
+                  Text('常用标签', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
+                  Spacer(),
+                  Text('点击去管理', style: TextStyle(fontSize: 11, color: theme.colorScheme.primary)),
+                  Icon(Icons.arrow_forward_ios, size: 12, color: theme.colorScheme.primary),
+                ],
+              ),
+            ),
+          ),
           if (_generatedTags.isNotEmpty) ...[
             SizedBox(height: 12),
             Wrap(
