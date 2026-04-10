@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -203,18 +204,23 @@ class ReminderService {
     const androidDetails = AndroidNotificationDetails(
       'daily_reminder',
       '每日提醒',
-      channelDescription: '每日记录提醒',
+      channelDescription: '每日记录提醒 - 强势推送',
       importance: Importance.max,
       priority: Priority.max,
       showWhen: true,
       enableVibration: true,
+      vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]),
       category: AndroidNotificationCategory.reminder,
       fullScreenIntent: true,
+      autoCancel: false,
+      ongoing: true,
+      visibility: NotificationVisibility.public,
     );
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      interruptionLevel: NotificationInterruptionLevel.timeSensitive,
     );
     const notificationDetails = NotificationDetails(
       android: androidDetails,
@@ -242,22 +248,22 @@ class ReminderService {
     try {
       await _plugin.zonedSchedule(
         1,
-        'AI 人生记录器',
-        '今天发生了什么新鲜事？来记录一下吧~',
+        '🔔 AI 人生记录器 - 每日提醒',
+        '今天发生了什么新鲜事？来记录一下吧~ 📝',
         scheduledDate,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
-      debugPrint('每日提醒已设置，时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
+      debugPrint('每日提醒已设置（强势推送模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
     } catch (e) {
       debugPrint('精确调度失败，尝试不精确模式: $e');
       try {
         await _plugin.zonedSchedule(
           1,
-          'AI 人生记录器',
-          '今天发生了什么新鲜事？来记录一下吧~',
+          '🔔 AI 人生记录器 - 每日提醒',
+          '今天发生了什么新鲜事？来记录一下吧~ 📝',
           scheduledDate,
           notificationDetails,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -283,16 +289,21 @@ class ReminderService {
       const androidDetails = AndroidNotificationDetails(
         'daily_reminder',
         '每日提醒',
-        channelDescription: '每日记录提醒',
+        channelDescription: '每日记录提醒 - 强势推送',
         importance: Importance.max,
         priority: Priority.max,
         showWhen: true,
         enableVibration: true,
+        vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]),
+        autoCancel: false,
+        ongoing: true,
+        visibility: NotificationVisibility.public,
       );
       const iosDetails = DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
+        interruptionLevel: NotificationInterruptionLevel.timeSensitive,
       );
       const notificationDetails = NotificationDetails(
         android: androidDetails,
@@ -301,8 +312,8 @@ class ReminderService {
 
       await _plugin.show(
         999,
-        'AI 人生记录器 - 测试通知',
-        '如果您收到这条通知，说明每日提醒功能正常工作！✅',
+        '🔔 AI 人生记录器 - 测试通知',
+        '如果您收到这条通知，说明每日提醒功能正常工作！✅ 现在就开始记录今天的心情吧~ 📝',
         notificationDetails,
       );
 

@@ -116,6 +116,13 @@ class _SettingsPageState extends State<SettingsPage> {
               Icons.notifications, '\u6BCF\u65E5\u63D0\u9192', _reminderEnabled ? '\u5DF2\u542F\u7528' : '\u672A\u542F\u7528',
               onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => ReminderPage())); _loadSettings(); },
             ),
+            if (_reminderEnabled) ...[
+              SizedBox(height: 8),
+              _buildSettingCard(cardColor, isDark, primaryColor,
+                Icons.notifications_active, '\u6D4B\u8BD5\u63A8\u9001', '\u7ACB\u5373\u53D1\u9001\u6D4B\u8BD5\u901A\u77E5\uFF0C\u786E\u8BA4\u63A8\u9001\u529F\u80FD\u6B63\u5E38',
+                onTap: _testPushNotification,
+              ),
+            ],
             SizedBox(height: 40),
           ],
         ),
@@ -253,6 +260,21 @@ class _SettingsPageState extends State<SettingsPage> {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('清除数据失败，请重试'), backgroundColor: Colors.red));
         }
       }
+    }
+  }
+
+  Future<void> _testPushNotification() async {
+    final result = await ReminderService.instance.sendTestNotification();
+    if (mounted) {
+      final theme = Theme.of(context);
+      final primaryColor = theme.colorScheme.primary;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result ? '测试推送已发送，请查看通知栏 ✅' : '发送失败，请检查权限设置'),
+          backgroundColor: result ? Colors.green : primaryColor,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 
