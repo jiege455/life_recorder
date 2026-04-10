@@ -50,8 +50,8 @@ class LockService {
       }
 
       // 检查是否可以使用生物识别
-      final canCheckBiometrics = await canCheckBiometrics();
-      if (!canCheckBiometrics) {
+      final canCheckBiometricsValue = await canCheckBiometrics();
+      if (!canCheckBiometricsValue) {
         debugPrint('无法使用生物识别');
         return false;
       }

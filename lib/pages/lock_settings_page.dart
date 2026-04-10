@@ -1,4 +1,4 @@
-﻿﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../services/lock_service.dart';
 
 class LockSettingsPage extends StatefulWidget {
@@ -168,9 +168,9 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
             ],
           ),
           SizedBox(height: 12),
-          _buildInfoItem('PIN 码验证', '4位数字密码，安全键盘输入'),
+          _buildInfoItem('PIN 码验证', '4 位数字密码，安全键盘输入'),
           _buildInfoItem('生物识别', '支持指纹、面部识别'),
-          _buildInfoItem('忘记密码', '连续失败5次可紧急解锁'),
+          _buildInfoItem('忘记密码', '连续失败 5 次可紧急解锁'),
           _buildInfoItem('安全性', 'PIN 码 SHA-256 加密存储'),
         ],
       ),
