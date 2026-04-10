@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
-import 'api_config_page.dart';
 
 class AiReportPage extends StatefulWidget {
   const AiReportPage({super.key});
@@ -79,10 +78,12 @@ class _AiReportPageState extends State<AiReportPage> {
             duration: Duration(seconds: 4),
             action: errorMsg.contains('密钥')
                 ? SnackBarAction(
-                    label: '去配置',
+                    label: '查看配置',
                     textColor: Colors.white,
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage()));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('API 密钥配置在 lib/config/api_config.dart 文件中'), backgroundColor: Colors.blue),
+                      );
                     },
                   )
                 : null,

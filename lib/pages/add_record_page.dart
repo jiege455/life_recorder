@@ -9,7 +9,6 @@ import '../database/database_helper.dart';
 import '../services/ai_service.dart';
 import '../services/speech_service.dart';
 import '../services/tag_service.dart';
-import 'api_config_page.dart';
 
 class AddRecordPage extends StatefulWidget {
   final int? editRecordId;
@@ -107,10 +106,12 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 duration: Duration(seconds: 4),
                 action: error.toString().contains('密钥')
                     ? SnackBarAction(
-                        label: '去配置',
+                        label: '查看配置',
                         textColor: Colors.white,
                         onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage()));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('API 密钥配置在 lib/config/api_config.dart 文件中'), backgroundColor: Colors.blue),
+                          );
                         },
                       )
                     : null,
@@ -281,10 +282,12 @@ class _AddRecordPageState extends State<AddRecordPage> {
             duration: Duration(seconds: 4),
             action: errorMsg.contains('密钥')
                 ? SnackBarAction(
-                    label: '去配置',
+                    label: '查看配置',
                     textColor: Colors.white,
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => ApiConfigPage()));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('API 密钥配置在 lib/config/api_config.dart 文件中'), backgroundColor: Colors.blue),
+                      );
                     },
                   )
                 : null,

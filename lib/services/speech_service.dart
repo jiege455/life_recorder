@@ -113,7 +113,7 @@ class SpeechService {
     if (!_isInitialized) {
       bool success = await init();
       if (!success) {
-        onError('语音服务初始化失败，请检查讯飞语音密钥是否正确配置。前往设置 → API密钥配置，填写您的讯飞开放平台密钥。');
+        onError('语音服务初始化失败，请检查讯飞语音密钥是否正确配置。密钥配置在 lib/config/api_config.dart 文件中。');
         return;
       }
     }
