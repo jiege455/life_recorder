@@ -9,7 +9,8 @@ import '../database/database_helper.dart';
 import '../services/ai_service.dart';
 import '../services/speech_service.dart';
 import '../services/tag_service.dart';
-import '../pages/tag_manager_page.dart';n
+import '../pages/tag_manager_page.dart';
+
 class AddRecordPage extends StatefulWidget {
   final int? editRecordId;
   final String editContent;
@@ -354,6 +355,176 @@ class _AddRecordPageState extends State<AddRecordPage> {
     );
   }
 
+  Widget _buildMyTagsSection(ThemeData theme, {bool isEmpty = false}) {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.star, size: 16, color: theme.colorScheme.primary),
+              SizedBox(width: 6),
+              Text('我的标签', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
+              Spacer(),
+              Text('点击快速添加', style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6))),
+            ],
+          ),
+          if (!isEmpty) ...[
+            SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: _customTags.map((tag) {
+                final isSelected = _generatedTags.contains(tag);
+                return GestureDetector(
+                  onTap: () {
+                    if (isSelected) {
+                      setState(() {
+                        _generatedTags.remove(tag);
+                      });
+                    } else {
+                      _addCustomTag(tag);
+                    }
+                  },
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 200),
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline.withOpacity(0.3),
+                        width: 1.5,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: theme.colorScheme.primary.withOpacity(0.3),
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              )
+                            ]
+                          : null,
+                    ),
+                    child: Text(
+                      tag,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            SizedBox(height: 8),
+            Divider(height: 1, color: theme.colorScheme.outline.withOpacity(0.2)),
+            SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.add_circle_outline, size: 16, color: theme.colorScheme.primary),
+                SizedBox(width: 6),
+                Text('添加新标签', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: theme.colorScheme.primary)),
+              ],
+            ),
+            SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: '输入标签名称，按回车添加',
+                      hintStyle: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.add, size: 18, color: theme.colorScheme.primary),
+                        onPressed: () {
+                          final controller = TextEditingController();
+                          _showAddTagDialog(controller);
+                        },
+                      ),
+                    ),
+                    style: TextStyle(fontSize: 12),
+                    onSubmitted: (value) {
+                      if (value.trim().isNotEmpty) {
+                        _addNewTag(value.trim());
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.info_outline, size: 16, color: theme.colorScheme.primary),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '暂无自定义标签，点击右下角按钮添加',
+                    style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6)),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.add_circle_outline, size: 16, color: theme.colorScheme.primary),
+                SizedBox(width: 6),
+                Text('添加新标签', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: theme.colorScheme.primary)),
+              ],
+            ),
+            SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: '输入标签名称，按回车添加',
+                      hintStyle: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.add, size: 18, color: theme.colorScheme.primary),
+                        onPressed: () {
+                          final controller = TextEditingController();
+                          _showAddTagDialog(controller);
+                        },
+                      ),
+                    ),
+                    style: TextStyle(fontSize: 12),
+                    onSubmitted: (value) {
+                      if (value.trim().isNotEmpty) {
+                        _addNewTag(value.trim());
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveRecord() async {
     if (_contentController.text.trim().isEmpty && _selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -642,7 +813,8 @@ class _AddRecordPageState extends State<AddRecordPage> {
                         style: TextStyle(
                             fontSize: 13,
                             color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                            fontWeight:
+                                isSelected ? FontWeight.bold : FontWeight.normal)),
                   ],
                 ),
               ),
