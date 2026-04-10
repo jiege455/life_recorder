@@ -67,13 +67,16 @@ class _ReminderPageState extends State<ReminderPage> {
   }
 
   Widget _buildReminderCard() {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
+          colors: [primaryColor, primaryColor.withOpacity(0.8)],
         ),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -162,7 +165,7 @@ class _ReminderPageState extends State<ReminderPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(value ? '提醒已启用' : '提醒已关闭'),
-            backgroundColor: value ? Colors.green : Colors.orange,
+            backgroundColor: value ? Colors.green : primaryColor,
           ),
         );
       } else {
@@ -192,7 +195,7 @@ class _ReminderPageState extends State<ReminderPage> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.notifications_off, color: Colors.orange, size: 24),
+            Icon(Icons.notifications_off, color: primaryColor, size: 24),
             SizedBox(width: 8),
             Text('通知权限未开启'),
           ],
@@ -235,7 +238,7 @@ class _ReminderPageState extends State<ReminderPage> {
             icon: Icon(isPermanentlyDenied ? Icons.settings : Icons.notifications_active, size: 18),
             label: Text(isPermanentlyDenied ? '去设置' : '允许'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF4A90E2),
+              backgroundColor: primaryColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -281,7 +284,7 @@ class _ReminderPageState extends State<ReminderPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result ? '测试通知已发送，请查看通知栏 ✅' : '发送失败，请检查权限设置'),
-          backgroundColor: result ? Colors.green : Colors.orange,
+          backgroundColor: result ? Colors.green : primaryColor,
         ),
       );
     }

@@ -88,7 +88,7 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
             ],
           ),
           SizedBox(height: 12),
-          Text('开启后，每次启动应用都需要输入 PIN 码或使用生物识别验证', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
+          Text('开启后，每次启动应用都需要输入 PIN 码验证', style: TextStyle(fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
           SizedBox(height: 12),
           SwitchListTile(
             title: Text(_lockEnabled ? '已开启' : '已关闭', style: TextStyle(fontSize: 15)),
@@ -132,7 +132,7 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
               onPressed: () => _resetPin(),
               icon: Icon(Icons.refresh, size: 18),
               label: Text('重置 PIN 码'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red[700]),
             )
           else
             ElevatedButton.icon(
@@ -169,7 +169,6 @@ class _LockSettingsPageState extends State<LockSettingsPage> {
           ),
           SizedBox(height: 12),
           _buildInfoItem('PIN 码验证', '4 位数字密码，安全键盘输入'),
-          _buildInfoItem('生物识别', '支持指纹、面部识别'),
           _buildInfoItem('忘记密码', '连续失败 5 次可紧急解锁'),
           _buildInfoItem('安全性', 'PIN 码 SHA-256 加密存储'),
         ],
