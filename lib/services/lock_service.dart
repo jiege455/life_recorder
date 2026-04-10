@@ -43,28 +43,34 @@ class LockService {
   Future<bool> authenticateWithBiometrics() async {
     try {
       // 检查设备是否支持
-      final isSupported = await isDeviceSupported();
+      final isSupported = await _localAuth.isDeviceSupported();
+      debugPrint('设备是否支持生物识别：$isSupported');
       if (!isSupported) {
         debugPrint('设备不支持生物识别');
         return false;
       }
 
       // 检查是否可以使用生物识别
-      final canCheckBiometricsValue = await canCheckBiometrics();
+      final canCheckBiometricsValue = await _localAuth.canCheckBiometrics;
+      debugPrint('是否可以检查生物识别：$canCheckBiometricsValue');
       if (!canCheckBiometricsValue) {
         debugPrint('无法使用生物识别');
         return false;
       }
 
+      // 检查是否有可用的生物识别方式
+      final availableBiometrics = await _localAuth.availableBiometrics;
+      debugPrint('可用的生物识别方式：$availableBiometrics');
+      
       // 执行生物识别验证
       final authenticated = await _localAuth.authenticate(
         localizedReason: '请验证身份以进入应用',
         options: const AuthenticationOptions(
-          stickyAuth: true, // 使用 stickyAuth 确保验证完成
-          biometricOnly: true,
+          stickyAuth: true,
+          biometricOnly: false, // 改为 false，允许使用设备密码
         ),
       ).timeout(
-        const Duration(seconds: 60), // 增加超时时间到 60 秒
+        const Duration(seconds: 60),
         onTimeout: () => false,
       );
 
@@ -86,6 +92,8 @@ class LockService {
         await Future.delayed(const Duration(seconds: 5));
       } else if (e.code == 'AuthenticationFailed') {
         debugPrint('生物识别验证失败');
+      } else if (e.code == 'UserCancelException') {
+        debugPrint('用户取消了生物识别');
       }
       
       return false;

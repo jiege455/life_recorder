@@ -73,14 +73,31 @@ class SpeechService {
   }
 
   Future<bool> requestPermission() async {
-    var status = await Permission.microphone.status;
-    if (!status.isGranted) {
-      status = await Permission.microphone.request();
+    try {
+      var status = await Permission.microphone.status;
+      debugPrint('麦克风权限状态：$status');
+      
+      if (status.isGranted) {
+        return true;
+      }
+      
+      if (status.isDenied) {
+        status = await Permission.microphone.request();
+        debugPrint('请求权限后状态：$status');
+        return status.isGranted;
+      }
+      
+      if (status.isPermanentlyDenied) {
+        debugPrint('权限被永久拒绝，需要用户手动开启');
+        // 不自动打开设置，让用户自己决定
+        return false;
+      }
+      
+      return status.isGranted;
+    } catch (e) {
+      debugPrint('请求权限失败：$e');
+      return false;
     }
-    if (status.isPermanentlyDenied) {
-      openAppSettings();
-    }
-    return status.isGranted;
   }
 
   Future<void> startListening({
