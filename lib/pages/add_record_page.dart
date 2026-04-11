@@ -33,6 +33,7 @@ class AddRecordPage extends StatefulWidget {
 
 class _AddRecordPageState extends State<AddRecordPage> {
   final TextEditingController _contentController = TextEditingController();
+  final TextEditingController _tagController = TextEditingController();
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   final AiService _aiService = AiService();
   final SpeechService _speechService = SpeechService();
@@ -453,6 +454,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
   @override
   void dispose() {
     _contentController.dispose();
+    _tagController.dispose();
     _speechService.stopListening();
     super.dispose();
   }
@@ -830,6 +832,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
             children: [
               Expanded(
                 child: TextField(
+                  controller: _tagController,
                   decoration: InputDecoration(
                     hintText: '添加自定义标签，按回车确认',
                     prefixIcon: Icon(Icons.add_circle_outline, color: theme.colorScheme.primary, size: 20),
@@ -843,26 +846,27 @@ class _AddRecordPageState extends State<AddRecordPage> {
                   onSubmitted: (value) {
                     if (value.trim().isNotEmpty) {
                       _addNewTag(value.trim());
+                      _tagController.clear();
                     }
                   },
                 ),
               ),
               SizedBox(width: 8),
-              ElevatedButton.icon(
+              ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => TagManagerPage()),
-                  );
+                  final value = _tagController.text.trim();
+                  if (value.isNotEmpty) {
+                    _addNewTag(value);
+                    _tagController.clear();
+                  }
                 },
-                icon: Icon(Icons.manage_search, size: 18),
-                label: Text('管理'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
+                child: Text('确定'),
               ),
             ],
           ),

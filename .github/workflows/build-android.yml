@@ -7,7 +7,22 @@ on:
     branches: [ main, master ]
 
 jobs:
+  pre-clean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean old artifacts before build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          API="repos/$GH_REPO"
+          echo "=== 清理旧 Artifacts ==="
+          gh api "$API/actions/artifacts?per_page=100" --jq '.artifacts[].id' | \
+            xargs -I{} sh -c 'gh api -X DELETE "$API/actions/artifacts/{}" --silent 2>/dev/null && echo "deleted {}" || true' 2>/dev/null || true
+          echo "=== 清理完成 ==="
+
   build:
+    needs: pre-clean
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,14 +40,10 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          # Ensure android/app directory exists
           mkdir -p android/app
-          
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "Using keystore from Secrets"
             echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
           else
-            echo "Generating debug keystore for build"
             keytool -genkey -v \
               -keystore android/app/release.jks \
               -storetype JKS \
@@ -55,3 +66,4 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 3

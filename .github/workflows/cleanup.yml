@@ -1,0 +1,49 @@
+name: Cleanup
+
+permissions:
+  actions: write
+  contents: read
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean artifacts and old runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -x
+          API="repos/$GH_REPO"
+
+          echo "=== Step 1: Delete all artifacts ==="
+          gh api "$API/actions/artifacts?per_page=100" --jq '.artifacts[].id' | \
+            xargs -I{} sh -c 'gh api -X DELETE "$API/actions/artifacts/{}" --silent 2>/dev/null && echo "deleted artifact {}" || true' 2>/dev/null || true
+
+          echo "=== Step 2: Get workflow ID ==="
+          WF_ID=$(gh api "$API/actions/workflows" --jq '.workflows[]|select(.name=="Build Android APK")|.id')
+          echo "Workflow ID: $WF_ID"
+
+          echo "=== Step 3: List first 5 runs ==="
+          gh api "$API/actions/workflows/$WF_ID/runs?per_page=100" --jq '.workflow_runs[:5]|.[]|"id=\(.id) \(.conclusion)"'
+
+          echo "=== Step 4: Delete old runs (keep latest 1 success) ==="
+          SUCCESS_RUN=$(gh api "$API/actions/workflows/$WF_ID/runs?per_page=100" --jq '.workflow_runs[]|select(.conclusion=="success")|.id' | head -1)
+          echo "Keeping success run: $SUCCESS_RUN"
+
+          gh api "$API/actions/workflows/$WF_ID/runs?per_page=100" --jq '.workflow_runs[].id' | \
+            while read RID; do
+              [ -z "$RID" ] && continue
+              if [ "$RID" = "$SUCCESS_RUN" ]; then
+                echo "KEEP run $RID"
+                continue
+              fi
+              echo "DELETE run $RID"
+              gh api -X DELETE "$API/actions/runs/$RID" 2>&1 | head -c 200 || true
+              sleep 0.3
+            done
+
+          echo "=== DONE ==="
