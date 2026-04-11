@@ -59,12 +59,22 @@ class _AddRecordPageState extends State<AddRecordPage> {
   void initState() {
     super.initState();
     _loadCustomTags();
+    _requestMicrophonePermission();
     if (_isEditMode) {
       _contentController.text = widget.editContent;
       _selectedMood = widget.editMood;
       _generatedTags = List.from(widget.editTags);
       _selectedImages = List.from(widget.editImages);
     }
+  }
+
+  Future<void> _requestMicrophonePermission() async {
+    try {
+      var status = await Permission.microphone.status;
+      if (status.isDenied) {
+        await Permission.microphone.request();
+      }
+    } catch (e) {}
   }
 
   void _loadCustomTags() {
@@ -105,6 +115,17 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 content: Text('语音识别错误: $error'),
                 backgroundColor: Colors.orange,
                 duration: Duration(seconds: 4),
+                action: error.toString().contains('密钥')
+                    ? SnackBarAction(
+                        label: '查看配置',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('API 密钥配置在 lib/config/api_config.dart 文件中'), backgroundColor: Colors.blue),
+                          );
+                        },
+                      )
+                    : null,
               ),
             );
           }
@@ -270,6 +291,17 @@ class _AddRecordPageState extends State<AddRecordPage> {
             content: Text('标签生成失败：$errorMsg'),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
+            action: errorMsg.contains('密钥')
+                ? SnackBarAction(
+                    label: '查看配置',
+                    textColor: Colors.white,
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('API 密钥配置在 lib/config/api_config.dart 文件中'), backgroundColor: Colors.blue),
+                      );
+                    },
+                  )
+                : null,
           ),
         );
       }
@@ -643,8 +675,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                         style: TextStyle(
                             fontSize: 13,
                             color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
-                            fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.normal)),
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
                   ],
                 ),
               ),
