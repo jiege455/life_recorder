@@ -59,12 +59,22 @@ class _AddRecordPageState extends State<AddRecordPage> {
   void initState() {
     super.initState();
     _loadCustomTags();
+    _requestMicrophonePermission();
     if (_isEditMode) {
       _contentController.text = widget.editContent;
       _selectedMood = widget.editMood;
       _generatedTags = List.from(widget.editTags);
       _selectedImages = List.from(widget.editImages);
     }
+  }
+
+  Future<void> _requestMicrophonePermission() async {
+    try {
+      var status = await Permission.microphone.status;
+      if (status.isDenied) {
+        await Permission.microphone.request();
+      }
+    } catch (e) {}
   }
 
   void _loadCustomTags() {

@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'pages/home_page.dart';
 import 'pages/privacy_policy_page.dart';
 import 'pages/user_agreement_page.dart';
@@ -46,6 +47,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
   bool _lockEnabled = false;
   bool _agreedToPolicy = false;
   bool _hasCheckedPermission = false;
+  bool _permissionsRequested = false;
 
   @override
   void initState() {
@@ -196,8 +198,20 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkNotificationPermissionOnStart();
+      _requestStartupPermissions();
     });
     return const HomePage();
+  }
+
+  Future<void> _requestStartupPermissions() async {
+    if (_permissionsRequested) return;
+    _permissionsRequested = true;
+
+    try {
+      await Permission.notification.request();
+    } catch (e) {
+      debugPrint('请求通知权限失败：$e');
+    }
   }
 }
 
