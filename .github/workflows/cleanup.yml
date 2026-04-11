@@ -11,59 +11,64 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Delete old workflow runs and artifacts
+      - name: Delete ALL old workflow runs and artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           echo "========================================="
-          echo "  开始清理旧 Workflow Runs 和 Artifacts"
+          echo "  强力清理：删除所有旧 Runs 和 Artifacts"
           echo "========================================="
 
           # 获取workflow ID
-          WORKFLOW_ID=$(gh api repos/$GITHUB_REPOSITORY/actions/workflows --jq '.workflows[] | select(.name == "Build Android APK") | .id')
-          echo "Build Android APK Workflow ID: $WORKFLOW_ID"
+          WORKFLOW_ID=$(gh api repos/$REPO/actions/workflows --jq '.workflows[] | select(.name == "Build Android APK") | .id')
+          echo "Workflow ID: $WORKFLOW_ID"
 
-          # 获取所有runs
-          echo ""
-          echo "--- 列出所有 Runs ---"
-          RUNS=$(gh api repos/$GITHUB_REPOSITORY/actions/workflows/$WORKFLOW_ID/runs --jq '.workflow_runs[] | "\(.id)|\(.status)|\(.conclusion)|\(.created_at)"' | sort -t'|' -k3)
-          
-          TOTAL=$(echo "$RUNS" | wc -l)
+          # 收集所有runs（处理分页）
+          PAGE=1
+          ALL_RUNS=""
+          while true; do
+            PAGE_DATA=$(gh api "repos/$REPO/actions/workflows/$WORKFLOW_ID/runs?per_page=100&page=$PAGE" --jq '.workflow_runs[] | "\(.id)|\(.conclusion)"')
+            if [ -z "$PAGE_DATA" ]; then break; fi
+            ALL_RUNS="$ALL_RUNS
+$PAGE_DATA"
+            PAGE=$((PAGE + 1))
+          done
+
+          TOTAL=$(echo "$ALL_RUNS" | grep -c '|')
           echo "共找到 $TOTAL 个 runs"
 
-          # 删除失败的runs，保留最新2个成功的
-          echo ""
-          echo "--- 开始删除旧 Runs ---"
-          SUCCESS_COUNT=0
-          DELETED=0
+          # 找出最新2个成功的run ID，其他全删
+          SUCCESS_IDS=$(echo "$ALL_RUNS" | grep '|success$' | head -2 | cut -d'|' -f1)
+          echo "保留的成功 run IDs: $SUCCESS_IDS"
 
-          # 先删除所有失败的runs
-          echo "$RUNS" | while IFS='|' read id status conclusion created; do
-            if [ "$status" = "completed" ] && [ "$conclusion" = "success" ]; then
-              SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-              if [ $SUCCESS_COUNT -le 2 ]; then
-                echo "✅ 保留成功 run: $id ($created)"
-                continue
-              fi
+          DELETED=0
+          echo "$ALL_RUNS" | while IFS='|' read id conclusion; do
+            if echo "$SUCCESS_IDS" | grep -q "^${id}$"; then
+              echo "✅ 保留 run: $id"
+              continue
             fi
-            
-            echo "🗑️  删除 run: $id (状态=$status, 结果=$conclusion, 时间=$created)"
-            gh api -X DELETE repos/$GITHUB_REPOSITORY/actions/runs/$id --silent 2>/dev/null || true
+            echo "🗑️  删除 run: $id ($conclusion)"
+            gh api -X DELETE "repos/$REPO/actions/runs/$id" --silent 2>/dev/null || true
             DELETED=$((DELETED + 1))
           done
 
-          # 清理残留的artifacts
+          # 强制清理所有artifacts（多次尝试）
           echo ""
-          echo "--- 清理残留 Artifacts ---"
-          ARTIFACTS=$(gh api repos/$GITHUB_REPOSITORY/actions/artifacts --per_page=100 --jq '.artifacts[] | .id')
-          if [ -n "$ARTIFACTS" ]; then
-            echo "$ARTIFACTS" | while read aid; do
-              echo "🗑️  删除 artifact: $aid"
-              gh api -X DELETE repos/$GITHUB_REPOSITORY/actions/artifacts/$aid --silent 2>/dev/null || true
+          echo "--- 清理 Artifacts ---"
+          for attempt in 1 2 3; do
+            ARTIFACT_IDS=$(gh api repos/$REPO/actions/artifacts --per_page=100 --jq '.artifacts[].id')
+            if [ -z "$ARTIFACT_IDS" ]; then
+              echo "✅ 所有 artifacts 已清理完毕"
+              break
+            fi
+            COUNT=$(echo "$ARTIFACT_IDS" | wc -l)
+            echo "第$attempt轮：发现 $count 个 artifacts，删除中..."
+            echo "$ARTIFACT_IDS" | while read aid; do
+              gh api -X DELETE "repos/$REPO/actions/artifacts/$aid" --silent 2>/dev/null || true
             done
-          else
-            echo "没有残留 artifacts"
-          fi
+            sleep 2
+          done
 
           echo ""
           echo "========================================="
