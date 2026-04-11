@@ -3,6 +3,7 @@ name: Cleanup Old Runs
 permissions:
   actions: write
   contents: read
+  workflows: write
 
 on:
   workflow_dispatch:
@@ -11,51 +12,67 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Delete old workflow runs and artifacts
+      - name: Delete ALL old runs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           echo "========================================="
-          echo "  强力清理旧 Runs 和 Artifacts"
+          echo "       开始强力清理"
           echo "========================================="
 
-          # 先删除所有artifacts（用gh内置命令）
+          which jq > /dev/null || apt-get update && apt-get install -y jq
+
           echo ""
-          echo "--- 第一步：清理 Artifacts ---"
-          gh artifact list --limit 100 2>/dev/null | tail -n +2 | awk '{print $1}' | while read aid; do
-            echo "🗑️  删除 artifact: $aid"
-            gh artifact delete "$aid" --yes --quiet 2>/dev/null || true
-          done || echo "没有 artifacts 或已清空"
-
-          # 删除所有已完成的runs，保留最新2个成功的
-          echo ""
-          echo "--- 第二步：清理旧 Runs ---"
-          
-          # 获取所有run ID和状态
-          gh run list --workflow=build-android.yml --limit 200 --json databaseId,status,conclusion --jq '.[] | "\(.databaseId) \(.status) \(.conclusion)"' > /tmp/runs.txt
-          
-          TOTAL=$(wc -l < /tmp/runs.txt)
-          echo "共找到 $TOTAL 个 runs"
-
-          # 找出要保留的最新2个成功run
-          KEEP_IDS=$(grep ' success$' /tmp/runs.txt | head -2 | awk '{print $1}')
-          echo "保留的 run IDs: $KEEP_IDS"
-
-          # 删除其他所有run
-          DELETED=0
-          cat /tmp/runs.txt | while read id status conclusion; do
-            if echo "$KEEP_IDS" | grep -q "^${id} "; then
-              echo "✅ 保留: $id ($conclusion)"
-              continue
-            fi
-            echo "🗑️  删除 run: $id ($status/$conclusion)"
-            gh run delete "$id" --yes --quiet 2>/dev/null || true
-            DELETED=$((DELETED + 1))
+          echo "[1/3] 清理 Artifacts..."
+          gh api "repos/$GH_REPO/actions/artifacts?per_page=100" --jq '.artifacts[].id' | while read aid; do
+            [ -z "$aid" ] && continue
+            gh api -X DELETE "repos/$GH_REPO/actions/artifacts/$aid" --silent 2>/dev/null && echo "  ✅ 已删 artifact $aid" || true
           done
 
-          rm -f /tmp/runs.txt
+          echo ""
+          echo "[2/3] 获取运行列表..."
+          WORKFLOW_ID=$(gh api "repos/$GH_REPO/actions/workflows" --jq '.workflows[] | select(.name=="Build Android APK") | .id')
+          echo "Workflow ID: $WORKFLOW_ID"
+
+          PAGE=1
+          > /tmp/all_runs.txt
+          while true; do
+            DATA=$(gh api "repos/$GH_REPO/actions/workflows/$WORKFLOW_ID/runs?per_page=100&page=$PAGE" --jq '.workflow_runs[] | "\(.id) \(.conclusion)"' 2>/dev/null)
+            [ -z "$DATA" ] && break
+            echo "$DATA" >> /tmp/all_runs.txt
+            PAGE=$((PAGE+1))
+          done
+
+          TOTAL=$(wc -l < /tmp/all_runs.txt)
+          echo "共找到 $TOTAL 条记录"
+
+          echo ""
+          echo "[3/3] 删除旧Runs..."
+          
+          KEEP1=$(grep ' success$' /tmp/all_runs.txt | head -1 | awk '{print $1}')
+          KEEP2=$(grep ' success$' /tmp/all_runs.txt | head -2 | tail -1 | awk '{print $1}')
+          echo "保留: $KEEP1, $KEEP2"
+
+          DELETED=0
+          cat /tmp/all_runs.txt | while read rid rcon; do
+            if [ "$rid" = "$KEEP1" ] || [ "$rid" = "$KEEP2" ]; then
+              echo "  ⏭️  保留 $rid ($rcon)"
+              continue
+            fi
+            RESULT=$(gh api -X DELETE "repos/$GH_REPO/actions/runs/$rid" 2>&1)
+            if echo "$RESULT" | grep -q '"message":\|"Not Found"'; then
+              echo "  ❌ 失败 $rid ($rcon)"
+            else
+              echo "  🗑️  已删 $rid ($rcon)"
+            fi
+            DELETED=$((DELETED+1))
+            sleep 0.5
+          done
+
+          rm -f /tmp/all_runs.txt
 
           echo ""
           echo "========================================="
-          echo "  清理完成！"
+          echo "       清理完成！"
           echo "========================================="
