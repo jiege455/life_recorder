@@ -176,7 +176,7 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
           localizationsDelegates: [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizationsDelegate,
+            GlobalCupertinoLocalizations.delegate,
           ],
           supportedLocales: [
             const Locale('zh', 'CN'),
