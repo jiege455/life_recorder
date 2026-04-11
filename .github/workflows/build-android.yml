@@ -1,9 +1,5 @@
 name: Build Android APK
 
-permissions:
-  actions: write
-  contents: read
-
 on:
   push:
     branches: [ main, master ]
@@ -11,36 +7,7 @@ on:
     branches: [ main, master ]
 
 jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Delete all old artifacts
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "=== 开始清理旧 Artifacts ==="
-          
-          # 获取所有artifacts并逐个删除
-          ARTIFACTS=$(gh api repos/$GITHUB_REPOSITORY/actions/artifacts --jq '.artifacts[] | "\(.id) \(.name) \(.size_in_bytes)"')
-          
-          if [ -z "$ARTIFACTS" ]; then
-            echo "没有找到需要清理的 artifacts"
-            exit 0
-          fi
-          
-          DELETED=0
-          TOTAL_SIZE=0
-          echo "$ARTIFACTS" | while read id name size; do
-            echo "删除 artifact: $name (ID: $id, 大小: $size bytes)"
-            gh api -X DELETE repos/$GITHUB_REPOSITORY/actions/artifacts/$id --silent || true
-            DELETED=$((DELETED + 1))
-            TOTAL_SIZE=$((TOTAL_SIZE + size))
-          done
-          
-          echo "=== 清理完成 ==="
-
   build:
-    needs: cleanup
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -58,14 +25,10 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          # Ensure android/app directory exists
           mkdir -p android/app
-          
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "Using keystore from Secrets"
             echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
           else
-            echo "Generating debug keystore for build"
             keytool -genkey -v \
               -keystore android/app/release.jks \
               -storetype JKS \
