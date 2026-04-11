@@ -11,64 +11,49 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Delete ALL old workflow runs and artifacts
+      - name: Delete old workflow runs and artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
         run: |
           echo "========================================="
-          echo "  强力清理：删除所有旧 Runs 和 Artifacts"
+          echo "  强力清理旧 Runs 和 Artifacts"
           echo "========================================="
 
-          # 获取workflow ID
-          WORKFLOW_ID=$(gh api repos/$REPO/actions/workflows --jq '.workflows[] | select(.name == "Build Android APK") | .id')
-          echo "Workflow ID: $WORKFLOW_ID"
+          # 先删除所有artifacts（用gh内置命令）
+          echo ""
+          echo "--- 第一步：清理 Artifacts ---"
+          gh artifact list --limit 100 2>/dev/null | tail -n +2 | awk '{print $1}' | while read aid; do
+            echo "🗑️  删除 artifact: $aid"
+            gh artifact delete "$aid" --yes --quiet 2>/dev/null || true
+          done || echo "没有 artifacts 或已清空"
 
-          # 收集所有runs（处理分页）
-          PAGE=1
-          ALL_RUNS=""
-          while true; do
-            PAGE_DATA=$(gh api "repos/$REPO/actions/workflows/$WORKFLOW_ID/runs?per_page=100&page=$PAGE" --jq '.workflow_runs[] | "\(.id)|\(.conclusion)"')
-            if [ -z "$PAGE_DATA" ]; then break; fi
-            ALL_RUNS="$ALL_RUNS
-$PAGE_DATA"
-            PAGE=$((PAGE + 1))
-          done
-
-          TOTAL=$(echo "$ALL_RUNS" | grep -c '|')
+          # 删除所有已完成的runs，保留最新2个成功的
+          echo ""
+          echo "--- 第二步：清理旧 Runs ---"
+          
+          # 获取所有run ID和状态
+          gh run list --workflow=build-android.yml --limit 200 --json databaseId,status,conclusion --jq '.[] | "\(.databaseId) \(.status) \(.conclusion)"' > /tmp/runs.txt
+          
+          TOTAL=$(wc -l < /tmp/runs.txt)
           echo "共找到 $TOTAL 个 runs"
 
-          # 找出最新2个成功的run ID，其他全删
-          SUCCESS_IDS=$(echo "$ALL_RUNS" | grep '|success$' | head -2 | cut -d'|' -f1)
-          echo "保留的成功 run IDs: $SUCCESS_IDS"
+          # 找出要保留的最新2个成功run
+          KEEP_IDS=$(grep ' success$' /tmp/runs.txt | head -2 | awk '{print $1}')
+          echo "保留的 run IDs: $KEEP_IDS"
 
+          # 删除其他所有run
           DELETED=0
-          echo "$ALL_RUNS" | while IFS='|' read id conclusion; do
-            if echo "$SUCCESS_IDS" | grep -q "^${id}$"; then
-              echo "✅ 保留 run: $id"
+          cat /tmp/runs.txt | while read id status conclusion; do
+            if echo "$KEEP_IDS" | grep -q "^${id} "; then
+              echo "✅ 保留: $id ($conclusion)"
               continue
             fi
-            echo "🗑️  删除 run: $id ($conclusion)"
-            gh api -X DELETE "repos/$REPO/actions/runs/$id" --silent 2>/dev/null || true
+            echo "🗑️  删除 run: $id ($status/$conclusion)"
+            gh run delete "$id" --yes --quiet 2>/dev/null || true
             DELETED=$((DELETED + 1))
           done
 
-          # 强制清理所有artifacts（多次尝试）
-          echo ""
-          echo "--- 清理 Artifacts ---"
-          for attempt in 1 2 3; do
-            ARTIFACT_IDS=$(gh api repos/$REPO/actions/artifacts --per_page=100 --jq '.artifacts[].id')
-            if [ -z "$ARTIFACT_IDS" ]; then
-              echo "✅ 所有 artifacts 已清理完毕"
-              break
-            fi
-            COUNT=$(echo "$ARTIFACT_IDS" | wc -l)
-            echo "第$attempt轮：发现 $count 个 artifacts，删除中..."
-            echo "$ARTIFACT_IDS" | while read aid; do
-              gh api -X DELETE "repos/$REPO/actions/artifacts/$aid" --silent 2>/dev/null || true
-            done
-            sleep 2
-          done
+          rm -f /tmp/runs.txt
 
           echo ""
           echo "========================================="
