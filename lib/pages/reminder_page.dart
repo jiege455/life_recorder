@@ -15,6 +15,8 @@ class _ReminderPageState extends State<ReminderPage> {
   int _minute = 0;
   bool _isLoading = true;
 
+  static const Color _bluePrimary = Color(0xFF4A90E2);
+
   @override
   void initState() {
     super.initState();
@@ -37,12 +39,11 @@ class _ReminderPageState extends State<ReminderPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = theme.colorScheme.primary;
 
     return Scaffold(
       appBar: AppBar(
         title: Text('每日提醒', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: primaryColor,
+        backgroundColor: _bluePrimary,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
@@ -59,7 +60,11 @@ class _ReminderPageState extends State<ReminderPage> {
                 children: [
                   _buildReminderCard(),
                   SizedBox(height: 24),
-                  _buildTimeSelector(isDark, primaryColor),
+                  _buildTimeSelector(isDark),
+                  if (_reminderEnabled) ...[
+                    SizedBox(height: 16),
+                    _buildDebugInfo(),
+                  ],
                 ],
               ),
             ),
@@ -67,16 +72,13 @@ class _ReminderPageState extends State<ReminderPage> {
   }
 
   Widget _buildReminderCard() {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [primaryColor, primaryColor.withOpacity(0.8)],
+          colors: [_bluePrimary, _bluePrimary.withOpacity(0.8)],
         ),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -99,12 +101,12 @@ class _ReminderPageState extends State<ReminderPage> {
     );
   }
 
-  Widget _buildTimeSelector(bool isDark, Color primaryColor) {
+  Widget _buildTimeSelector(bool isDark) {
     final theme = Theme.of(context);
     final cardColor = theme.cardColor;
     final textColor = theme.colorScheme.onSurface;
     final subtitleColor = theme.colorScheme.onSurfaceVariant;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: cardColor,
@@ -120,7 +122,7 @@ class _ReminderPageState extends State<ReminderPage> {
               style: TextStyle(fontSize: 12, color: subtitleColor),
             ),
             value: _reminderEnabled,
-            activeColor: primaryColor,
+            activeColor: _bluePrimary,
             onChanged: _onToggleReminder,
           ),
           if (_reminderEnabled) ...[
@@ -129,7 +131,7 @@ class _ReminderPageState extends State<ReminderPage> {
               title: Text('提醒时间', style: TextStyle(fontSize: 16, color: textColor)),
               subtitle: Text(
                 _formatTime(_hour, _minute),
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primaryColor),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _bluePrimary),
               ),
               trailing: Icon(Icons.access_time, color: subtitleColor),
               onTap: _selectTime,
@@ -141,10 +143,102 @@ class _ReminderPageState extends State<ReminderPage> {
                 '立即发送一条测试通知，确认功能正常',
                 style: TextStyle(fontSize: 12, color: subtitleColor),
               ),
-              trailing: Icon(Icons.notifications_active, color: primaryColor),
+              trailing: Icon(Icons.notifications_active, color: _bluePrimary),
               onTap: _sendTestNotification,
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebugInfo() {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final subtitleColor = theme.colorScheme.onSurfaceVariant;
+
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _reminderService.getDebugInfo(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return SizedBox.shrink();
+        final info = snapshot.data!;
+        return Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.info_outline, size: 18, color: _bluePrimary),
+                  SizedBox(width: 8),
+                  Text('调度状态', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _bluePrimary)),
+                ],
+              ),
+              SizedBox(height: 8),
+              _buildInfoRow('时区', info['timezone'] ?? '未知'),
+              _buildInfoRow('当前时间', info['currentTime'] ?? '未知'),
+              _buildInfoRow('精确闹钟', info['canScheduleExactAlarms'] == true ? '✅ 已授权' : '❌ 未授权'),
+              _buildInfoRow('通知权限', info['hasNotificationPermission'] == true ? '✅ 已授权' : '❌ 未授权'),
+              if (info['canScheduleExactAlarms'] != true) ...[
+                SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning, color: Colors.orange, size: 16),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '精确闹钟未授权，定时推送可能不精确。请在系统设置中开启「闹钟和提醒」权限。',
+                          style: TextStyle(fontSize: 12, color: Colors.orange),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await _reminderService.requestExactAlarmPermission();
+                      setState(() {});
+                    },
+                    icon: Icon(Icons.settings, size: 16),
+                    label: Text('开启精确闹钟权限'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _bluePrimary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          SizedBox(width: 8),
+          Expanded(child: Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
         ],
       ),
     );
@@ -157,8 +251,6 @@ class _ReminderPageState extends State<ReminderPage> {
 
     _reminderService.setEnabled(value).then((success) {
       if (!mounted) return;
-      final theme = Theme.of(context);
-      final primaryColor = theme.colorScheme.primary;
       if (success) {
         setState(() {
           _hour = _reminderService.hour;
@@ -167,7 +259,7 @@ class _ReminderPageState extends State<ReminderPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(value ? '提醒已启用' : '提醒已关闭'),
-            backgroundColor: value ? Colors.green : primaryColor,
+            backgroundColor: value ? Colors.green : _bluePrimary,
           ),
         );
       } else {
@@ -192,13 +284,12 @@ class _ReminderPageState extends State<ReminderPage> {
     if (!mounted) return;
 
     final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.notifications_off, color: primaryColor, size: 24),
+            Icon(Icons.notifications_off, color: _bluePrimary, size: 24),
             SizedBox(width: 8),
             Text('通知权限未开启'),
           ],
@@ -241,7 +332,7 @@ class _ReminderPageState extends State<ReminderPage> {
             icon: Icon(isPermanentlyDenied ? Icons.settings : Icons.notifications_active, size: 18),
             label: Text(isPermanentlyDenied ? '去设置' : '允许'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
+              backgroundColor: _bluePrimary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -260,9 +351,10 @@ class _ReminderPageState extends State<ReminderPage> {
       context: context,
       initialTime: TimeOfDay(hour: _hour, minute: _minute),
       builder: (context, child) {
-        final theme = Theme.of(context);
         return Theme(
-          data: theme.copyWith(colorScheme: theme.colorScheme.copyWith(primary: theme.colorScheme.primary)),
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(primary: _bluePrimary),
+          ),
           child: child!,
         );
       },
@@ -285,12 +377,10 @@ class _ReminderPageState extends State<ReminderPage> {
   Future<void> _sendTestNotification() async {
     final result = await _reminderService.sendTestNotification();
     if (mounted) {
-      final theme = Theme.of(context);
-      final primaryColor = theme.colorScheme.primary;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result ? '测试通知已发送，请查看通知栏 ✅' : '发送失败，请检查权限设置'),
-          backgroundColor: result ? Colors.green : primaryColor,
+          backgroundColor: result ? Colors.green : _bluePrimary,
         ),
       );
     }

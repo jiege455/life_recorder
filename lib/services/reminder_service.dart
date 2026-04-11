@@ -56,11 +56,23 @@ class ReminderService {
 
     await _plugin.initialize(
       initSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {},
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        debugPrint('收到通知响应：${response.id} - ${response.payload}');
+      },
     );
 
     await loadSettings();
     await checkAndFixReminderState();
+
+    if (_enabled) {
+      debugPrint('应用启动，重新调度每日提醒');
+      try {
+        await _scheduleNotification();
+      } catch (e) {
+        debugPrint('应用启动时重新调度通知失败：$e');
+      }
+    }
+
     _isInitialized = true;
   }
 
@@ -134,6 +146,34 @@ class ReminderService {
     }
   }
 
+  Future<bool> canScheduleExactAlarms() async {
+    if (!Platform.isAndroid) return true;
+    try {
+      final androidPlugin = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        return await androidPlugin.canScheduleExactNotifications() ?? false;
+      }
+    } catch (e) {
+      debugPrint('检查精确闹钟权限失败：$e');
+    }
+    return false;
+  }
+
+  Future<bool> requestExactAlarmPermission() async {
+    if (!Platform.isAndroid) return true;
+    try {
+      final androidPlugin = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      if (androidPlugin != null) {
+        final granted = await androidPlugin.requestExactAlarmsPermission() ?? false;
+        debugPrint('精确闹钟权限请求结果：$granted');
+        return granted;
+      }
+    } catch (e) {
+      debugPrint('请求精确闹钟权限失败：$e');
+    }
+    return false;
+  }
+
   Future<bool> checkAndFixReminderState() async {
     if (!_enabled) return true;
 
@@ -159,6 +199,14 @@ class ReminderService {
         _enabled = false;
         return false;
       }
+
+      if (Platform.isAndroid) {
+        final canExact = await canScheduleExactAlarms();
+        if (!canExact) {
+          debugPrint('没有精确闹钟权限，尝试请求');
+          await requestExactAlarmPermission();
+        }
+      }
     }
 
     _enabled = enabled;
@@ -169,7 +217,7 @@ class ReminderService {
       try {
         await _scheduleNotification();
       } catch (e) {
-        debugPrint('调度通知失败: $e');
+        debugPrint('调度通知失败：$e');
         _enabled = false;
         await prefs.setBool(_reminderKey, false);
         return false;
@@ -193,7 +241,7 @@ class ReminderService {
       try {
         await _scheduleNotification();
       } catch (e) {
-        debugPrint('重新调度通知失败: $e');
+        debugPrint('重新调度通知失败：$e');
       }
     }
   }
@@ -220,7 +268,6 @@ class ReminderService {
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
-      interruptionLevel: NotificationInterruptionLevel.timeSensitive,
     );
     final notificationDetails = NotificationDetails(
       android: androidDetails,
@@ -241,25 +288,32 @@ class ReminderService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    debugPrint('当前时间: $now');
-    debugPrint('计划通知时间: $scheduledDate');
-    debugPrint('时区: ${tz.local.name}');
+    debugPrint('===== 定时推送调度信息 =====');
+    debugPrint('当前时间：$now');
+    debugPrint('计划通知时间：$scheduledDate');
+    debugPrint('时区：${tz.local.name}');
+    debugPrint('距离通知还有：${scheduledDate.difference(now).inMinutes} 分钟');
+
+    bool canExact = true;
+    if (Platform.isAndroid) {
+      canExact = await canScheduleExactAlarms();
+      debugPrint('精确闹钟权限：$canExact');
+    }
 
     try {
-      await _plugin.zonedSchedule(
-        1,
-        '🔔 AI 人生记录器 - 每日提醒',
-        '今天发生了什么新鲜事？来记录一下吧~ 📝',
-        scheduledDate,
-        notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-      );
-      debugPrint('每日提醒已设置（强势推送模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
-    } catch (e) {
-      debugPrint('精确调度失败，尝试不精确模式: $e');
-      try {
+      if (canExact) {
+        await _plugin.zonedSchedule(
+          1,
+          '🔔 AI 人生记录器 - 每日提醒',
+          '今天发生了什么新鲜事？来记录一下吧~ 📝',
+          scheduledDate,
+          notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
+          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        );
+        debugPrint('每日提醒已设置（精确模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
+      } else {
         await _plugin.zonedSchedule(
           1,
           '🔔 AI 人生记录器 - 每日提醒',
@@ -271,8 +325,23 @@ class ReminderService {
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         );
         debugPrint('每日提醒已设置（不精确模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
+      }
+    } catch (e) {
+      debugPrint('调度失败，尝试不精确模式：$e');
+      try {
+        await _plugin.zonedSchedule(
+          1,
+          '🔔 AI 人生记录器 - 每日提醒',
+          '今天发生了什么新鲜事？来记录一下吧~ 📝',
+          scheduledDate,
+          notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
+          uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+        );
+        debugPrint('每日提醒已设置（降级不精确模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
       } catch (e2) {
-        debugPrint('通知调度完全失败: $e2');
+        debugPrint('通知调度完全失败：$e2');
         rethrow;
       }
     }
@@ -303,7 +372,6 @@ class ReminderService {
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
-        interruptionLevel: NotificationInterruptionLevel.timeSensitive,
       );
       final notificationDetails = NotificationDetails(
         android: androidDetails,
@@ -323,5 +391,21 @@ class ReminderService {
       debugPrint('发送测试通知失败：$e');
       return false;
     }
+  }
+
+  Future<Map<String, dynamic>> getDebugInfo() async {
+    final now = tz.TZDateTime.now(tz.local);
+    final canExact = await canScheduleExactAlarms();
+    final hasNotifPerm = await isNotificationPermissionGranted();
+    return {
+      'enabled': _enabled,
+      'hour': _hour,
+      'minute': _minute,
+      'timezone': tz.local.name,
+      'currentTime': now.toString(),
+      'canScheduleExactAlarms': canExact,
+      'hasNotificationPermission': hasNotifPerm,
+      'isInitialized': _isInitialized,
+    };
   }
 }

@@ -4,7 +4,7 @@ import '../config/api_config.dart';
 
 class AiService {
   String get _apiKey => ApiConfig.deepseekApiKey;
-  String get _baseUrl => ApiConfig.deepseekBaseUrl;
+  static const String _baseUrl = ApiConfig.deepseekBaseUrl;
 
   final Dio _dio = Dio(BaseOptions(
     connectTimeout: Duration(seconds: 15),

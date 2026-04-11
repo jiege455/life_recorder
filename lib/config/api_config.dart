@@ -7,7 +7,7 @@ class ApiConfig {
   static const String _iflyAppSecretPref = 'ifly_app_secret';
 
   static const String _defaultDeepseekApiKey = 'sk-4c521537a01a44aebc4a2bd9f057dde9';
-  static const String _defaultDeepseekBaseUrl = 'https://api.deepseek.com/v1/chat/completions';
+  static const String deepseekBaseUrl = 'https://api.deepseek.com/v1/chat/completions';
   static const String _defaultIflyAppId = '000dc3e2';
   static const String _defaultIflyAppKey = 'eeb3a079d047433a30fc7d39a2988f50';
   static const String _defaultIflyAppSecret = 'N2IxNzU5YzNhMDI3YjQ2N2Q2MzMxNDAx';
@@ -18,7 +18,6 @@ class ApiConfig {
   static String _iflyAppSecret = _defaultIflyAppSecret;
 
   static String get deepseekApiKey => _deepseekApiKey;
-  static String get deepseekBaseUrl => _defaultDeepseekBaseUrl;
   static String get iflyAppId => _iflyAppId;
   static String get iflyAppKey => _iflyAppKey;
   static String get iflyAppSecret => _iflyAppSecret;
@@ -26,12 +25,6 @@ class ApiConfig {
   static bool get isDeepseekConfigured => _deepseekApiKey.isNotEmpty;
   static bool get isIflyConfigured =>
       _iflyAppId.isNotEmpty && _iflyAppKey.isNotEmpty && _iflyAppSecret.isNotEmpty;
-
-  static bool get isUsingDefaultDeepseekKey => _deepseekApiKey == _defaultDeepseekApiKey;
-  static bool get isUsingDefaultIflyKey =>
-      _iflyAppId == _defaultIflyAppId &&
-      _iflyAppKey == _defaultIflyAppKey &&
-      _iflyAppSecret == _defaultIflyAppSecret;
 
   static Future<void> loadConfig() async {
     final prefs = await SharedPreferences.getInstance();

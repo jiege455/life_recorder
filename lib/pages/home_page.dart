@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
 import 'dart:io';
 import 'dart:convert';
 import '../database/database_helper.dart';
