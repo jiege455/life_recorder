@@ -1,0 +1,101 @@
+name: Build Android APK
+description: 自动构建 Android Release APK
+
+trigger:
+  push:
+    branches:
+      include:
+        - master
+        - main
+
+variables:
+  FLUTTER_VERSION: "3.24.0"
+  JAVA_VERSION: "17"
+  ANDROID_SDK_ROOT: "/usr/local/android-sdk"
+
+stages:
+  - name: build
+    displayName: 构建Android APK
+    strategy: naturally
+    trigger: auto
+    steps:
+      - step: checkout@1
+        name: 检出代码
+        with:
+          depth: 1
+
+      - step: shell@1
+        name: 安装依赖
+        with:
+          script: |
+            apt-get update && apt-get install -y \
+              curl \
+              git \
+              unzip \
+              wget \
+              openjdk-17-jdk-headless \
+              android-tools
+
+            # 设置 JAVA_HOME
+            export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+            export PATH=$JAVA_HOME/bin:$PATH
+            java -version
+
+      - step: shell@1
+        name: 安装Flutter SDK
+        with:
+          script: |
+            cd /opt
+            wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz
+            tar xf flutter_linux_3.24.0-stable.tar.xz
+            export PATH="/opt/flutter/bin:$PATH"
+            flutter --version
+            flutter doctor -v
+
+      - step: shell@1
+        name: 配置Android并构建APK
+        with:
+          script: |
+            export PATH="/opt/flutter/bin:$PATH"
+            export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+            export PATH=$JAVA_HOME/bin:$PATH
+            export ANDROID_HOME=/usr/local/android-sdk
+
+            # 接受Android许可
+            yes | sdkmanager --licenses || true
+
+            # 进入项目目录
+            cd $GITEE_WORKSPACE
+
+            # 获取依赖
+            flutter pub get
+
+            # 创建签名密钥（如果不存在）
+            if [ ! -f android/app/release.jks ]; then
+              keytool -genkeypair \
+                -v \
+                -keystore android/app/release.jks \
+                -keyalg RSA \
+                -keysize 2048 \
+                -validity 10000 \
+                -alias release \
+                -storepass jiege2026 \
+                -keypass jiege2026 \
+                -dname "CN=Jie Network Tech, OU=Mobile, O=JieNetwork, L=Shenzhen, ST=Guangdong, C=CN"
+            fi
+
+            # 构建Release APK
+            flutter build apk --release \
+              --build-number=${GITEE_RUN_NUMBER} \
+              --obfuscate \
+              --split-debug-info=build/debug-info/
+
+            echo "=== 构建完成 ==="
+            ls -lh build/app/outputs/flutter-apk/
+
+      - step: upload-artifact@1
+        name: 上传APK产物
+        with:
+          artifactName: release-apk
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
