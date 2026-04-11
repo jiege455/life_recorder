@@ -7,7 +7,35 @@ on:
     branches: [ main, master ]
 
 jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Delete old artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            let deleted = 0;
+            for (const artifact of artifacts.data.artifacts) {
+              if (artifact.name === 'release-apk') {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id
+                });
+                deleted++;
+              }
+            }
+            console.log(`Deleted ${deleted} old artifacts`);
+
   build:
+    needs: cleanup
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +53,9 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
+          # Ensure android/app directory exists
+          mkdir -p android/app
+          
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "Using keystore from Secrets"
             echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
@@ -52,3 +83,4 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 3
