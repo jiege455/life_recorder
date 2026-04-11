@@ -12,6 +12,8 @@ class ReminderService {
   static final ReminderService instance = ReminderService._();
   static const String _reminderKey = 'daily_reminder';
   static const String _timeKey = 'reminder_time';
+  static const String _channelId = 'daily_reminder_v2';
+  static const int _notificationId = 1001;
 
   ReminderService._();
 
@@ -60,6 +62,27 @@ class ReminderService {
         debugPrint('收到通知响应：${response.id} - ${response.payload}');
       },
     );
+
+    if (Platform.isAndroid) {
+      try {
+        final androidPlugin = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        if (androidPlugin != null) {
+          const channel = AndroidNotificationChannel(
+            'daily_reminder_v2',
+            '每日提醒',
+            description: '每日记录提醒',
+            importance: Importance.max,
+            enableVibration: true,
+            playSound: true,
+            showBadge: true,
+          );
+          await androidPlugin.createNotificationChannel(channel);
+          debugPrint('通知频道已显式创建：daily_reminder_v2');
+        }
+      } catch (e) {
+        debugPrint('创建通知频道失败：$e');
+      }
+    }
 
     await loadSettings();
     await checkAndFixReminderState();
@@ -250,7 +273,7 @@ class ReminderService {
     await _plugin.cancelAll();
 
     final androidDetails = AndroidNotificationDetails(
-      'daily_reminder',
+      _channelId,
       '每日提醒',
       channelDescription: '每日记录提醒',
       importance: Importance.max,
@@ -293,6 +316,8 @@ class ReminderService {
     debugPrint('计划通知时间：$scheduledDate');
     debugPrint('时区：${tz.local.name}');
     debugPrint('距离通知还有：${scheduledDate.difference(now).inMinutes} 分钟');
+    debugPrint('通知频道ID：$_channelId');
+    debugPrint('通知ID：$_notificationId');
 
     bool canExact = true;
     if (Platform.isAndroid) {
@@ -303,7 +328,7 @@ class ReminderService {
     try {
       if (canExact) {
         await _plugin.zonedSchedule(
-          1,
+          _notificationId,
           '🔔 AI 人生记录器 - 每日提醒',
           '今天发生了什么新鲜事？来记录一下吧~ 📝',
           scheduledDate,
@@ -311,11 +336,12 @@ class ReminderService {
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           matchDateTimeComponents: DateTimeComponents.time,
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+          payload: 'daily_reminder',
         );
         debugPrint('每日提醒已设置（精确模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
       } else {
         await _plugin.zonedSchedule(
-          1,
+          _notificationId,
           '🔔 AI 人生记录器 - 每日提醒',
           '今天发生了什么新鲜事？来记录一下吧~ 📝',
           scheduledDate,
@@ -323,6 +349,7 @@ class ReminderService {
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           matchDateTimeComponents: DateTimeComponents.time,
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+          payload: 'daily_reminder',
         );
         debugPrint('每日提醒已设置（不精确模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
       }
@@ -330,7 +357,7 @@ class ReminderService {
       debugPrint('调度失败，尝试不精确模式：$e');
       try {
         await _plugin.zonedSchedule(
-          1,
+          _notificationId,
           '🔔 AI 人生记录器 - 每日提醒',
           '今天发生了什么新鲜事？来记录一下吧~ 📝',
           scheduledDate,
@@ -338,6 +365,7 @@ class ReminderService {
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           matchDateTimeComponents: DateTimeComponents.time,
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+          payload: 'daily_reminder',
         );
         debugPrint('每日提醒已设置（降级不精确模式），时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
       } catch (e2) {
@@ -356,7 +384,7 @@ class ReminderService {
       }
 
       final androidDetails = AndroidNotificationDetails(
-        'daily_reminder',
+        _channelId,
         '每日提醒',
         channelDescription: '每日记录提醒',
         importance: Importance.max,
