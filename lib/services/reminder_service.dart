@@ -252,17 +252,17 @@ class ReminderService {
     final androidDetails = AndroidNotificationDetails(
       'daily_reminder',
       '每日提醒',
-      channelDescription: '每日记录提醒 - 强势推送',
+      channelDescription: '每日记录提醒',
       importance: Importance.max,
       priority: Priority.max,
       showWhen: true,
       enableVibration: true,
       vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]),
       category: AndroidNotificationCategory.reminder,
-      fullScreenIntent: true,
-      autoCancel: false,
-      ongoing: true,
+      autoCancel: true,
       visibility: NotificationVisibility.public,
+      channelShowBadge: true,
+      playSound: true,
     );
     final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
@@ -358,15 +358,16 @@ class ReminderService {
       final androidDetails = AndroidNotificationDetails(
         'daily_reminder',
         '每日提醒',
-        channelDescription: '每日记录提醒 - 强势推送',
+        channelDescription: '每日记录提醒',
         importance: Importance.max,
         priority: Priority.max,
         showWhen: true,
         enableVibration: true,
         vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]),
-        autoCancel: false,
-        ongoing: true,
+        autoCancel: true,
         visibility: NotificationVisibility.public,
+        channelShowBadge: true,
+        playSound: true,
       );
       final iosDetails = DarwinNotificationDetails(
         presentAlert: true,
