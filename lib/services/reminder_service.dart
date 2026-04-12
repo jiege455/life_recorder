@@ -136,6 +136,25 @@ class ReminderService {
     await openAppSettings();
   }
 
+  Future<bool> isNotificationPermissionPermanentlyDenied() async {
+    final status = await Permission.notification.status;
+    return status.isPermanentlyDenied;
+  }
+
+  Future<bool> checkAndFixReminderState() async {
+    if (!_enabled) return true;
+    
+    final hasPermission = await isNotificationPermissionGranted();
+    if (!hasPermission) {
+      return false;
+    }
+    
+    if (_enabled) {
+      await _scheduleDailyReminder();
+    }
+    return true;
+  }
+
   Future<bool> setEnabled(bool enabled) async {
     if (enabled) {
       final hasPermission = await requestNotificationPermission();
@@ -255,7 +274,6 @@ class ReminderService {
         );
       }
     } catch (e) {
-      debugPrint('❌ 调度失败：$e');
       rethrow;
     }
   }
