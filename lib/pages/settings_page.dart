@@ -5,6 +5,7 @@ import '../services/lock_service.dart';
 import '../services/reminder_service.dart';
 import '../services/tag_service.dart';
 import '../services/backup_service.dart';
+import '../config/api_config.dart';
 import '../database/database_helper.dart';
 import 'tag_manager_page.dart';
 import 'lock_settings_page.dart';
@@ -51,61 +52,74 @@ class _SettingsPageState extends State<SettingsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('设置', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('\u8BBE\u7F6E',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: primaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(icon: Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('外观'),
+            _buildSectionTitle('\u5916\u89C2'),
             _buildThemeSetting(cardColor, primaryColor, isDark),
             SizedBox(height: 24),
-            _buildSectionTitle('标签管理'),
-            _buildSettingCard(cardColor, isDark, primaryColor, Icons.label, '自定义标签', '管理常用标签',
+            _buildSectionTitle('\u6807\u7B7E\u7BA1\u7406'),
+            _buildSettingCard(cardColor, isDark, primaryColor,
+              Icons.label, '\u81EA\u5B9A\u4E49\u6807\u7B7E', '\u7BA1\u7406\u5E38\u7528\u6807\u7B7E',
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => TagManagerPage())),
             ),
             SizedBox(height: 24),
-            _buildSectionTitle('数据管理'),
-            _buildSettingCard(cardColor, isDark, primaryColor, Icons.backup, '导出数据', '将记录导出为JSON文件',
+            _buildSectionTitle('\u6570\u636E\u7BA1\u7406'),
+            _buildSettingCard(cardColor, isDark, primaryColor,
+              Icons.backup, '\u5BFC\u51FA\u6570\u636E', '\u5C06\u8BB0\u5F55\u5BFC\u51FA\u4E3AJSON\u6587\u4EF6',
               trailing: _isExporting ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : null,
               onTap: _isExporting ? null : _exportData,
             ),
             SizedBox(height: 8),
-            _buildSettingCard(cardColor, isDark, primaryColor, Icons.restore, '导入数据', '从JSON文件恢复记录',
+            _buildSettingCard(cardColor, isDark, primaryColor,
+              Icons.restore, '\u5BFC\u5165\u6570\u636E', '\u4ECEJSON\u6587\u4EF6\u6062\u590D\u8BB0\u5F55',
               trailing: _isImporting ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : null,
               onTap: _isImporting ? null : _importData,
             ),
             SizedBox(height: 8),
-            _buildSettingCard(cardColor, isDark, primaryColor, Icons.delete_forever, '清除所有数据', '删除全部记录，此操作不可恢复',
-              iconColor: Colors.red, titleColor: Colors.red, onTap: _clearAllData,
+            _buildSettingCard(cardColor, isDark, primaryColor,
+              Icons.delete_forever, '\u6E05\u9664\u6240\u6709\u6570\u636E', '\u5220\u9664\u5168\u90E8\u8BB0\u5F55\uFF0C\u6B64\u64CD\u4F5C\u4E0D\u53EF\u6062\u590D',
+              iconColor: Colors.red, titleColor: Colors.red,
+              onTap: _clearAllData,
             ),
             SizedBox(height: 24),
-            _buildSectionTitle('隐私与安全'),
-            _buildSettingCard(cardColor, isDark, primaryColor, Icons.lock, '隐私锁', _lockEnabled ? '已启用' : '未启用',
+            _buildSectionTitle('\u9690\u79C1\u4E0E\u5B89\u5168'),
+            _buildSettingCard(cardColor, isDark, primaryColor,
+              Icons.lock, '\u9690\u79C1\u9501', _lockEnabled ? '\u5DF2\u542F\u7528' : '\u672A\u542F\u7528',
               onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => LockSettingsPage())); _loadSettings(); },
             ),
             SizedBox(height: 8),
-            _buildSettingCard(cardColor, isDark, primaryColor, Icons.privacy_tip, '隐私政策', null,
+            _buildSettingCard(cardColor, isDark, primaryColor,
+              Icons.privacy_tip, '\u9690\u79C1\u653F\u7B56', null,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => PrivacyPolicyPage())),
             ),
             SizedBox(height: 8),
-            _buildSettingCard(cardColor, isDark, primaryColor, Icons.description, '用户协议', null,
+            _buildSettingCard(cardColor, isDark, primaryColor,
+              Icons.description, '\u7528\u6237\u534F\u8BAE', null,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => UserAgreementPage())),
             ),
             SizedBox(height: 24),
-            _buildSectionTitle('提醒'),
-            _buildSettingCard(cardColor, isDark, primaryColor, Icons.notifications, '每日提醒', _reminderEnabled ? '已启用' : '未启用',
+            _buildSectionTitle('\u63D0\u9192'),
+            _buildSettingCard(cardColor, isDark, primaryColor,
+              Icons.notifications, '\u6BCF\u65E5\u63D0\u9192', _reminderEnabled ? '\u5DF2\u542F\u7528' : '\u672A\u542F\u7528',
               onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (context) => ReminderPage())); _loadSettings(); },
             ),
             if (_reminderEnabled) ...[
               SizedBox(height: 8),
               _buildSettingCard(cardColor, isDark, primaryColor,
-                Icons.notifications_active, '测试推送', '立即发送测试通知，确认推送功能正常',
+                Icons.notifications_active, '\u6D4B\u8BD5\u63A8\u9001', '\u7ACB\u5373\u53D1\u9001\u6D4B\u8BD5\u901A\u77E5\uFF0C\u786E\u8BA4\u63A8\u9001\u529F\u80FD\u6B63\u5E38',
                 onTap: _testPushNotification,
               ),
             ],
@@ -120,7 +134,11 @@ class _SettingsPageState extends State<SettingsPage> {
     final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(left: 4, bottom: 12),
-      child: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant)),
+      child: Text(
+        title,
+        style: TextStyle(
+            fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant),
+      ),
     );
   }
 
@@ -130,6 +148,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final theme = Theme.of(context);
     final textColor = theme.colorScheme.onSurface;
     final subtitleColor = theme.colorScheme.onSurfaceVariant;
+    
     return Container(
       decoration: BoxDecoration(
         color: cardColor,
@@ -158,8 +177,9 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           ListTile(
             leading: Icon(Icons.brightness_6, color: primaryColor),
-            title: Text('深色模式', style: TextStyle(fontSize: 15)),
-            subtitle: Text(_getThemeModeText(), style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+            title: Text('\u6DF1\u8272\u6A21\u5F0F', style: TextStyle(fontSize: 15)),
+            subtitle: Text(_getThemeModeText(),
+                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
             trailing: Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
             onTap: _showThemeDialog,
           ),
@@ -170,9 +190,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
   String _getThemeModeText() {
     switch (_themeMode) {
-      case ThemeMode.light: return '浅色模式';
-      case ThemeMode.dark: return '深色模式';
-      case ThemeMode.system: return '跟随系统';
+      case ThemeMode.light:
+        return '\u6D45\u8272\u6A21\u5F0F';
+      case ThemeMode.dark:
+        return '\u6DF1\u8272\u6A21\u5F0F';
+      case ThemeMode.system:
+        return '\u8DDF\u968F\u7CFB\u7EDF';
     }
   }
 
@@ -187,9 +210,9 @@ class _SettingsPageState extends State<SettingsPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildThemeOption('跟随系统', ThemeMode.system),
-            _buildThemeOption('浅色模式', ThemeMode.light),
-            _buildThemeOption('深色模式', ThemeMode.dark),
+            _buildThemeOption('\u8DDF\u968F\u7CFB\u7EDF', ThemeMode.system),
+            _buildThemeOption('\u6D45\u8272\u6A21\u5F0F', ThemeMode.light),
+            _buildThemeOption('\u6DF1\u8272\u6A21\u5F0F', ThemeMode.dark),
           ],
         ),
       ),
@@ -260,9 +283,9 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final path = await BackupService.instance.exportData();
       if (path == null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('导出失败，请重试'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('\u5BFC\u51FA\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5'), backgroundColor: Colors.red));
       } else if (path != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('数据导出成功！'), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('\u6570\u636E\u5BFC\u51FA\u6210\u529F\uFF01'), backgroundColor: Colors.green));
       }
     } finally {
       if (mounted) { setState(() => _isExporting = false); }
@@ -275,7 +298,7 @@ class _SettingsPageState extends State<SettingsPage> {
       final backupInfo = await BackupService.instance.readBackupFile();
       if (backupInfo == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('未选择文件或文件格式错误'), backgroundColor: Colors.orange));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('\u672A\u9009\u62E9\u6587\u4EF6\u6216\u6587\u4EF6\u683C\u5F0F\u9519\u8BEF'), backgroundColor: Colors.orange));
         }
         return;
       }
@@ -293,11 +316,11 @@ class _SettingsPageState extends State<SettingsPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('即将导入以下备份数据：', style: TextStyle(fontWeight: FontWeight.w500)),
+              Text('\u5373\u5C06\u5BFC\u5165\u4EE5\u4E0B\u5907\u4EFD\u6570\u636E\uFF1A', style: TextStyle(fontWeight: FontWeight.w500)),
               SizedBox(height: 12),
-              _buildInfoRow('记录数量', '${backupInfo['recordCount']}条'),
-              _buildInfoRow('备份时间', backupInfo['exportTime'].toString()),
-              _buildInfoRow('版本', backupInfo['version'].toString()),
+              _buildInfoRow('\u8BB0\u5F55\u6570\u91CF', '${backupInfo['recordCount']}\u6761'),
+              _buildInfoRow('\u5907\u4EFD\u65F6\u95F4', backupInfo['exportTime'].toString()),
+              _buildInfoRow('\u7248\u672C', backupInfo['version'].toString()),
               SizedBox(height: 12),
               Container(
                 padding: EdgeInsets.all(12),
@@ -306,18 +329,18 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Icon(Icons.warning, color: Colors.orange, size: 20),
                     SizedBox(width: 8),
-                    Expanded(child: Text('导入将替换当前所有数据，请确保已备份', style: TextStyle(fontSize: 13, color: theme.colorScheme.error))),
+                    Expanded(child: Text('\u5BFC\u5165\u5C06\u66FF\u6362\u5F53\u524D\u6240\u6709\u6570\u636E\uFF0C\u8BF7\u786E\u4FDD\u5DF2\u5907\u4EFD', style: TextStyle(fontSize: 13, color: theme.colorScheme.error))),
                   ],
                 ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: Text('取消')),
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text('\u53D6\u6D88')),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF4A90E2), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-              child: Text('确认导入'),
+              child: Text('\u786E\u8BA4\u5BFC\u5165'),
             ),
           ],
         ),
@@ -339,7 +362,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   CircularProgressIndicator(color: Color(0xFF4A90E2)),
                   SizedBox(height: 16),
-                  Text('正在导入数据...', style: TextStyle(fontSize: 14)),
+                  Text('\u6B63\u5728\u5BFC\u5165\u6570\u636E...', style: TextStyle(fontSize: 14)),
                 ],
               ),
             ),
@@ -352,9 +375,9 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         Navigator.pop(context);
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('数据导入成功！共导入${backupInfo['recordCount']}条记录'), backgroundColor: Colors.green));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('\u6570\u636E\u5BFC\u5165\u6210\u529F\uFF01\u5171\u5BFC\u5165${backupInfo['recordCount']}\u6761\u8BB0\u5F55'), backgroundColor: Colors.green));
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('导入失败，请检查备份文件格式'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('\u5BFC\u5165\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u5907\u4EFD\u6587\u4EF6\u683C\u5F0F'), backgroundColor: Colors.red));
         }
       }
     } finally {
