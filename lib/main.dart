@@ -244,7 +244,6 @@ class _LockScreenState extends State<LockScreen> {
     final pin = await LockService.instance.getSavedPin();
     if (!mounted) return;
     if (pin == null || pin.isEmpty) {
-      // 如果没有设置 PIN 码，直接解锁
       LockService.instance.unlock();
       widget.onUnlock();
       return;
@@ -275,25 +274,20 @@ class _LockScreenState extends State<LockScreen> {
   }
 
   void _verifyPin() {
-    // 严格验证 PIN 码
     if (_inputPin == _correctPin) {
-      // 验证成功
       LockService.instance.unlock();
       widget.onUnlock();
     } else {
-      // 验证失败
       setState(() {
         _failedAttempts++;
         _isWrong = true;
         _inputPin = '';
         
-        // 连续失败 5 次后显示紧急解锁
         if (_failedAttempts >= 5) {
           _showEmergencyUnlock = true;
         }
       });
       
-      // 震动反馈
       HapticFeedback.vibrate();
     }
   }
@@ -337,13 +331,10 @@ class _LockScreenState extends State<LockScreen> {
     );
 
     if (confirmed == true) {
-      // 关闭隐私锁
       await LockService.instance.disableLock();
-      // 解锁并进入应用
       LockService.instance.unlock();
       widget.onUnlock();
       
-      // 显示提示
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
