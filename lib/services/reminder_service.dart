@@ -21,6 +21,8 @@ class ReminderService {
   int _hour = 20;
   int _minute = 0;
   bool _isInitialized = false;
+  DateTime? _lastRescheduleTime;
+  static const Duration _rescheduleCooldown = Duration(seconds: 30);
 
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
 
@@ -339,6 +341,15 @@ class ReminderService {
   }
 
   Future<void> rescheduleIfEnabled() async {
+    final now = DateTime.now();
+    
+    // 防抖检查：如果距离上次调度不到 30 秒，跳过
+    if (_lastRescheduleTime != null && now.difference(_lastRescheduleTime!) < _rescheduleCooldown) {
+      debugPrint('⏭️ 跳过重新调度（冷却中，距上次 ${(now.difference(_lastRescheduleTime!).inSeconds)} 秒）');
+      return;
+    }
+    
+    _lastRescheduleTime = now;
     debugPrint('🔄 重新检查并调度提醒...');
     
     if (_enabled) {
@@ -385,24 +396,9 @@ class ReminderService {
     );
 
     final now = tz.TZDateTime.now(tz.local);
-    var scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      _hour,
-      _minute,
-      0,
-    );
-
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-    }
 
     debugPrint('📍 当前时间：$now');
-    debugPrint('🎯 计划通知时间：$scheduledDate');
     debugPrint('🌍 时区：${tz.local.name}');
-    debugPrint('⏱️ 距离通知还有：${scheduledDate.difference(now).inMinutes} 分钟');
     debugPrint('📢 通知频道ID：$_channelId');
     debugPrint('🆔 通知ID：$_notificationId');
 
@@ -417,39 +413,58 @@ class ReminderService {
 
     try {
       if (canExact) {
-        debugPrint('🚀 使用精确模式调度...');
+        debugPrint('🚀 使用精确模式 + 每日重复调度...');
         
         await _plugin.zonedSchedule(
           _notificationId,
           '🔔 AI 人生记录器 - 每日提醒',
           '今天发生了什么新鲜事？来记录一下吧~ 📝\n\n开发者：杰哥网络科技',
-          scheduledDate,
+          tz.TZDateTime(
+            tz.local,
+            now.year,
+            now.month,
+            now.day,
+            _hour,
+            _minute,
+            0,
+          ),
           notificationDetails,
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
           payload: 'daily_reminder',
         );
         
-        debugPrint('✅ 每日提醒已设置（精确模式）');
+        debugPrint('✅ 每日提醒已设置（精确模式 + 每日重复）');
         debugPrint('   时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
-        debugPrint('   模式：exactAllowWhileIdle（即使Doze模式也会触发）');
+        debugPrint('   模式：exactAllowWhileIdle + matchDateTimeComponents.time');
+        debugPrint('   效果：每天的该时间自动触发，即使Doze模式也会触发');
       } else {
-        debugPrint('⚠️ 使用不精确模式调度（可能延迟几分钟）...');
+        debugPrint('⚠️ 使用不精确模式 + 每日重复调度...');
         
         await _plugin.zonedSchedule(
           _notificationId,
           '🔔 AI 人生记录器 - 每日提醒',
           '今天发生了什么新鲜事？来记录一下吧~ 📝\n\n开发者：杰哥网络科技',
-          scheduledDate,
+          tz.TZDateTime(
+            tz.local,
+            now.year,
+            now.month,
+            now.day,
+            _hour,
+            _minute,
+            0,
+          ),
           notificationDetails,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time,
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
           payload: 'daily_reminder',
         );
         
-        debugPrint('✅ 每日提醒已设置（不精确模式）');
+        debugPrint('✅ 每日提醒已设置（不精确模式 + 每日重复）');
         debugPrint('   时间：${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')}');
-        debugPrint('   模式：inexactAllowWhileIdle');
+        debugPrint('   模式：inexactAllowWhileIdle + matchDateTimeComponents.time');
         debugPrint('   ⚠️ 注意：可能比设定时间晚几分钟');
       }
       
@@ -519,7 +534,7 @@ class ReminderService {
     
     var nextTriggerTime = '未设置';
     if (_enabled) {
-      final scheduledDate = tz.TZDateTime(
+      var scheduledDate = tz.TZDateTime(
         tz.local,
         now.year,
         now.month,
@@ -529,7 +544,7 @@ class ReminderService {
         0,
       );
       if (scheduledDate.isBefore(now)) {
-        scheduledDate.add(const Duration(days: 1));
+        scheduledDate = scheduledDate.add(const Duration(days: 1));
       }
       nextTriggerTime = scheduledDate.toString();
     }
@@ -549,6 +564,8 @@ class ReminderService {
       'notificationId': _notificationId,
       'platform': Platform.operatingSystem,
       'androidVersion': Platform.isAndroid ? '需要检查' : 'N/A',
+      'scheduleMode': 'matchDateTimeComponents.time (每日重复)',
+      'lastRescheduleTime': _lastRescheduleTime?.toString() ?? '从未调度',
     };
   }
 
@@ -571,6 +588,7 @@ class ReminderService {
 
   Future<void> forceReschedule() async {
     debugPrint('🔄 强制重新调度所有通知...');
+    _lastRescheduleTime = null; // 重置冷却时间，允许立即调度
     
     if (_enabled) {
       try {
