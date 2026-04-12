@@ -154,6 +154,8 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
           _isLocked = false;
         });
       }
+      
+      ReminderService.instance.rescheduleIfEnabled();
     }
   }
 
