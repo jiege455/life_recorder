@@ -42,19 +42,59 @@ class LockService {
 
   Future<bool> authenticateWithBiometrics() async {
     try {
-      final isSupported = await isDeviceSupported();
-      if (!isSupported) return false;
-      return await _localAuth.authenticate(
+      // 检查设备是否支持
+      final isSupported = await _localAuth.isDeviceSupported();
+      debugPrint('设备是否支持生物识别：$isSupported');
+      if (!isSupported) {
+        debugPrint('设备不支持生物识别');
+        return false;
+      }
+
+      // 检查是否可以使用生物识别
+      final canCheckBiometricsValue = await _localAuth.canCheckBiometrics;
+      debugPrint('是否可以检查生物识别：$canCheckBiometricsValue');
+      if (!canCheckBiometricsValue) {
+        debugPrint('无法使用生物识别');
+        return false;
+      }
+      
+      // 执行生物识别验证
+      final authenticated = await _localAuth.authenticate(
         localizedReason: '请验证身份以进入应用',
         options: const AuthenticationOptions(
-          stickyAuth: false,
-          biometricOnly: true,
+          stickyAuth: true,
+          biometricOnly: false, // 改为 false，允许使用设备密码
         ),
-      ).timeout(const Duration(seconds: 30), onTimeout: () => false);
-    } on PlatformException catch (e) {
-      if (e.code == 'auth_in_progress' || e.code == 'locked_out') {
-        await Future.delayed(const Duration(seconds: 2));
+      ).timeout(
+        const Duration(seconds: 60),
+        onTimeout: () => false,
+      );
+
+      if (authenticated) {
+        debugPrint('生物识别验证成功');
+      } else {
+        debugPrint('生物识别验证失败');
       }
+
+      return authenticated;
+    } on PlatformException catch (e) {
+      debugPrint('生物识别异常：${e.code} - ${e.message}');
+      
+      // 处理特定的错误码
+      if (e.code == 'NotEnrolledException') {
+        debugPrint('用户未录入生物特征');
+      } else if (e.code == 'LockoutException') {
+        debugPrint('生物识别被锁定，请稍后重试');
+        await Future.delayed(const Duration(seconds: 5));
+      } else if (e.code == 'AuthenticationFailed') {
+        debugPrint('生物识别验证失败');
+      } else if (e.code == 'UserCancelException') {
+        debugPrint('用户取消了生物识别');
+      }
+      
+      return false;
+    } catch (e) {
+      debugPrint('生物识别未知错误：$e');
       return false;
     }
   }
