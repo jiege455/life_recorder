@@ -41,7 +41,8 @@ class BackupService {
 
       await Share.shareXFiles(
         [XFile(file.path)],
-        text: 'AI\u4EBA\u751F\u8BB0\u5F55\u5668 - \u6570\u636E\u5907\u4EFD ${DateTime.now().year}\u5E74${DateTime.now().month}\u6708${DateTime.now().day}\u65E5',
+        text:
+            'AI\u4EBA\u751F\u8BB0\u5F55\u5668 - \u6570\u636E\u5907\u4EFD ${DateTime.now().year}\u5E74${DateTime.now().month}\u6708${DateTime.now().day}\u65E5',
       );
 
       return file.path;
@@ -57,7 +58,9 @@ class BackupService {
       for (var entity in files) {
         if (entity is File && entity.path.contains('life_recorder_backup_')) {
           final fileName = p.basename(entity.path);
-          final tsStr = fileName.replaceAll('life_recorder_backup_', '').replaceAll('.json', '');
+          final tsStr = fileName
+              .replaceAll('life_recorder_backup_', '')
+              .replaceAll('.json', '');
           final ts = int.tryParse(tsStr);
           if (ts != null && ts != currentTimestamp) {
             await entity.delete();
@@ -84,7 +87,8 @@ class BackupService {
       if (backupData['records'] == null) return null;
 
       return {
-        'recordCount': backupData['recordCount'] ?? (backupData['records'] as List).length,
+        'recordCount':
+            backupData['recordCount'] ?? (backupData['records'] as List).length,
         'exportTime': backupData['exportTime'] ?? '\u672A\u77E5',
         'version': backupData['version'] ?? '\u672A\u77E5',
         'records': backupData['records'],
@@ -147,7 +151,7 @@ class BackupService {
       if (images.isEmpty) return '[]';
       try {
         final decoded = jsonDecode(images);
-        if (decoded is List) return jsonEncode(decoded);
+        if (decoded is List) return jsonDecode(decoded);
       } catch (e) {}
       return '[]';
     }
