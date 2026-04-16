@@ -61,10 +61,6 @@ class _ReminderPageState extends State<ReminderPage> {
                   _buildReminderCard(),
                   SizedBox(height: 24),
                   _buildTimeSelector(isDark),
-                  if (_reminderEnabled) ...[
-                    SizedBox(height: 16),
-                    _buildDebugInfo(),
-                  ],
                 ],
               ),
             ),
@@ -147,98 +143,6 @@ class _ReminderPageState extends State<ReminderPage> {
               onTap: _sendTestNotification,
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDebugInfo() {
-    final theme = Theme.of(context);
-    final cardColor = theme.cardColor;
-    final subtitleColor = theme.colorScheme.onSurfaceVariant;
-
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _reminderService.getDebugInfo(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return SizedBox.shrink();
-        final info = snapshot.data!;
-        return Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: Offset(0, 4))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.info_outline, size: 18, color: _bluePrimary),
-                  SizedBox(width: 8),
-                  Text('调度状态', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _bluePrimary)),
-                ],
-              ),
-              SizedBox(height: 8),
-              _buildInfoRow('时区', info['timezone'] ?? '未知'),
-              _buildInfoRow('当前时间', info['currentTime'] ?? '未知'),
-              _buildInfoRow('精确闹钟', info['canScheduleExactAlarms'] == true ? '✅ 已授权' : '❌ 未授权'),
-              _buildInfoRow('通知权限', info['hasNotificationPermission'] == true ? '✅ 已授权' : '❌ 未授权'),
-              if (info['canScheduleExactAlarms'] != true) ...[
-                SizedBox(height: 8),
-                Container(
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.warning, color: Colors.orange, size: 16),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '精确闹钟未授权，定时推送可能不精确。请在系统设置中开启「闹钟和提醒」权限。',
-                          style: TextStyle(fontSize: 12, color: Colors.orange),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      await _reminderService.requestExactAlarmPermission();
-                      setState(() {});
-                    },
-                    icon: Icon(Icons.settings, size: 16),
-                    label: Text('开启精确闹钟权限'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _bluePrimary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          SizedBox(width: 8),
-          Expanded(child: Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
         ],
       ),
     );
