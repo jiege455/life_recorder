@@ -98,179 +98,239 @@ class _ShareCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 分享卡片固定使用浅色背景，确保生成图片效果一致
     return Container(
       width: 375,
-      padding: EdgeInsets.all(0),
+      padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFF8F9FA),
+            Color(0xFFF0F2F5),
+          ],
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 顶部装饰条
           Container(
-            width: double.infinity,
-            padding: EdgeInsets.fromLTRB(24, 28, 24, 20),
+            width: 60,
+            height: 4,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
                 colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
               ),
+              borderRadius: BorderRadius.circular(2),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.auto_stories, color: Colors.white, size: 14),
-                          SizedBox(width: 4),
-                          Text(
-                            'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
-                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Spacer(),
-                    Text(
-                      moodEmoji,
-                      style: TextStyle(fontSize: 28),
+          ),
+          SizedBox(height: 20),
+
+          // 头部信息区
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 心情表情
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFF4A90E2).withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
                     ),
                   ],
                 ),
-                SizedBox(height: 12),
-                Text(
-                  dateStr,
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                child: Center(
+                  child: Text(moodEmoji, style: TextStyle(fontSize: 30)),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  '\u5FC3\u60C5\uFF1A$mood',
-                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      dateStr,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF666666),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      '心情：$mood',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF333333),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+            ],
+          ),
+
+          SizedBox(height: 20),
+
+          // 分割线
+          Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF4A90E2).withOpacity(0.3),
+                  Colors.transparent,
+                ],
+              ),
             ),
           ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(24, 20, 24, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  content,
-                  style: TextStyle(
-                    fontSize: 16,
-                    height: 1.8,
-                    color: Color(0xFF333333),
-                  ),
-                ),
-                if (tags.isNotEmpty) ...[
-                  SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: tags.take(5).map((tag) {
-                      return Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Color(0xFF4A90E2).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          '#$tag',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF4A90E2),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-                if (images != null && images!.isNotEmpty) ...[
-                  SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: images!.take(3).map((imgPath) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          File(imgPath),
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(Icons.broken_image, color: Colors.grey[400], size: 28),
-                            );
-                          },
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ],
-            ),
-          ),
+          SizedBox(height: 20),
+
+          // 内容卡片
           Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Color(0xFFF8F9FA),
-              border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: Color(0xFF4A90E2),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(Icons.auto_stories, color: Colors.white, size: 16),
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
-                      ),
-                      Text(
-                        '\u5F00\u53D1\u8005\uFF1A\u6770\u54E5\u7F51\u7EDC\u79D1\u6280',
-                        style: TextStyle(fontSize: 10, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  '\u957F\u6309\u4FDD\u5B58\u56FE\u7247\u5206\u4EAB',
-                  style: TextStyle(fontSize: 10, color: Colors.grey),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 16,
+                  offset: Offset(0, 4),
                 ),
               ],
             ),
+            child: Text(
+              content,
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.8,
+                color: Color(0xFF333333),
+              ),
+            ),
+          ),
+
+          // 标签区
+          if (tags.isNotEmpty) ...[
+            SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: tags.take(5).map((tag) {
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF4A90E2).withOpacity(0.15), Color(0xFF4A90E2).withOpacity(0.05)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Color(0xFF4A90E2).withOpacity(0.2), width: 1),
+                  ),
+                  child: Text(
+                    '#$tag',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF4A90E2),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+
+          // 图片区
+          if (images != null && images!.isNotEmpty) ...[
+            SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: images!.take(3).map((imgPath) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    File(imgPath),
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.broken_image, color: Colors.grey[400], size: 28),
+                      );
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+
+          SizedBox(height: 24),
+
+          // 底部标识
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF4A90E2), Color(0xFF357ABD)],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFF4A90E2).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.auto_stories, color: Colors.white, size: 18),
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AI\u4EBA\u751F\u8BB0\u5F55\u5668',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF333333),
+                      ),
+                    ),
+                    Text(
+                      '\u5F00\u53D1\u8005\uFF1A\u6770\u54E5\u7F51\u7EDC\u79D1\u6280',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF999999),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
