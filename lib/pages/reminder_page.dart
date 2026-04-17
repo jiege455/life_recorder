@@ -152,6 +152,16 @@ class _ReminderPageState extends State<ReminderPage> {
               trailing: Icon(Icons.build, color: Colors.orange),
               onTap: _diagnoseAndFix,
             ),
+            Divider(height: 1, color: theme.dividerColor),
+            ListTile(
+              title: Text('电池优化', style: TextStyle(fontSize: 16, color: textColor)),
+              subtitle: Text(
+                '关闭电池优化可防止推送被系统杀死',
+                style: TextStyle(fontSize: 12, color: subtitleColor),
+              ),
+              trailing: Icon(Icons.battery_std, color: Colors.teal),
+              onTap: _showBatteryOptimizationDialog,
+            ),
           ],
         ],
       ),
@@ -300,6 +310,44 @@ class _ReminderPageState extends State<ReminderPage> {
     }
   }
 
+  Future<void> _showBatteryOptimizationDialog() async {
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.battery_std, color: _bluePrimary),
+            SizedBox(width: 8),
+            Text('电池优化设置'),
+          ],
+        ),
+        content: Text(
+          '关闭电池优化可以防止系统在后台杀死推送服务，确保每日提醒正常触发。\n\n'
+          '点击"去设置"后，请选择"允许"或"不优化"选项。',
+          style: TextStyle(fontSize: 14, height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('取消'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _reminderService.requestIgnoreBatteryOptimizations();
+            },
+            icon: Icon(Icons.open_in_new, size: 18),
+            label: Text('去设置'),
+            style: ElevatedButton.styleFrom(backgroundColor: _bluePrimary),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _diagnoseAndFix() async {
     // Show loading dialog
     showDialog(
@@ -356,6 +404,15 @@ class _ReminderPageState extends State<ReminderPage> {
       advice += '将尝试重新调度通知\n';
     } else {
       diagnosis += '✅ 通知已调度\n';
+    }
+
+    // 检查电池优化状态
+    final isIgnoringBattery = await _reminderService.isIgnoringBatteryOptimizations();
+    if (!isIgnoringBattery) {
+      diagnosis += '❌ 电池优化未关闭（推送可能被系统杀死）\n';
+      advice += '建议前往"电池优化"设置，关闭电池优化\n';
+    } else {
+      diagnosis += '✅ 电池优化已关闭\n';
     }
 
     // Try to fix

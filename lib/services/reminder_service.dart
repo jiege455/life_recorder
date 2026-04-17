@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -11,18 +12,21 @@ class ReminderService {
   static final ReminderService instance = ReminderService._();
   static const String _channelId = 'daily_reminder_v4';
   static const int _notificationId = 1001;
+  static const MethodChannel _foregroundChannel = MethodChannel('reminder_foreground_service');
 
   ReminderService._();
 
   bool _enabled = false;
   int _hour = 20;
   int _minute = 0;
+  bool _foregroundRunning = false;
 
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
 
   bool get enabled => _enabled;
   int get hour => _hour;
   int get minute => _minute;
+  bool get foregroundRunning => _foregroundRunning;
 
   Future<void> initialize() async {
     tz_data.initializeTimeZones();
@@ -71,6 +75,52 @@ class ReminderService {
     // 每次都尝试重新调度，确保通知有效
     if (_enabled) {
       await _scheduleDailyReminder();
+    }
+  }
+
+  /// 启动前台保活服务
+  Future<void> startForegroundService() async {
+    if (!Platform.isAndroid || _foregroundRunning) return;
+    try {
+      await _foregroundChannel.invokeMethod('startService');
+      _foregroundRunning = true;
+      print('[ReminderService] 前台保活服务已启动');
+    } catch (e) {
+      print('[ReminderService] 启动前台服务失败: $e');
+    }
+  }
+
+  /// 停止前台保活服务
+  Future<void> stopForegroundService() async {
+    if (!Platform.isAndroid || !_foregroundRunning) return;
+    try {
+      await _foregroundChannel.invokeMethod('stopService');
+      _foregroundRunning = false;
+      print('[ReminderService] 前台保活服务已停止');
+    } catch (e) {
+      print('[ReminderService] 停止前台服务失败: $e');
+    }
+  }
+
+  /// 检查电池优化状态
+  Future<bool> isIgnoringBatteryOptimizations() async {
+    if (!Platform.isAndroid) return true;
+    try {
+      final result = await _foregroundChannel.invokeMethod<bool>('isIgnoringBatteryOptimizations');
+      return result ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// 请求忽略电池优化
+  Future<bool> requestIgnoreBatteryOptimizations() async {
+    if (!Platform.isAndroid) return true;
+    try {
+      await _foregroundChannel.invokeMethod('requestIgnoreBatteryOptimizations');
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 
@@ -171,7 +221,13 @@ class ReminderService {
         if (!canExact) {
           await requestExactAlarmPermission();
         }
+        
+        // 启动前台保活服务
+        await startForegroundService();
       }
+    } else {
+      // 停止前台服务
+      await stopForegroundService();
     }
 
     _enabled = enabled;
