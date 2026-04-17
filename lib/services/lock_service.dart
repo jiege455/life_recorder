@@ -162,6 +162,9 @@ class LockService {
 
     if (!enabled) {
       await prefs.remove(_pinKey);
+      _lastUnlockTime = null;
+    } else {
+      _lastUnlockTime = null;
     }
   }
 
@@ -185,6 +188,7 @@ class LockService {
   Future<void> disableLock() async {
     _lockEnabled = false;
     _isLocked = false;
+    _lastUnlockTime = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_lockKey, false);
     await prefs.remove(_pinKey);
