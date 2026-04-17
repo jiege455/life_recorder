@@ -205,7 +205,7 @@ class _ReminderPageState extends State<ReminderPage> {
           children: [
             Icon(Icons.notifications_off, color: _bluePrimary, size: 24),
             SizedBox(width: 8),
-            Text('通知权限未开启'),
+            Text('通知权限未开启', style: TextStyle(color: theme.colorScheme.onSurface)),
           ],
         ),
         backgroundColor: theme.colorScheme.surface,
@@ -214,12 +214,12 @@ class _ReminderPageState extends State<ReminderPage> {
           isPermanentlyDenied
               ? '通知权限已被禁止，需要前往系统设置中手动开启通知权限，才能使用每日提醒功能。'
               : '需要通知权限才能启用每日提醒，请允许通知权限。',
-          style: TextStyle(fontSize: 14, height: 1.6),
+          style: TextStyle(fontSize: 14, height: 1.6, color: theme.colorScheme.onSurface),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('取消'),
+            child: Text('取消', style: TextStyle(color: theme.colorScheme.onSurface)),
           ),
           ElevatedButton.icon(
             onPressed: () async {
@@ -290,7 +290,10 @@ class _ReminderPageState extends State<ReminderPage> {
 
   Future<void> _showBatteryOptimizationDialog() async {
     if (!mounted) return;
-    
+
+    final theme = Theme.of(context);
+    final textColor = theme.colorScheme.onSurface;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -299,18 +302,18 @@ class _ReminderPageState extends State<ReminderPage> {
           children: [
             Icon(Icons.battery_std, color: _bluePrimary),
             SizedBox(width: 8),
-            Text('电池优化设置'),
+            Text('电池优化设置', style: TextStyle(color: textColor)),
           ],
         ),
         content: Text(
           '关闭电池优化可以防止系统在后台杀死推送服务，确保每日提醒正常触发。\n\n'
           '点击"去设置"后，请选择"允许"或"不优化"选项。',
-          style: TextStyle(fontSize: 14, height: 1.6),
+          style: TextStyle(fontSize: 14, height: 1.6, color: textColor),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('取消'),
+            child: Text('取消', style: TextStyle(color: textColor)),
           ),
           ElevatedButton.icon(
             onPressed: () async {
@@ -327,6 +330,9 @@ class _ReminderPageState extends State<ReminderPage> {
   }
 
   Future<void> _diagnoseAndFix() async {
+    final theme = Theme.of(context);
+    final textColor = theme.colorScheme.onSurface;
+
     // Show loading dialog
     showDialog(
       context: context,
@@ -336,7 +342,7 @@ class _ReminderPageState extends State<ReminderPage> {
           children: [
             Icon(Icons.build, color: _bluePrimary),
             SizedBox(width: 8),
-            Text('诊断推送问题'),
+            Text('诊断推送问题', style: TextStyle(color: textColor)),
           ],
         ),
         content: Column(
@@ -344,7 +350,7 @@ class _ReminderPageState extends State<ReminderPage> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('正在检查推送状态...'),
+            Text('正在检查推送状态...', style: TextStyle(color: textColor)),
           ],
         ),
       ),
