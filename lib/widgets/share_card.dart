@@ -583,13 +583,6 @@ class _ShareCardWidget extends StatelessWidget {
                         color: Color(0xFF333333),
                       ),
                     ),
-                    Text(
-                      '\u5F00\u53D1\u8005\uFF1A\u6770\u54E5\u7F51\u7EDC\u79D1\u6280',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF999999),
-                      ),
-                    ),
                   ],
                 ),
               ),
