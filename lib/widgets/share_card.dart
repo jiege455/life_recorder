@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 
 class ShareCardHelper {
   static Future<void> shareAsImage(
@@ -17,7 +18,6 @@ class ShareCardHelper {
     List<String>? images,
   }) async {
     final cardKey = GlobalKey();
-
     final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
 
@@ -49,7 +49,7 @@ class ShareCardHelper {
       final boundary = cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) {
         overlayEntry.remove();
-        await Share.share('$content\n\n\u2014\u2014 AI\u4EBA\u751F\u8BB0\u5F55\u5668');
+        _showShareOptions(context, content: content, mood: mood, moodEmoji: moodEmoji, dateStr: dateStr, tags: tags, images: images);
         return;
       }
 
@@ -57,7 +57,7 @@ class ShareCardHelper {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) {
         overlayEntry.remove();
-        await Share.share('$content\n\n\u2014\u2014 AI\u4EBA\u751F\u8BB0\u5F55\u5668');
+        _showShareOptions(context, content: content, mood: mood, moodEmoji: moodEmoji, dateStr: dateStr, tags: tags, images: images);
         return;
       }
 
@@ -68,14 +68,277 @@ class ShareCardHelper {
 
       overlayEntry.remove();
 
+      _showShareOptionsDialog(context, filePath, content: content, mood: mood, moodEmoji: moodEmoji, dateStr: dateStr, tags: tags, images: images);
+    } catch (e) {
+      overlayEntry.remove();
+      _showShareOptions(context, content: content, mood: mood, moodEmoji: moodEmoji, dateStr: dateStr, tags: tags, images: images);
+    }
+  }
+
+  static Future<void> _generateAndShare(
+    BuildContext context, {
+    required String content,
+    required String mood,
+    required String moodEmoji,
+    required String dateStr,
+    required List<String> tags,
+    List<String>? images,
+  }) async {
+    final cardKey = GlobalKey();
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: -9999,
+        top: -9999,
+        child: Material(
+          child: RepaintBoundary(
+            key: cardKey,
+            child: _ShareCardWidget(
+              content: content,
+              mood: mood,
+              moodEmoji: moodEmoji,
+              dateStr: dateStr,
+              tags: tags,
+              images: images,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+    await Future.delayed(Duration(milliseconds: 1500));
+
+    try {
+      final boundary = cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) {
+        overlayEntry.remove();
+        await Share.share('$content\n\n—— AI人生记录器');
+        return;
+      }
+
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        overlayEntry.remove();
+        await Share.share('$content\n\n—— AI人生记录器');
+        return;
+      }
+
+      final buffer = byteData.buffer;
+      final tempDir = await getTemporaryDirectory();
+      final filePath = '${tempDir.path}/share_card_${DateTime.now().millisecondsSinceEpoch}.png';
+      await File(filePath).writeAsBytes(buffer.asUint8List());
+      overlayEntry.remove();
+
       await Share.shareXFiles(
         [XFile(filePath)],
-        text: 'AI\u4EBA\u751F\u8BB0\u5F55\u5668 - \u8BB0\u5F55\u751F\u6D3B\u70B9\u6EF4',
+        text: 'AI人生记录器 - 记录生活点滴',
       );
     } catch (e) {
       overlayEntry.remove();
-      await Share.share('$content\n\n\u2014\u2014 AI\u4EBA\u751F\u8BB0\u5F55\u5668');
+      await Share.share('$content\n\n—— AI人生记录器');
     }
+  }
+
+  static Future<void> _saveToGallery(
+    BuildContext context, {
+    required String content,
+    required String mood,
+    required String moodEmoji,
+    required String dateStr,
+    required List<String> tags,
+    List<String>? images,
+  }) async {
+    final cardKey = GlobalKey();
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: -9999,
+        top: -9999,
+        child: Material(
+          child: RepaintBoundary(
+            key: cardKey,
+            child: _ShareCardWidget(
+              content: content,
+              mood: mood,
+              moodEmoji: moodEmoji,
+              dateStr: dateStr,
+              tags: tags,
+              images: images,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+    await Future.delayed(Duration(milliseconds: 1500));
+
+    try {
+      final boundary = cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) {
+        overlayEntry.remove();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('保存图片失败')));
+        return;
+      }
+
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        overlayEntry.remove();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('保存图片失败')));
+        return;
+      }
+
+      final buffer = byteData.buffer;
+      final result = await ImageGallerySaverPlus.saveImage(
+        buffer.asUint8List(),
+        name: 'life_recorder_${DateTime.now().millisecondsSinceEpoch}',
+        quality: 100,
+      );
+
+      overlayEntry.remove();
+
+      if (result['isSuccess'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 48),
+                SizedBox(height: 8),
+                Text('已保存到相册', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Text('打开微信朋友圈即可选择此图片分享', style: TextStyle(fontSize: 12)),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('保存到相册失败，请检查权限')));
+      }
+    } catch (e) {
+      overlayEntry.remove();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('保存图片失败: $e')));
+    }
+  }
+
+  static void _showShareOptionsDialog(BuildContext context, String filePath, {
+    required String content,
+    required String mood,
+    required String moodEmoji,
+    required String dateStr,
+    required List<String> tags,
+    List<String>? images,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '选择分享方式',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            ListTile(
+              leading: Icon(Icons.share, color: Colors.blue),
+              title: Text('系统分享'),
+              subtitle: Text('分享到任意应用'),
+              onTap: () {
+                Navigator.pop(context);
+                Share.shareXFiles(
+                  [XFile(filePath)],
+                  text: 'AI人生记录器 - 记录生活点滴',
+                );
+              },
+            ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.photo_library, color: Colors.green),
+              title: Text('保存到相册'),
+              subtitle: Text('保存后可在微信朋友圈分享'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _saveToGallery(
+                  context,
+                  content: content,
+                  mood: mood,
+                  moodEmoji: moodEmoji,
+                  dateStr: dateStr,
+                  tags: tags,
+                  images: images,
+                );
+              },
+            ),
+            SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static void _showShareOptions(BuildContext context, {
+    required String content,
+    required String mood,
+    required String moodEmoji,
+    required String dateStr,
+    required List<String> tags,
+    List<String>? images,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '选择分享方式',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            ListTile(
+              leading: Icon(Icons.share, color: Colors.blue),
+              title: Text('系统分享'),
+              subtitle: Text('分享到任意应用'),
+              onTap: () {
+                Navigator.pop(context);
+                Share.share('$content\n\n—— AI人生记录器');
+              },
+            ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.photo_library, color: Colors.green),
+              title: Text('生成卡片并保存到相册'),
+              subtitle: Text('保存后可在微信朋友圈分享'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _saveToGallery(
+                  context,
+                  content: content,
+                  mood: mood,
+                  moodEmoji: moodEmoji,
+                  dateStr: dateStr,
+                  tags: tags,
+                  images: images,
+                );
+              },
+            ),
+            SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
   }
 }
 
