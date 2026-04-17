@@ -68,6 +68,7 @@ class ReminderService {
 
     await loadSettings();
     
+    // 每次都尝试重新调度，确保通知有效
     if (_enabled) {
       await _scheduleDailyReminder();
     }
@@ -213,7 +214,9 @@ class ReminderService {
 
   Future<void> _scheduleDailyReminder() async {
     try {
-      print('[ReminderService] _scheduleDailyReminder called. Target time: $_hour:$_minute');
+      print('[ReminderService] 开始调度每日提醒，目标时间: $_hour:$_minute');
+      
+      // 先取消之前的通知
       await _plugin.cancel(_notificationId);
 
       final androidDetails = AndroidNotificationDetails(
@@ -231,6 +234,7 @@ class ReminderService {
         channelShowBadge: true,
         playSound: true,
         fullScreenIntent: true,
+        timeoutAfter: 3600000, // 1小时后自动消失
       );
       
       final iosDetails = DarwinNotificationDetails(
@@ -244,21 +248,27 @@ class ReminderService {
         iOS: iosDetails,
       );
 
+      // 计算下次触发时间
       final now = DateTime.now();
       var scheduledTime = DateTime(now.year, now.month, now.day, _hour, _minute, 0);
+      
+      // 如果今天的时间已经过了，设置为明天
       if (scheduledTime.isBefore(now)) {
         scheduledTime = scheduledTime.add(Duration(days: 1));
       }
-      print('[ReminderService] Calculated scheduledTime: $scheduledTime');
+      
+      print('[ReminderService] 计算的触发时间: $scheduledTime');
 
       final scheduledDate = tz.TZDateTime.from(scheduledTime, tz.local);
-      print('[ReminderService] TZ scheduledDate: $scheduledDate');
+      print('[ReminderService] 时区转换后的时间: $scheduledDate, 时区: ${tz.local.name}');
 
+      // 检查精确闹钟权限
       final canExact = Platform.isAndroid ? await canScheduleExactAlarms() : true;
-      print('[ReminderService] canExact: $canExact');
+      print('[ReminderService] 精确闹钟权限: $canExact');
       
+      // 调度通知
       if (canExact) {
-        print('[ReminderService] Scheduling with exactAllowWhileIdle');
+        print('[ReminderService] 使用精确闹钟模式调度');
         await _plugin.zonedSchedule(
           _notificationId,
           '🔔 AI 人生记录器 - 每日提醒',
@@ -271,7 +281,7 @@ class ReminderService {
           payload: 'daily_reminder',
         );
       } else {
-        print('[ReminderService] Scheduling with inexactAllowWhileIdle');
+        print('[ReminderService] 使用不精确闹钟模式调度');
         await _plugin.zonedSchedule(
           _notificationId,
           '🔔 AI 人生记录器 - 每日提醒',
@@ -284,9 +294,18 @@ class ReminderService {
           payload: 'daily_reminder',
         );
       }
-      print('[ReminderService] Reminder scheduled successfully.');
-    } catch (e) {
-      print('[ReminderService] Error scheduling reminder: $e');
+      
+      // 验证通知是否已调度
+      final pending = await _plugin.pendingNotificationRequests();
+      print('[ReminderService] 当前待处理通知数量: ${pending.length}');
+      for (var n in pending) {
+        print('[ReminderService] 待处理通知 ID: ${n.id}, 标题: ${n.title}');
+      }
+      
+      print('[ReminderService] 每日提醒调度成功');
+    } catch (e, stackTrace) {
+      print('[ReminderService] 调度失败: $e');
+      print('[ReminderService] 堆栈: $stackTrace');
       rethrow;
     }
   }
@@ -336,5 +355,78 @@ class ReminderService {
     } catch (e) {
       return false;
     }
+  }
+
+  /// 获取通知状态信息（用于调试）
+  Future<Map<String, dynamic>> getNotificationStatus() async {
+    try {
+      final pending = await _plugin.pendingNotificationRequests();
+      final permission = await isNotificationPermissionGranted();
+      final canExact = Platform.isAndroid ? await canScheduleExactAlarms() : true;
+      
+      bool hasScheduledReminder = false;
+      for (var n in pending) {
+        if (n.id == _notificationId) {
+          hasScheduledReminder = true;
+          break;
+        }
+      }
+
+      return {
+        'enabled': _enabled,
+        'permission': permission,
+        'canExactAlarm': canExact,
+        'scheduled': hasScheduledReminder,
+        'pendingCount': pending.length,
+        'targetTime': '$_hour:$_minute',
+        'channelId': _channelId,
+      };
+    } catch (e) {
+      return {
+        'error': e.toString(),
+      };
+    }
+  }
+
+  /// 取消所有待处理的通知
+  Future<void> cancelAllNotifications() async {
+    await _plugin.cancelAll();
+  }
+
+  /// 强制重新调度通知
+  Future<bool> forceReschedule() async {
+    try {
+      await loadSettings();
+      if (_enabled) {
+        await _plugin.cancelAll();
+        await _scheduleDailyReminder();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// 获取详细的调试信息
+  Future<String> getDebugInfo() async {
+    final status = await getNotificationStatus();
+    final buffer = StringBuffer();
+    
+    buffer.writeln('=== 推送服务调试信息 ===');
+    buffer.writeln('推送开关: ${status['enabled']}');
+    buffer.writeln('通知权限: ${status['permission']}');
+    buffer.writeln('精确闹钟权限: ${status['canExactAlarm']}');
+    buffer.writeln('已调度通知: ${status['scheduled']}');
+    buffer.writeln('待处理通知数: ${status['pendingCount']}');
+    buffer.writeln('目标时间: ${status['targetTime']}');
+    buffer.writeln('通知渠道: ${status['channelId']}');
+    
+    if (status.containsKey('error')) {
+      buffer.writeln('错误: ${status['error']}');
+    }
+    
+    buffer.writeln('========================');
+    return buffer.toString();
   }
 }

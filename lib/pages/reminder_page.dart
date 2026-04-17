@@ -142,6 +142,16 @@ class _ReminderPageState extends State<ReminderPage> {
               trailing: Icon(Icons.notifications_active, color: _bluePrimary),
               onTap: _sendTestNotification,
             ),
+            Divider(height: 1, color: theme.dividerColor),
+            ListTile(
+              title: Text('诊断与修复', style: TextStyle(fontSize: 16, color: textColor)),
+              subtitle: Text(
+                '检查推送状态，修复推送问题',
+                style: TextStyle(fontSize: 12, color: subtitleColor),
+              ),
+              trailing: Icon(Icons.build, color: Colors.orange),
+              onTap: _diagnoseAndFix,
+            ),
           ],
         ],
       ),
@@ -285,6 +295,132 @@ class _ReminderPageState extends State<ReminderPage> {
         SnackBar(
           content: Text(result ? '测试通知已发送，请查看通知栏 ✅' : '发送失败，请检查权限设置'),
           backgroundColor: result ? Colors.green : _bluePrimary,
+        ),
+      );
+    }
+  }
+
+  Future<void> _diagnoseAndFix() async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.build, color: _bluePrimary),
+            SizedBox(width: 8),
+            Text('诊断推送问题'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('正在检查推送状态...'),
+          ],
+        ),
+      ),
+    );
+
+    // Get debug info
+    final debugInfo = await _reminderService.getDebugInfo();
+    final status = await _reminderService.getNotificationStatus();
+
+    // Close loading dialog
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+
+    // Show detailed diagnostic info
+    String diagnosis = '';
+    String advice = '';
+
+    if (!status['permission']) {
+      diagnosis += '❌ 通知权限未开启\n';
+      advice += '请前往系统设置开启通知权限\n';
+    } else {
+      diagnosis += '✅ 通知权限正常\n';
+    }
+
+    if (!status['canExactAlarm']) {
+      diagnosis += '❌ 精确闹钟权限未开启\n';
+      advice += '请前往系统设置允许精确闹钟\n';
+    } else {
+      diagnosis += '✅ 精确闹钟权限正常\n';
+    }
+
+    if (!status['scheduled']) {
+      diagnosis += '❌ 通知未调度\n';
+      advice += '将尝试重新调度通知\n';
+    } else {
+      diagnosis += '✅ 通知已调度\n';
+    }
+
+    // Try to fix
+    bool fixSuccess = false;
+    if (!status['scheduled'] || !status['permission'] || !status['canExactAlarm']) {
+      fixSuccess = await _reminderService.forceReschedule();
+      if (fixSuccess) {
+        advice += '\n✅ 已尝试修复，请观察下次推送是否成功';
+      }
+    }
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.info_outline, color: _bluePrimary),
+              SizedBox(width: 8),
+              Text('诊断结果'),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('状态检查：', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Text(diagnosis, style: TextStyle(fontSize: 13)),
+                SizedBox(height: 8),
+                if (advice.isNotEmpty) ...[
+                  Text('建议操作：', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 4),
+                  Text(advice, style: TextStyle(fontSize: 13)),
+                ],
+                SizedBox(height: 8),
+                Text('调试信息：', style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(debugInfo, style: TextStyle(fontSize: 11, fontFamily: 'monospace')),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('关闭'),
+            ),
+            if (!status['permission'])
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _reminderService.openNotificationSettings();
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: _bluePrimary),
+                child: Text('开启权限'),
+              ),
+          ],
         ),
       );
     }
