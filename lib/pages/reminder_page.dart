@@ -439,7 +439,7 @@ class _ReminderPageState extends State<ReminderPage> {
                 Container(
                   padding: EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.grey[800] : Colors.grey[100],
+                    color: theme.brightness == Brightness.dark ? Colors.grey[800] : Colors.grey[100],
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(debugInfo, style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: textColor)),
