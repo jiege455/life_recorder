@@ -738,7 +738,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
         Padding(
           padding: EdgeInsets.only(top: 8),
           child: Text(
-            _isRecognizing ? '正在识别...' : '按住说话（需麦克风权限）',
+            _isRecognizing ? '正在识别...' : '按住说话',
             style: TextStyle(
               fontSize: 13,
               color: _isRecognizing ? Colors.orange : theme.colorScheme.onSurfaceVariant,

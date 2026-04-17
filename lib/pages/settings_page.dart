@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/theme_service.dart';
 import '../services/lock_service.dart';
 import '../services/reminder_service.dart';
-import '../services/tag_service.dart';
 import '../services/backup_service.dart';
-import '../config/api_config.dart';
 import '../database/database_helper.dart';
 import 'tag_manager_page.dart';
 import 'lock_settings_page.dart';

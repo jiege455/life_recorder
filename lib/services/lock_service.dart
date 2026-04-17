@@ -8,10 +8,12 @@ class LockService {
   static final LockService instance = LockService._();
   static const String _lockKey = 'lock_enabled';
   static const String _pinKey = 'lock_pin';
+  static const Duration _unlockCooldown = Duration(minutes: 5);
 
   final LocalAuthentication _localAuth = LocalAuthentication();
   bool _isLocked = false;
   bool _lockEnabled = false;
+  DateTime? _lastUnlockTime;
 
   LockService._();
 
@@ -22,6 +24,9 @@ class LockService {
     final prefs = await SharedPreferences.getInstance();
     _lockEnabled = prefs.getBool(_lockKey) ?? false;
     _isLocked = _lockEnabled;
+    if (_lockEnabled) {
+      _lastUnlockTime = null;
+    }
   }
 
   Future<bool> canCheckBiometrics() async {
@@ -162,12 +167,19 @@ class LockService {
 
   void unlock() {
     _isLocked = false;
+    _lastUnlockTime = DateTime.now();
   }
 
   void lock() {
     if (_lockEnabled) {
       _isLocked = true;
     }
+  }
+
+  bool shouldLock() {
+    if (!_lockEnabled) return false;
+    if (_lastUnlockTime == null) return true;
+    return DateTime.now().difference(_lastUnlockTime!) > _unlockCooldown;
   }
 
   Future<void> disableLock() async {

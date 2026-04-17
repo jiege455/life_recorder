@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../services/ai_service.dart';
-import 'package:intl/intl.dart';
 
 class AnnualReviewPage extends StatefulWidget {
   const AnnualReviewPage({super.key});
@@ -15,7 +14,6 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
   final AiService _aiService = AiService();
   int _selectedYear = DateTime.now().year;
   Map<String, int> _moodStats = {};
-  int _totalRecords = 0;
   String? _reviewContent;
   bool _isLoading = false;
   bool _isGenerating = false;
@@ -36,7 +34,6 @@ class _AnnualReviewPageState extends State<AnnualReviewPage> {
       setState(() {
         _yearRecords = records;
         _moodStats = moodStats;
-        _totalRecords = totalCount;
         _isLoading = false;
       });
     }

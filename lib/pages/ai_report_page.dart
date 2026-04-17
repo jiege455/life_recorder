@@ -25,9 +25,10 @@ class _AiReportPageState extends State<AiReportPage> {
 
   Future<void> _checkRecordCount() async {
     final count = await _dbHelper.getRecordCount();
-    setState(() {
+    // _recordCount will be used for future features
+    if (mounted) {
       _recordCount = count;
-    });
+    }
   }
 
   Future<void> _generateReport() async {

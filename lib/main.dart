@@ -144,10 +144,14 @@ class _LifeRecorderAppState extends State<LifeRecorderApp> with WidgetsBindingOb
     if (state == AppLifecycleState.resumed) {
       final currentLockEnabled = LockService.instance.lockEnabled;
       if (currentLockEnabled && !_isLocked) {
+        final needRelock = LockService.instance.shouldLock();
         setState(() {
           _lockEnabled = currentLockEnabled;
-          _isLocked = true;
+          _isLocked = needRelock;
         });
+        if (!needRelock) {
+          debugPrint('隐私锁冷却中，跳过重新锁定');
+        }
       } else if (!currentLockEnabled && _isLocked) {
         setState(() {
           _lockEnabled = false;
