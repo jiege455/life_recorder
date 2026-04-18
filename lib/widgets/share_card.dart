@@ -312,7 +312,6 @@ class _ShareCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 375,
-      constraints: BoxConstraints(minHeight: 450),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -327,125 +326,63 @@ class _ShareCardWidget extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // 背景装饰 - 时钟元素
+          // 背景装饰
           Positioned(
-            top: 20,
+            top: -20,
             right: -30,
             child: Opacity(
-              opacity: 0.15,
+              opacity: 0.12,
               child: CustomPaint(
-                size: Size(140, 140),
+                size: Size(100, 100),
                 painter: ClockPainter(),
               ),
             ),
           ),
           Positioned(
-            bottom: 40,
-            left: -50,
-            child: Opacity(
-              opacity: 0.1,
-              child: Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-              ),
-            ),
-          ),
-          // 闪光点装饰
-          Positioned(
-            top: 60,
-            left: 30,
-            child: Icon(Icons.star, color: Colors.white.withOpacity(0.4), size: 20),
-          ),
-          Positioned(
-            top: 140,
-            right: 50,
-            child: Icon(Icons.star, color: Colors.white.withOpacity(0.3), size: 16),
+            top: 30,
+            left: 20,
+            child: Icon(Icons.star, color: Colors.white.withOpacity(0.35), size: 14),
           ),
           // 主内容区
           Padding(
-            padding: EdgeInsets.fromLTRB(24, 28, 24, 24),
+            padding: EdgeInsets.fromLTRB(18, 16, 18, 14),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 顶部日期区域
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.calendar_today_outlined, color: Colors.white, size: 16),
-                      SizedBox(width: 8),
-                      Text(
-                        dateStr,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
-                // 心情区域
+                // 顶部：心情 + 日期
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // 心情表情 - 带发光效果
                     Container(
-                      width: 72,
-                      height: 72,
+                      width: 42,
+                      height: 42,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white.withOpacity(0.2),
-                        border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withOpacity(0.3),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                        ],
+                        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
                       ),
                       child: Center(
-                        child: Text(
-                          moodEmoji,
-                          style: TextStyle(fontSize: 36),
-                        ),
+                        child: Text(moodEmoji, style: TextStyle(fontSize: 22)),
                       ),
                     ),
-                    SizedBox(width: 18),
+                    SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '今日心情',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.8),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
                             mood,
                             style: TextStyle(
-                              fontSize: 22,
+                              fontSize: 18,
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
+                            ),
+                          ),
+                          Text(
+                            dateStr,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white.withOpacity(0.75),
                             ),
                           ),
                         ],
@@ -453,120 +390,69 @@ class _ShareCardWidget extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 24),
+                SizedBox(height: 14),
                 // 分割线
                 Container(
-                  height: 1.5,
+                  height: 1,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.white.withOpacity(0.5),
+                        Colors.white.withOpacity(0.4),
                         Colors.white.withOpacity(0.1),
-                        Colors.transparent,
                       ],
                     ),
                   ),
                 ),
-                SizedBox(height: 24),
-                // 内容卡片
-                Container(
-                  width: double.infinity,
-                  constraints: BoxConstraints(minHeight: 100),
-                  padding: EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 24,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 装饰性引号
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: EdgeInsets.only(top: 4),
-                            child: Text(
-                              '"',
-                              style: TextStyle(
-                                fontSize: 48,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF4A90E2).withOpacity(0.25),
-                                height: 0.7,
-                                fontFamily: 'Georgia',
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              content,
-                              style: TextStyle(
-                                fontSize: 16,
-                                height: 1.9,
-                                color: Color(0xFF333333),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      // 右下引号
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          '"',
-                          style: TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF4A90E2).withOpacity(0.2),
-                            height: 0.5,
-                            fontFamily: 'Georgia',
-                          ),
+                SizedBox(height: 12),
+                // 内容区域（限制最大高度）
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: 120),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.12),
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: SingleChildScrollView(
+                      child: Text(
+                        content,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.7,
+                          color: Color(0xFF333333),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
                 // 标签区
                 if (tags.isNotEmpty) ...[
-                  SizedBox(height: 20),
+                  SizedBox(height: 10),
                   Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: tags.take(5).map((tag) {
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: tags.take(3).map((tag) {
                       return Container(
-                        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.4),
-                            width: 1,
-                          ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.label, color: Colors.white, size: 14),
-                            SizedBox(width: 5),
-                            Text(
-                              tag,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          tag,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       );
                     }).toList(),
@@ -574,47 +460,32 @@ class _ShareCardWidget extends StatelessWidget {
                 ],
                 // 图片区
                 if (images != null && images!.isNotEmpty) ...[
-                  SizedBox(height: 20),
+                  SizedBox(height: 10),
                   Container(
-                    height: 95,
+                    height: 65,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      itemCount: images!.take(3).length,
-                      separatorBuilder: (context, index) => SizedBox(width: 12),
+                      itemCount: images!.take(2).length,
+                      separatorBuilder: (context, index) => SizedBox(width: 8),
                       itemBuilder: (context, index) {
                         final imgPath = images![index];
                         return ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(10),
                           child: Container(
-                            width: 95,
-                            height: 95,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white.withOpacity(0.6), width: 2.5),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.15),
-                                  blurRadius: 12,
-                                  offset: Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(13),
-                              child: Image.file(
-                                File(imgPath),
-                                width: 95,
-                                height: 95,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(13),
-                                    ),
-                                    child: Icon(Icons.image_outlined, color: Colors.white, size: 36),
-                                  );
-                                },
-                              ),
+                            width: 65,
+                            height: 65,
+                            child: Image.file(
+                              File(imgPath),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(Icons.image_outlined, color: Colors.white, size: 24),
+                                );
+                              },
                             ),
                           ),
                         );
@@ -622,58 +493,52 @@ class _ShareCardWidget extends StatelessWidget {
                     ),
                   ),
                 ],
-                SizedBox(height: 24),
-                // 底部品牌标识 - 使用APP logo
+                SizedBox(height: 12),
+                // 底部品牌
                 Center(
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // APP Logo 模拟 - 蓝色圆形
+                        // 时钟Logo
                         Container(
-                          width: 28,
-                          height: 28,
+                          width: 18,
+                          height: 18,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
                               colors: [Color(0xFF6BB3FD), Color(0xFF4A90E2)],
                             ),
-                            border: Border.all(color: Colors.white, width: 1.5),
+                            border: Border.all(color: Colors.white, width: 1),
                           ),
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              // 时钟刻度模拟
                               ...List.generate(12, (index) {
                                 final angle = (index * 30) * 3.14159 / 180;
-                                final isMainHour = index % 3 == 0;
                                 return Positioned(
-                                  top: isMainHour ? 2 : 3,
+                                  top: 1.5,
                                   child: Transform.rotate(
                                     angle: angle,
                                     child: Container(
-                                      width: isMainHour ? 1.5 : 1,
-                                      height: isMainHour ? 5 : 3,
+                                      width: 1,
+                                      height: index % 3 == 0 ? 3.5 : 2,
                                       decoration: BoxDecoration(
                                         color: Colors.white,
-                                        borderRadius: BorderRadius.circular(1),
+                                        borderRadius: BorderRadius.circular(0.5),
                                       ),
                                     ),
                                   ),
                                 );
                               }),
-                              // 中心点
                               Container(
-                                width: 4,
-                                height: 4,
+                                width: 2.5,
+                                height: 2.5,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   shape: BoxShape.circle,
@@ -682,14 +547,13 @@ class _ShareCardWidget extends StatelessWidget {
                             ],
                           ),
                         ),
-                        SizedBox(width: 12),
+                        SizedBox(width: 8),
                         Text(
                           'AI人生记录器',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 11,
                             color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
