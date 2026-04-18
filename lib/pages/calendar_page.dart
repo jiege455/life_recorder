@@ -12,14 +12,17 @@ class CalendarPage extends StatefulWidget {
   State<CalendarPage> createState() => _CalendarPageState();
 }
 
-class _CalendarPageState extends State<CalendarPage> {
+class _CalendarPageState extends State<CalendarPage> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   Map<DateTime, List<Map<String, dynamic>>> _events = {};
   List<Map<String, dynamic>> _selectedDayRecords = [];
   List<Map<String, dynamic>> _allRecords = [];
-  String _viewMode = 'calendar'; // 'calendar' 或 'timeline'
+  String _viewMode = 'calendar';
 
   @override
   void initState() {
@@ -108,8 +111,8 @@ class _CalendarPageState extends State<CalendarPage> {
       try {
         final createdAt = record['created_at'];
         DateTime dt;
-        if (createdAt is int) {
-          dt = DateTime.fromMillisecondsSinceEpoch(createdAt);
+        if (createdAt is num) {
+          dt = DateTime.fromMillisecondsSinceEpoch(createdAt.toInt());
         } else if (createdAt is String) {
           dt = DateTime.parse(createdAt);
         } else {
@@ -124,12 +127,11 @@ class _CalendarPageState extends State<CalendarPage> {
         continue;
       }
     }
-    // Sort each day's records by time
     for (var key in grouped.keys) {
       grouped[key]!.sort((a, b) {
         DateTime getDt(Map<String, dynamic> r) {
           final t = r['created_at'];
-          if (t is int) return DateTime.fromMillisecondsSinceEpoch(t);
+          if (t is num) return DateTime.fromMillisecondsSinceEpoch(t.toInt());
           if (t is String) return DateTime.parse(t);
           return DateTime.now();
         }
