@@ -215,7 +215,6 @@ class _CalendarPageState extends State<CalendarPage> {
 
   Widget _buildTimelineView() {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final grouped = _getGroupedRecords();
     
     if (grouped.isEmpty) {
@@ -419,7 +418,6 @@ class _CalendarPageState extends State<CalendarPage> {
 
   Widget _buildCalendar() {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final primaryColor = theme.colorScheme.primary;
     return Container(
       margin: EdgeInsets.all(16),
@@ -479,7 +477,6 @@ class _CalendarPageState extends State<CalendarPage> {
 
   Widget _buildDayRecords() {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     if (_selectedDayRecords.isEmpty) {
       return Center(
         child: Column(
