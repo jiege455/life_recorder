@@ -326,7 +326,6 @@ class _ShareCardWidget extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // 背景装饰
           Positioned(
             top: -20,
             right: -30,
@@ -343,14 +342,12 @@ class _ShareCardWidget extends StatelessWidget {
             left: 20,
             child: Icon(Icons.star, color: Colors.white.withOpacity(0.35), size: 14),
           ),
-          // 主内容区
           Padding(
             padding: EdgeInsets.fromLTRB(18, 16, 18, 14),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 顶部：心情 + 日期
                 Row(
                   children: [
                     Container(
@@ -385,13 +382,36 @@ class _ShareCardWidget extends StatelessWidget {
                               color: Colors.white.withOpacity(0.75),
                             ),
                           ),
+                          if (tags.isNotEmpty) ...[
+                            SizedBox(height: 6),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: tags.take(3).map((tag) {
+                                return Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    tag,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
                         ],
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 14),
-                // 分割线
+                SizedBox(height: 12),
                 Container(
                   height: 1,
                   decoration: BoxDecoration(
@@ -403,8 +423,7 @@ class _ShareCardWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(height: 12),
-                // 内容区域（限制最大高度）
+                SizedBox(height: 10),
                 ConstrainedBox(
                   constraints: BoxConstraints(maxHeight: 120),
                   child: Container(
@@ -433,32 +452,6 @@ class _ShareCardWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                // 标签区
-                if (tags.isNotEmpty) ...[
-                  SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: tags.take(3).map((tag) {
-                      return Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          tag,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-                // 图片区
                 if (images != null && images!.isNotEmpty) ...[
                   SizedBox(height: 10),
                   Container(
@@ -494,27 +487,25 @@ class _ShareCardWidget extends StatelessWidget {
                   ),
                 ],
                 SizedBox(height: 12),
-                // 底部品牌
                 Center(
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.white.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // 时钟Logo
                         Container(
-                          width: 18,
-                          height: 18,
+                          width: 12,
+                          height: 12,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
                               colors: [Color(0xFF6BB3FD), Color(0xFF4A90E2)],
                             ),
-                            border: Border.all(color: Colors.white, width: 1),
+                            border: Border.all(color: Colors.white, width: 0.8),
                           ),
                           child: Stack(
                             alignment: Alignment.center,
@@ -522,23 +513,23 @@ class _ShareCardWidget extends StatelessWidget {
                               ...List.generate(12, (index) {
                                 final angle = (index * 30) * 3.14159 / 180;
                                 return Positioned(
-                                  top: 1.5,
+                                  top: 1,
                                   child: Transform.rotate(
                                     angle: angle,
                                     child: Container(
-                                      width: 1,
-                                      height: index % 3 == 0 ? 3.5 : 2,
+                                      width: 0.8,
+                                      height: index % 3 == 0 ? 2.5 : 1.5,
                                       decoration: BoxDecoration(
                                         color: Colors.white,
-                                        borderRadius: BorderRadius.circular(0.5),
+                                        borderRadius: BorderRadius.circular(0.3),
                                       ),
                                     ),
                                   ),
                                 );
                               }),
                               Container(
-                                width: 2.5,
-                                height: 2.5,
+                                width: 2,
+                                height: 2,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   shape: BoxShape.circle,
@@ -547,13 +538,13 @@ class _ShareCardWidget extends StatelessWidget {
                             ],
                           ),
                         ),
-                        SizedBox(width: 8),
+                        SizedBox(width: 5),
                         Text(
                           'AI人生记录器',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 9,
                             color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],

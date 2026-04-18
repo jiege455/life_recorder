@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:photo_view/photo_view.dart';
 import '../database/database_helper.dart';
 import 'add_record_page.dart';
 
@@ -242,17 +243,37 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
             ),
             itemCount: _images.length,
             itemBuilder: (context, index) {
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(_images[index]),
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      child: Icon(Icons.broken_image, color: theme.colorScheme.onSurfaceVariant),
-                    );
-                  },
+              return GestureDetector(
+                onTap: () => _showImagePreview(context, index),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.file(
+                        File(_images[index]),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            child: Icon(Icons.broken_image, color: theme.colorScheme.onSurfaceVariant),
+                          );
+                        },
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Container(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Icon(Icons.zoom_in, color: Colors.white, size: 14),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -359,6 +380,30 @@ class _RecordDetailPageState extends State<RecordDetailPage> {
     ];
     final index = tag.hashCode % colors.length;
     return colors[index];
+  }
+
+  void _showImagePreview(BuildContext context, int index) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            leading: IconButton(
+              icon: Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          backgroundColor: Colors.black,
+          body: PhotoView(
+            imageProvider: FileImage(File(_images[index])),
+            minScale: PhotoViewComputedScale.contained,
+            maxScale: PhotoViewComputedScale.covered * 2,
+            heroAttributes: PhotoViewHeroAttributes(tag: _images[index]),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _editRecord() async {
