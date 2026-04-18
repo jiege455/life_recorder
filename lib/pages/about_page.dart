@@ -45,8 +45,20 @@ class AboutPage extends StatelessWidget {
                 children: [
                   Container(
                     width: 80, height: 80,
-                    decoration: BoxDecoration(color: primaryColor, borderRadius: BorderRadius.circular(20)),
-                    child: Icon(Icons.auto_stories, size: 40, color: Colors.white),
+                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset(
+                        'assets/app_logo.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            decoration: BoxDecoration(color: primaryColor, borderRadius: BorderRadius.circular(20)),
+                            child: Icon(Icons.access_time, size: 40, color: Colors.white),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                   SizedBox(height: 16),
                   Text('AI人生记录器', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: primaryColor)),
