@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'dart:ui' as ui;
 import 'dart:io';
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
@@ -725,12 +726,12 @@ class ClockPainter extends CustomPainter {
       final innerRadius = isMainHour ? radius - 12 : radius - 8;
 
       final startOffset = Offset(
-        center.dx + innerRadius * -sin(angle),
-        center.dy + innerRadius * cos(angle),
+        center.dx + innerRadius * -math.sin(angle),
+        center.dy + innerRadius * math.cos(angle),
       );
       final endOffset = Offset(
-        center.dx + radius * -sin(angle),
-        center.dy + radius * cos(angle),
+        center.dx + radius * -math.sin(angle),
+        center.dy + radius * math.cos(angle),
       );
 
       final linePaint = Paint()
