@@ -19,7 +19,6 @@ class ShareCardHelper {
   }) async {
     if (!context.mounted) return;
 
-    // Show preview dialog
     await showDialog(
       context: context,
       barrierDismissible: true,
@@ -58,10 +57,11 @@ class _SharePreviewDialog extends StatefulWidget {
 
 class _SharePreviewDialogState extends State<_SharePreviewDialog> {
   final GlobalKey _cardKey = GlobalKey();
+  String? _generatedFilePath;
   bool _isProcessing = false;
   String _statusText = '';
 
-  Future<void> _captureAndShare() async {
+  Future<void> _generateCard() async {
     if (_isProcessing) return;
     setState(() {
       _isProcessing = true;
@@ -69,17 +69,17 @@ class _SharePreviewDialogState extends State<_SharePreviewDialog> {
     });
 
     try {
-      await Future.delayed(Duration(milliseconds: 500));
+      await Future.delayed(Duration(milliseconds: 300));
       final boundary = _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) {
-        setState(() { _statusText = '生成失败'; _isProcessing = false; });
+        setState(() { _statusText = '生成失败，请重试'; _isProcessing = false; });
         return;
       }
 
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) {
-        setState(() { _statusText = '生成失败'; _isProcessing = false; });
+        setState(() { _statusText = '生成失败，请重试'; _isProcessing = false; });
         return;
       }
 
@@ -88,11 +88,11 @@ class _SharePreviewDialogState extends State<_SharePreviewDialog> {
       await File(filePath).writeAsBytes(byteData.buffer.asUint8List());
 
       if (!mounted) return;
-      setState(() { _isProcessing = false; });
-
-      // Show share options
-      if (!mounted) return;
-      _showShareOptions(filePath);
+      setState(() {
+        _generatedFilePath = filePath;
+        _isProcessing = false;
+        _statusText = '卡片已生成 ✓';
+      });
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -103,48 +103,12 @@ class _SharePreviewDialogState extends State<_SharePreviewDialog> {
     }
   }
 
-  Future<void> _showShareOptions(String filePath) {
-    return showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Container(
-          padding: EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('选择分享方式', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 20),
-              ListTile(
-                leading: Icon(Icons.share, color: Colors.blue, size: 28),
-                title: Text('系统分享', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                subtitle: Text('分享到微信、QQ等应用'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Share.shareXFiles(
-                    [XFile(filePath)],
-                    text: 'AI人生记录器 - 记录生活点滴',
-                  );
-                },
-              ),
-              Divider(height: 1),
-              ListTile(
-                leading: Icon(Icons.photo_library, color: Colors.green, size: 28),
-                title: Text('保存到相册', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                subtitle: Text('保存后可在微信朋友圈分享'),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  await _saveToGallery(filePath);
-                },
-              ),
-              SizedBox(height: 10),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Future<void> _saveToGallery() async {
+    if (_generatedFilePath == null) {
+      await _generateCard();
+      if (_generatedFilePath == null) return;
+    }
 
-  Future<void> _saveToGallery(String filePath) async {
     if (!mounted) return;
     setState(() {
       _isProcessing = true;
@@ -152,7 +116,7 @@ class _SharePreviewDialogState extends State<_SharePreviewDialog> {
     });
 
     try {
-      final bytes = await File(filePath).readAsBytes();
+      final bytes = await File(_generatedFilePath!).readAsBytes();
       final result = await ImageGallerySaverPlus.saveImage(
         bytes,
         name: 'life_recorder_${DateTime.now().millisecondsSinceEpoch}',
@@ -160,7 +124,7 @@ class _SharePreviewDialogState extends State<_SharePreviewDialog> {
       );
 
       if (!mounted) return;
-      setState(() { _isProcessing = false; });
+      setState(() { _isProcessing = false; _statusText = ''; });
 
       if (result['isSuccess'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -185,14 +149,15 @@ class _SharePreviewDialogState extends State<_SharePreviewDialog> {
             duration: Duration(seconds: 3),
           ),
         );
+        Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('保存失败，请检查相册权限'), backgroundColor: Colors.orange),
+          SnackBar(content: Text('保存失败，请在设置中开启相册权限'), backgroundColor: Colors.orange),
         );
       }
     } catch (e) {
       if (mounted) {
-        setState(() { _isProcessing = false; });
+        setState(() { _isProcessing = false; _statusText = '保存失败'; });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('保存失败: $e'), backgroundColor: Colors.red),
         );
@@ -200,33 +165,55 @@ class _SharePreviewDialogState extends State<_SharePreviewDialog> {
     }
   }
 
+  Future<void> _shareSystem() async {
+    if (_generatedFilePath == null) {
+      await _generateCard();
+      if (_generatedFilePath == null) return;
+    }
+
+    setState(() { _isProcessing = true; _statusText = '正在分享...'; });
+
+    try {
+      await Share.shareXFiles(
+        [XFile(_generatedFilePath!)],
+        text: 'AI人生记录器 - 记录生活点滴',
+      );
+      if (mounted) setState(() { _isProcessing = false; _statusText = ''; });
+    } catch (e) {
+      if (mounted) setState(() { _isProcessing = false; _statusText = '分享失败'; });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.colorScheme.onSurface;
+
     return Dialog(
+      backgroundColor: isDark ? Color(0xFF1E1E2E) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         constraints: BoxConstraints(maxWidth: 400),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
             Container(
               padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
               child: Row(
                 children: [
                   Icon(Icons.image, color: Color(0xFF4A90E2)),
                   SizedBox(width: 8),
-                  Text('分享卡片预览', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('分享卡片预览', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
                   Spacer(),
                   IconButton(
-                    icon: Icon(Icons.close),
+                    icon: Icon(Icons.close, color: textColor),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
-            Divider(height: 1),
-            // Preview
+            Divider(height: 1, color: isDark ? Colors.grey[700] : Colors.grey[200]),
             Flexible(
               child: SingleChildScrollView(
                 padding: EdgeInsets.all(16),
@@ -243,7 +230,6 @@ class _SharePreviewDialogState extends State<_SharePreviewDialog> {
                 ),
               ),
             ),
-            // Footer buttons
             Container(
               padding: EdgeInsets.fromLTRB(20, 8, 20, 20),
               child: Column(
@@ -259,18 +245,40 @@ class _SharePreviewDialogState extends State<_SharePreviewDialog> {
                         ),
                       ),
                     ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isProcessing ? null : _captureAndShare,
-                      icon: _isProcessing ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(Icons.share),
-                      label: Text(_isProcessing ? '生成中...' : '选择分享方式'),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: Color(0xFF4A90E2),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isProcessing ? null : _shareSystem,
+                          icon: _isProcessing && _generatedFilePath == null
+                              ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              : Icon(Icons.share, size: 18),
+                          label: Text('系统分享'),
+                          style: OutlinedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            foregroundColor: Color(0xFF4A90E2),
+                            side: BorderSide(color: Color(0xFF4A90E2)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _isProcessing ? null : _saveToGallery,
+                          icon: _isProcessing && _generatedFilePath != null
+                              ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : Icon(Icons.download, size: 18),
+                          label: Text('保存到相册'),
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            backgroundColor: Color(0xFF4A90E2),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -318,7 +326,6 @@ class _ShareCardWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 顶部装饰条
           Container(
             width: 60,
             height: 4,
@@ -328,7 +335,6 @@ class _ShareCardWidget extends StatelessWidget {
             ),
           ),
           SizedBox(height: 20),
-          // 头部信息区
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -356,13 +362,11 @@ class _ShareCardWidget extends StatelessWidget {
             ],
           ),
           SizedBox(height: 20),
-          // 分割线
           Container(
             height: 1,
             decoration: BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF4A90E2).withOpacity(0.3), Colors.transparent])),
           ),
           SizedBox(height: 20),
-          // 内容卡片
           Container(
             width: double.infinity,
             padding: EdgeInsets.all(18),
@@ -373,7 +377,6 @@ class _ShareCardWidget extends StatelessWidget {
             ),
             child: Text(content, style: TextStyle(fontSize: 16, height: 1.8, color: Color(0xFF333333))),
           ),
-          // 标签区
           if (tags.isNotEmpty) ...[
             SizedBox(height: 16),
             Wrap(
@@ -392,7 +395,6 @@ class _ShareCardWidget extends StatelessWidget {
               }).toList(),
             ),
           ],
-          // 图片区
           if (images != null && images!.isNotEmpty) ...[
             SizedBox(height: 16),
             Wrap(
@@ -419,28 +421,12 @@ class _ShareCardWidget extends StatelessWidget {
               }).toList(),
             ),
           ],
-          SizedBox(height: 24),
-          // 底部标识
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [Color(0xFF4A90E2), Color(0xFF357ABD)]),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [BoxShadow(color: Color(0xFF4A90E2).withOpacity(0.3), blurRadius: 8, offset: Offset(0, 2))],
-                ),
-                child: Icon(Icons.auto_stories, color: Colors.white, size: 18),
-              ),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'AI人生记录器',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
-                ),
-              ),
-            ],
+          SizedBox(height: 16),
+          Center(
+            child: Text(
+              'AI人生记录器',
+              style: TextStyle(fontSize: 11, color: Color(0xFFAAAAAA)),
+            ),
           ),
         ],
       ),
