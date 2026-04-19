@@ -158,6 +158,7 @@ class _CalendarPageState extends State<CalendarPage> with AutomaticKeepAliveClie
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('日历视图', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
