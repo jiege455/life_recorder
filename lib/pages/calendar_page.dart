@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
 import 'dart:convert';
 import '../database/database_helper.dart';
 import '../services/app_events.dart';
@@ -338,6 +339,14 @@ class _CalendarPageState extends State<CalendarPage> with AutomaticKeepAliveClie
       } catch (e) {}
     }
 
+    List<String> images = [];
+    if (record['images'] != null && record['images'].toString().isNotEmpty) {
+      try {
+        List<dynamic> decoded = jsonDecode(record['images'].toString());
+        images = decoded.map((e) => e.toString()).toList();
+      } catch (e) {}
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -412,6 +421,40 @@ class _CalendarPageState extends State<CalendarPage> with AutomaticKeepAliveClie
                           padding: EdgeInsets.symmetric(horizontal: 6),
                         ),
                       ).toList(),
+                    ),
+                  ],
+                  if (images.isNotEmpty) ...[
+                    SizedBox(height: 6),
+                    SizedBox(
+                      height: 60,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: images.take(3).length,
+                        separatorBuilder: (context, index) => SizedBox(width: 6),
+                        itemBuilder: (context, index) {
+                          final imgPath = images[index];
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              width: 60,
+                              height: 60,
+                              child: Image.file(
+                                File(imgPath),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(Icons.image_outlined, color: theme.colorScheme.onSurfaceVariant, size: 20),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ],
