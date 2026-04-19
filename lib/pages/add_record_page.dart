@@ -829,6 +829,54 @@ class _AddRecordPageState extends State<AddRecordPage> {
               ),
             ),
           ),
+          if (_customTags.isNotEmpty) ...[
+            SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _customTags.asMap().entries.map((entry) {
+                final tag = entry.value;
+                final isSelected = _generatedTags.contains(tag);
+                return GestureDetector(
+                  onTap: () {
+                    if (isSelected) {
+                      setState(() => _generatedTags.remove(tag));
+                    } else {
+                      setState(() => _generatedTags.add(tag));
+                    }
+                  },
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected ? theme.colorScheme.primary : theme.colorScheme.primary.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isSelected) ...[
+                          Icon(Icons.check, size: 14, color: Colors.white),
+                          SizedBox(width: 4),
+                        ],
+                        Text(
+                          tag,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isSelected ? Colors.white : theme.colorScheme.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
           SizedBox(height: 12),
           Row(
             children: [
