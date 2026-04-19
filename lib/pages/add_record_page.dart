@@ -9,6 +9,7 @@ import '../database/database_helper.dart';
 import '../services/ai_service.dart';
 import '../services/speech_service.dart';
 import '../services/tag_service.dart';
+import '../services/app_events.dart';
 import 'tag_manager_page.dart';
 
 class AddRecordPage extends StatefulWidget {
@@ -433,6 +434,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
       }
 
       if (mounted) {
+        AppEvents().notifyRecordChanged();
         Navigator.pop(context, true);
       }
     } catch (e) {

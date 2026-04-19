@@ -3,6 +3,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import '../database/database_helper.dart';
+import '../services/app_events.dart';
 import 'record_detail_page.dart';
 
 class CalendarPage extends StatefulWidget {
@@ -29,6 +30,9 @@ class _CalendarPageState extends State<CalendarPage> with AutomaticKeepAliveClie
     super.initState();
     _selectedDay = _focusedDay;
     _loadEvents();
+    AppEvents().recordChanged.listen((_) {
+      if (mounted) _loadEvents();
+    });
   }
 
   Future<void> _loadEvents() async {
