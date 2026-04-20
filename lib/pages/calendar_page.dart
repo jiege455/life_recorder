@@ -208,7 +208,14 @@ class _CalendarPageState extends State<CalendarPage> with AutomaticKeepAliveClie
           SizedBox(width: 12),
         ],
       ),
-      body: _viewMode == 'calendar' ? _buildCalendarView() : _buildTimelineView(),
+      body: _viewMode == 'calendar' ? _buildCalendarView() : _buildTimelineViewWithRefresh(),
+    );
+  }
+
+  Widget _buildTimelineViewWithRefresh() {
+    return RefreshIndicator(
+      onRefresh: _loadEvents,
+      child: _buildTimelineView(),
     );
   }
 
